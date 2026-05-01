@@ -1,0 +1,54 @@
+# =============================================================================
+# 도우다 — 치매검진 및 치료비 지원
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: dementia-screening
+name: 치매검진 및 치료비 지원
+agency: 보건복지부 · 중앙치매센터
+category: 건강·의료
+summary: |
+  만 60세 이상이시면 가까운 치매안심센터에서 무료로 치매 검진을
+  받으실 수 있어요. 치매로 진단되시면 치료비도 매달 3만 원까지
+  지원받으실 수 있어요.
+
+eligibility:
+  age_min: 60
+  citizenship: KR
+
+benefit:
+  type: monthly_cash
+  amount_krw_max:
+    single: 30000
+    couple: 30000
+
+documents:
+  - 신분증
+  - 건강보험증
+  - 진단서 (치료비 지원 시)
+
+apply:
+  online:
+    name: 치매안심센터
+    url: https://www.nid.or.kr/info/center_list.aspx
+  offline:
+    - 가까운 치매안심센터 (보건소 내)
+    - 주소지 관할 보건소
+
+sources:
+  - https://www.nid.or.kr
+
+health_tags:
+  - daily_life
+
+show_condition:
+  health_concerns:
+    - daily_life
+
+last_verified: 2024-01-01
+
+notes: |
+  - 무료 검진은 선별검사 → 진단검사 → 감별검사 3단계로 진행돼요.
+  - 치매 진단 후 치료비 지원은 건강보험료 기준 하위 120% 이하 대상이에요.
+  - 치매안심센터에서 인지강화 프로그램(미술, 음악, 원예 등)도 무료로 참여하실 수 있어요.
+  - 배회 우려가 있으시면 '배회감지기'도 무료로 대여해 드려요.

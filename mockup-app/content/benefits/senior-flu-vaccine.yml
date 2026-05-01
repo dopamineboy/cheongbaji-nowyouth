@@ -1,0 +1,45 @@
+# =============================================================================
+# 도우다 — 어르신 인플루엔자 무료 예방접종
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: senior-flu-vaccine
+name: 어르신 인플루엔자 무료 예방접종
+agency: 질병관리청 · 지자체
+category: 건강·의료
+summary: |
+  만 65세 이상 어르신은 매년 가을~겨울에
+  독감(인플루엔자) 예방접종을 무료로 받으실 수 있어요.
+
+eligibility:
+  age_min: 65
+  citizenship: KR
+
+benefit:
+  type: service
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증 (주민등록증)
+
+apply:
+  online:
+    name: 예방접종도우미
+    url: https://nip.kdca.go.kr/irgd/civil/pageView.do?menuLv1=3&menuLv2=1
+  offline:
+    - 가까운 보건소
+    - 지정 의료기관 (위탁 병·의원)
+
+sources:
+  - https://nip.kdca.go.kr/irgd/civil/pageView.do?menuLv1=3&menuLv2=1
+
+universal: true
+
+last_verified: 2024-01-01
+
+notes: |
+  - 매년 10~12월 사이에 접종하시면 돼요.
+  - 별도 신청 없이 신분증만 가지고 가시면 됩니다.
+  - 폐렴구균 예방접종도 만 65세 이상이시면 무료예요 (평생 1회).

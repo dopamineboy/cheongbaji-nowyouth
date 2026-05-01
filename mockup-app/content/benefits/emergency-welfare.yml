@@ -1,0 +1,57 @@
+# =============================================================================
+# 도우다 — 긴급복지지원
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: emergency-welfare
+name: 긴급복지지원
+agency: 보건복지부 · 지자체
+category: 위기지원
+summary: |
+  갑작스러운 위기(실직, 질병, 사고 등)로 생활이 어려워지셨을 때,
+  생계비·의료비·주거비 등을 빠르게 지원해 드리는 제도예요.
+
+eligibility:
+  citizenship: KR
+  requires_crisis: true
+  median_income_pct: 100
+  income_recognition_max:
+    single: 2228446   # 기준 중위소득 100% (2024년 1인 가구)
+    couple: 3682549   # 기준 중위소득 100% (2024년 2인 가구)
+
+benefit:
+  type: one_time_cash
+  amount_krw_max:
+    single: 713102    # 생계지원 1인 가구 기준 (1회)
+    couple: 1178435
+
+documents:
+  - 신분증
+  - 위기 상황 확인 서류 (해고통지서, 진단서 등)
+  - 통장 사본
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003180
+  offline:
+    - 긴급복지지원 핫라인 129
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003180
+
+delinquency_tags:
+  - maintenance
+  - health_insurance
+  - utility
+
+show_condition:
+  has_delinquency: true
+
+last_verified: 2024-01-01
+
+notes: |
+  - 위기 사유: 주소득자 사망·실직, 중한 질병, 가정폭력, 화재 등.
+  - 생계(최대 6회), 의료(최대 2회, 300만 원), 주거(최대 12회) 등 구분돼요.
+  - 먼저 지원하고 나중에 자격을 확인하는 "선(先)지원" 제도예요.

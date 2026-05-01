@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+:root {
+  /* 화사 팔레트 — 시니어 친화 + 청춘(청바지) 톤
+     기존: 네이비/머스타드/베이지 → 신선·따뜻·밝게 */
+  --bg-page: #FFFBF1;          /* 매우 옅은 크림-피치 */
+  --bg-surface: #FFFFFF;
+  --bg-soft-blue: #EAF1FF;     /* 청바지 light tint */
+  --bg-soft-yellow: #FFF6DD;
+  --bg-soft-pink: #FFEEEC;
+
+  --color-primary: #2855F0;        /* 선명한 청바지 블루 */
+  --color-primary-strong: #1A3FCA; /* 강조 hover */
+  --color-primary-soft: #DCE7FF;
+
+  --color-accent: #FFB627;          /* 따뜻한 골드 */
+  --color-accent-strong: #E6970A;
+  --color-accent-soft: #FFEAB7;
+
+  --color-urgent: #F25C54;          /* 산호색 (친근한 빨강) */
+  --color-urgent-soft: #FFE4E0;
+
+  --color-success: #2BB661;         /* 밝은 에메랄드 */
+  --color-success-soft: #D9F5E5;
+
+  --color-text: #1A1A1A;
+  --color-muted: #5A5A5A;
+  --color-border: #F0E2C9;
+}
+
+@theme inline {
+  --color-background: var(--bg-page);
+  --color-foreground: var(--color-text);
+  --font-sans: var(--font-noto-kr), ui-sans-serif, system-ui;
+}
+
+html, body {
+  /* 부드러운 라디얼 그라데이션 — 위는 따뜻한 크림, 아래는 옅은 블루 */
+  background:
+    radial-gradient(circle at 0% 0%, #FFF6DD 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, #EAF1FF 0%, transparent 60%),
+    var(--bg-page);
+  background-attachment: fixed;
+  color: var(--color-text);
+  font-family: var(--font-noto-kr), ui-sans-serif, system-ui;
+  font-size: 18px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ──────────────────────────────────────────────────────
+   Hero / Stats 카드 — 청바지 블루 그라데이션
+   ────────────────────────────────────────────────────── */
+.hero-blue {
+  background: linear-gradient(135deg, #2855F0 0%, #5B7DFF 60%, #80A3FF 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.hero-blue::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 10% 90%, rgba(255, 182, 39, 0.20) 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero-blue > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 따뜻 골드 — 활동·미션 강조 */
+.hero-gold {
+  background: linear-gradient(135deg, #FFB627 0%, #FFD672 100%);
+  color: #4A2D00;
+}
+
+/* 산호 핑크 — 긴급/마감 강조 */
+.hero-coral {
+  background: linear-gradient(135deg, #F25C54 0%, #FF8B7A 100%);
+  color: white;
+}
+
+/* 에메랄드 — 성공/완료 강조 */
+.hero-emerald {
+  background: linear-gradient(135deg, #2BB661 0%, #5BD58A 100%);
+  color: white;
+}
+
+/* 부드러운 카드 그림자 */
+.card-soft {
+  box-shadow:
+    0 1px 3px rgba(40, 85, 240, 0.05),
+    0 4px 16px rgba(40, 85, 240, 0.06);
+}
+
+/* CTA 버튼 — 그라데이션 */
+.btn-primary {
+  background: linear-gradient(135deg, #2855F0 0%, #4F73FF 100%);
+  color: white;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 2px 8px rgba(40, 85, 240, 0.25);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(40, 85, 240, 0.35);
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+}
+
+/* 카드 hover 살짝 떠오름 */
+@media (hover: hover) {
+  .card-link {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card-link:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 4px 8px rgba(40, 85, 240, 0.08),
+      0 8px 24px rgba(40, 85, 240, 0.10);
+  }
+}

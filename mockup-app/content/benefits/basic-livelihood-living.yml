@@ -1,0 +1,48 @@
+# =============================================================================
+# 도우다 — 기초생활보장 생계급여
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: basic-livelihood-living
+name: 기초생활보장 생계급여
+agency: 보건복지부 · 지자체
+category: 기초생활보장
+summary: |
+  소득과 재산이 적어 생활이 어려우신 분께,
+  매달 생활비를 지원해 드리는 제도예요.
+
+eligibility:
+  citizenship: KR
+  median_income_pct: 32
+  income_recognition_max:
+    single: 713102    # 기준 중위소득 32% (2024년 1인 가구)
+    couple: 1178435   # 기준 중위소득 32% (2024년 2인 가구)
+
+benefit:
+  type: monthly_cash
+  amount_krw_max:
+    single: 713102
+    couple: 1178435
+
+documents:
+  - 신분증
+  - 소득·재산 확인 서류
+  - 통장 사본
+  - 임대차 계약서 (해당 시)
+  - 가족관계증명서
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00001132
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00001132
+
+last_verified: 2024-01-01
+
+notes: |
+  - 근로능력이 있으시면 자활사업 참여 조건이 붙을 수 있어요.
+  - 부양의무자 기준이 많이 완화되었어요 (2021년부터).

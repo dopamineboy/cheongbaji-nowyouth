@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>청바지(NowYouth) MVP 개발 실행 계획서</title>
+<style>
+@page { size: A4; margin: 20mm 18mm; }
+body {
+  font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+  font-size: 10.5pt; line-height: 1.6; color: #222;
+  max-width: 100%; margin: 0; padding: 0;
+}
+h1 {
+  font-size: 22pt; color: #1f6feb; border-bottom: 3px solid #1f6feb;
+  padding-bottom: 8px; margin-top: 24px; margin-bottom: 16px;
+  page-break-after: avoid;
+}
+h2 {
+  font-size: 16pt; color: #1f6feb; border-left: 5px solid #1f6feb;
+  padding-left: 12px; margin-top: 28px; margin-bottom: 12px;
+  page-break-after: avoid;
+}
+h3 {
+  font-size: 13pt; color: #2d5fb9; margin-top: 20px; margin-bottom: 8px;
+  page-break-after: avoid;
+}
+h4 { font-size: 11.5pt; color: #444; margin-top: 16px; }
+p { margin: 8px 0; }
+strong { color: #0b4a96; }
+blockquote {
+  border-left: 4px solid #ff9800; background: #fff8e7;
+  padding: 10px 16px; margin: 12px 0; color: #5a4420;
+  font-style: italic;
+}
+table {
+  border-collapse: collapse; width: 100%; margin: 12px 0;
+  font-size: 10pt; page-break-inside: avoid;
+}
+th {
+  background: #1f6feb; color: white; padding: 8px 10px;
+  text-align: left; border: 1px solid #0b4a96;
+}
+td {
+  padding: 7px 10px; border: 1px solid #d0d6e6; vertical-align: top;
+}
+tr:nth-child(even) td { background: #f4f8ff; }
+code {
+  background: #f3f4f8; padding: 2px 6px; border-radius: 3px;
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 9.5pt; color: #c0392b;
+}
+pre {
+  background: #f8f9fb; border: 1px solid #e0e4ef;
+  padding: 12px; border-radius: 4px; overflow-x: auto;
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 8.5pt; line-height: 1.35;
+  page-break-inside: avoid; white-space: pre;
+}
+pre code { background: none; padding: 0; color: #333; font-size: 8.5pt; }
+ul, ol { margin: 8px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+hr {
+  border: none; border-top: 2px solid #1f6feb;
+  margin: 28px 0; page-break-after: avoid;
+}
+a { color: #1f6feb; text-decoration: none; }
+/* 체크리스트 스타일 */
+li input[type="checkbox"] { margin-right: 6px; }
+</style>
+</head>
+<body>
+<h1 id="nowyouth-mvp">청바지(NowYouth) — MVP 개발 실행 계획서</h1>
+<h2 id="1-scope">1. Scope — 포함 / 제외</h2>
+<h3 id="now">✅ 포함 (🟢 Now에서 반드시 만드는 것)</h3>
+<table>
+<thead>
+<tr>
+<th>기능</th>
+<th>핵심 요구</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>온보딩·인증</strong></td>
+<td>휴대폰 본인인증(PASS 간편인증 or SMS OTP 대체) · 필수 3필드(생년월일·행정동·가구유형)</td>
+</tr>
+<tr>
+<td><strong>홈 피드</strong></td>
+<td>사용자별 혜택 추천 N건 카드형 리스트 + 4대 기능 진입점</td>
+</tr>
+<tr>
+<td><strong>복지 알리미 (Rule Engine)</strong></td>
+<td>복지로 Open API 주기 수집 → SQL WHERE 매칭 → 카드 리스트 + 신청 서류 체크리스트</td>
+</tr>
+<tr>
+<td><strong>일자리 목록</strong></td>
+<td>노인인력개발원 Open API → 키워드·거리(Haversine) 필터 → 신청 링크 전달</td>
+</tr>
+<tr>
+<td><strong>활동 포인트 원장</strong></td>
+<td><code>user_points</code> 테이블 · 인지 훈련 미니게임 1종 · 적립 토스트 UI</td>
+</tr>
+<tr>
+<td><strong>품앗이 게시판</strong></td>
+<td>행정동 지오펜싱 · 요청/응답 · 1:1 매칭 · 신고 시스템(3회→자동 정지)</td>
+</tr>
+<tr>
+<td><strong>AI 챗봇(기초)</strong></td>
+<td>OpenAI GPT-4o-mini 호출 · 자연어 Q&amp;A(혜택·일자리 관련만)</td>
+</tr>
+<tr>
+<td><strong>접근성</strong></td>
+<td>큰 글씨 모드 · 고대비 · KWCAG 2.2 AA 기본 준수</td>
+</tr>
+</tbody>
+</table>
+<h3 id="next">❌ 제외 (🟡 Next — 시드 투자 후)</h3>
+<ul>
+<li>AI Ranker (pgvector 임베딩 + LLM 우선순위 재정렬)</li>
+<li>네이티브 앱(iOS·Android) · HealthKit/Google Fit 연동</li>
+<li>카카오·네이버페이 기프티콘 API 자동 발급</li>
+<li>지자체 수행기관 API 직연동, GPS+QR 근태 체크</li>
+<li>양방향 평점, 음성 요청 등록(Whisper)</li>
+</ul>
+<h3 id="scale-series-a">❌ 제외 (🔴 Scale — Series A 이후)</h3>
+<ul>
+<li>문화누리카드 Webhook, 정부24 알림 서비스 API</li>
+<li>급여 정산 미들웨어, 지하철 역사 QR 배너</li>
+<li>지자체 사회복지사 모니터링 대시보드(B2G SaaS)</li>
+</ul>
+<hr />
+<h2 id="2">2. 기술 스택 확정</h2>
+<table>
+<thead>
+<tr>
+<th>레이어</th>
+<th>선택</th>
+<th>선정 이유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FE</strong></td>
+<td>Next.js 16 (App Router) + React 19 + Tailwind CSS</td>
+<td>PWA 내장, 서버 컴포넌트로 접근성·성능 유리, 기획팀이 이미 mockup-app에서 사용 중</td>
+</tr>
+<tr>
+<td><strong>BE</strong></td>
+<td>NestJS (Node 22 LTS) + TypeScript</td>
+<td>모듈형 구조, FE와 언어 통일(타입 공유), 공공기관 납품 선례</td>
+</tr>
+<tr>
+<td><strong>DB</strong></td>
+<td>PostgreSQL 16</td>
+<td>관계형 + JSONB, 확장성(Next 단계에서 pgvector 추가)</td>
+</tr>
+<tr>
+<td><strong>Cache</strong></td>
+<td>Redis 7</td>
+<td>세션·공공 API 응답 캐싱·큐</td>
+</tr>
+<tr>
+<td><strong>파일</strong></td>
+<td>S3 호환 (AWS S3 or Cloudflare R2)</td>
+<td>인증 서류·게시판 이미지</td>
+</tr>
+<tr>
+<td><strong>AI</strong></td>
+<td>OpenAI GPT-4o-mini · Whisper</td>
+<td>API 호출만, 자체 모델 학습 없음</td>
+</tr>
+<tr>
+<td><strong>인증</strong></td>
+<td>PASS 간편인증(유료, 건당 과금) · 개발 중에는 SMS OTP로 대체</td>
+<td>공공기관 인정</td>
+</tr>
+<tr>
+<td><strong>배포 FE</strong></td>
+<td>Vercel</td>
+<td>Next.js 네이티브, 프리뷰 배포 무료</td>
+</tr>
+<tr>
+<td><strong>배포 BE</strong></td>
+<td>Fly.io or Railway (초기) → AWS Seoul(ECS Fargate) 전환 예비</td>
+<td>저비용 시작, 성장 시 이전</td>
+</tr>
+<tr>
+<td><strong>모니터링</strong></td>
+<td>Sentry (오류) · BetterStack/Grafana Cloud (APM·로그)</td>
+<td>프리티어로 시작 가능</td>
+</tr>
+<tr>
+<td><strong>시크릿</strong></td>
+<td>Doppler or 1Password CLI</td>
+<td><code>.env</code> 직접 관리 금지</td>
+</tr>
+<tr>
+<td><strong>CI/CD</strong></td>
+<td>GitHub Actions</td>
+<td>무료 티어 충분</td>
+</tr>
+</tbody>
+</table>
+<p><strong>결정 필요 (Kick-off 미팅에서 확정)</strong>:
+- [ ] 레포 구조: 모노레포(<code>/apps/web</code>, <code>/apps/api</code>, <code>/packages/shared</code>) vs 분리
+- [ ] 본인인증 초기 방식: PASS 유료 즉시 vs SMS OTP 후 교체
+- [ ] S3 vs R2 (비용·한국 보관 요건)</p>
+<hr />
+<h2 id="3-api">3. 외부 API 사용 가능 현황</h2>
+<p>MVP 개발 시점에 <strong>실제로 연동 가능한 외부 API</strong>를 ✅ 즉시 사용 가능과 ⏳ 별도 신청·계약 필요로 구분합니다. 스프린트 계획(§6)은 ✅ 군 API만을 전제로 수립되었습니다.</p>
+<h3 id="_1">✅ 즉시 사용 가능 — 회원가입·키 발급만, 대부분 자동/당일 승인</h3>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>제공 기관</th>
+<th>용도</th>
+<th>발급 절차</th>
+<th>비용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>복지로 Open API</strong></td>
+<td>보건복지부</td>
+<td>중앙정부 복지 제도 약 360종</td>
+<td>공공데이터포털(<a href="https://www.data.go.kr">data.go.kr</a>) 활용신청 · 1~2일</td>
+<td>무료</td>
+</tr>
+<tr>
+<td><strong>한국노인인력개발원 Open API</strong></td>
+<td>노인인력개발원</td>
+<td>연 115만 개 노인일자리 공고</td>
+<td>공공데이터포털 활용신청 · 자동 승인</td>
+<td>무료</td>
+</tr>
+<tr>
+<td><strong>공공데이터포털 (행정구역 코드·지자체 복지)</strong></td>
+<td>행정안전부</td>
+<td>행정동 코드 · 지자체 복지사업 DB</td>
+<td>회원가입 후 개별 API 활용신청</td>
+<td>무료</td>
+</tr>
+<tr>
+<td><strong>Kakao Map REST API</strong></td>
+<td>카카오</td>
+<td>주소↔좌표 변환, 거리 계산, 지도 렌더</td>
+<td>Kakao Developers 앱 키 즉시 발급</td>
+<td>월 30만 건까지 무료</td>
+</tr>
+<tr>
+<td><strong>OpenAI API</strong> (GPT-4o-mini · Whisper)</td>
+<td>OpenAI</td>
+<td>AI 챗봇, 요약, 음성→텍스트</td>
+<td>결제 카드 등록 즉시</td>
+<td>사용량 기반(MVP 월 예산 10만원 이내 목표)</td>
+</tr>
+<tr>
+<td><strong>SMS OTP</strong> (NHN Cloud / Toast)</td>
+<td>NHN · Toast</td>
+<td>개발 단계 본인인증 대체</td>
+<td>사업자 가입 · 즉시 발급</td>
+<td>건당 약 9원</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">⏳ 별도 신청·계약 필요 — 심사·파트너십 기간 존재</h3>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>제공 기관</th>
+<th>신청 방식</th>
+<th>소요 기간</th>
+<th>비용</th>
+<th>단계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PASS 간편인증</strong></td>
+<td>NICE평가정보</td>
+<td>사업자 심사 · 계약 체결</td>
+<td>2~4주</td>
+<td>건당 약 80~150원</td>
+<td>🟢 S5 도입 목표</td>
+</tr>
+<tr>
+<td><strong>KISA 본인확인 서비스</strong></td>
+<td>한국인터넷진흥원</td>
+<td>행안부 지정 절차·심사</td>
+<td>4~8주</td>
+<td>연 분담금 + 건당 과금</td>
+<td>🟡 시드 후</td>
+</tr>
+<tr>
+<td><strong>토스페이먼츠 / 카카오페이 결제</strong></td>
+<td>토스 · 카카오</td>
+<td>사업자 등록 후 심사</td>
+<td>1~2주</td>
+<td>건당 수수료 2.5~3%</td>
+<td>🟡 리워드 유료 발송 시</td>
+</tr>
+<tr>
+<td><strong>카카오·네이버페이 기프티콘 발급 API</strong></td>
+<td>카카오 · 네이버</td>
+<td>월 거래액 심사·사업자 파트너십</td>
+<td>1~3개월</td>
+<td>계약 조건별 상이</td>
+<td>🟡 Next</td>
+</tr>
+<tr>
+<td><strong>지자체 수행기관 포털</strong></td>
+<td>개별 지자체·복지관</td>
+<td>개별 B2B 계약 (실증 1곳부터)</td>
+<td>1~3개월</td>
+<td>수수료 협의</td>
+<td>🟡 실증 단계</td>
+</tr>
+<tr>
+<td><strong>정부24 알림 서비스 API</strong></td>
+<td>행정안전부</td>
+<td>민간 개방 제한 · 기관 협약</td>
+<td>6개월 이상</td>
+<td>무료(협약 전제)</td>
+<td>🔴 Scale</td>
+</tr>
+<tr>
+<td><strong>문화누리카드 결제 Webhook</strong></td>
+<td>NH농협 · 문체부</td>
+<td>카드사 데이터 제휴 · 여신금융 법무</td>
+<td>6개월 이상</td>
+<td>계약 조건별</td>
+<td>🔴 Scale</td>
+</tr>
+<tr>
+<td><strong>한국철도공사 역사 QR</strong></td>
+<td>코레일 · 지자체</td>
+<td>기관 협약 · 시설 사용 허가</td>
+<td>6개월 이상</td>
+<td>협약 조건별</td>
+<td>🔴 Scale</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_3">📌 대표 착수 체크리스트</h3>
+<p><strong>이번 주 즉시 신청</strong> (1~2일 내 발급 예상):
+- [ ] 공공데이터포털 회원가입 · <strong>복지로 Open API</strong> 활용신청
+- [ ] 공공데이터포털 · <strong>한국노인인력개발원 Open API</strong> 활용신청
+- [ ] 공공데이터포털 · <strong>행정구역 코드 API</strong> 활용신청
+- [ ] Kakao Developers 앱 생성 · REST API 키 발급
+- [ ] OpenAI 조직 계정 개설 · 결제카드 등록 · API 키 발급
+- [ ] NHN Cloud(또는 Toast) SMS 사업자 가입</p>
+<p><strong>병행 진행</strong> (2~4주 소요, S5 시점 목표):
+- [ ] PASS 간편인증(NICE평가정보) 영업 담당자 미팅 요청</p>
+<p><strong>시드 투자 후 착수</strong> (본 문서 Scope 외): KISA 본인확인 · 토스페이먼츠 · 기프티콘 API · 지자체 수행기관 B2B</p>
+<hr />
+<h2 id="4">4. 도메인 모델 — 주요 테이블</h2>
+<pre><code class="language-sql">-- 사용자
+users (id, phone_hash, created_at, last_login_at, status)
+user_profiles (user_id PK, birth_year, dong_code, household_type,
+               income_bracket NULL, pension_status NULL, interests JSONB)
+
+-- 복지 (복지로 API 수집 캐시)
+welfare_programs (id, source, source_id, title, summary, eligibility JSONB,
+                  benefit_amount_krw, apply_url, deadline, region_codes TEXT[],
+                  updated_at)
+
+-- 포인트 원장 (감사 추적)
+point_ledger (id, user_id, type, amount, metadata JSONB, created_at)
+  -- type: WALK | STAMP | GAME | CULTURE | POOMASI | REDEEM | BONUS
+
+-- 일자리 (노인인력개발원 API 수집 캐시)
+jobs (id, source, source_id, title, org, region_code, wage, hours,
+      requirements JSONB, apply_url, expires_at, updated_at)
+
+-- 품앗이
+poomasi_posts (id, author_id, dong_code, category, title, body,
+               status, created_at)
+poomasi_matches (id, post_id, helper_id, status, created_at)
+poomasi_reports (id, target_user_id, reporter_id, reason, created_at)
+
+-- 감사
+audit_logs (id, user_id, action, entity, entity_id, metadata JSONB, created_at)
+</code></pre>
+<p><strong>원칙</strong>:
+- 휴대폰 번호는 해시(phone_hash)로 저장, 원문은 본인확인 세션에서만 보관 후 삭제
+- 모든 포인트 거래는 <code>point_ledger</code> <strong>append-only</strong>, 수정·삭제 금지 (감사 요건)
+- PII 최소 수집: 이름·상세주소는 품앗이 매칭 시에만 마스킹 상태로 노출</p>
+<hr />
+<h2 id="5-api-be-fe">5. API 스펙 (BE ↔ FE 계약)</h2>
+<p><strong>공통</strong>: REST(JSON), <code>Authorization: Bearer &lt;JWT&gt;</code>, 에러 포맷 <code>{ code, message, field? }</code></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/auth/otp/send</code></td>
+<td>SMS OTP 발송</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/otp/verify</code></td>
+<td>OTP 검증 → JWT 발급</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/pass/callback</code></td>
+<td>(Phase 2) PASS 간편인증 콜백</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/me</code></td>
+<td>내 프로필</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/me</code></td>
+<td>프로필 수정</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/welfare/match</code></td>
+<td>내 프로필 기반 복지 추천 (Rule Engine)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/welfare/:id</code></td>
+<td>상세 + 서류 체크리스트</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/jobs/search?kw=&amp;dong=&amp;radius=</code></td>
+<td>일자리 검색</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/jobs/:id</code></td>
+<td>상세</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/points/balance</code></td>
+<td>잔액 조회</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/points/earn</code></td>
+<td>내부 이벤트(게임 완료 등)로 적립</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/points/history</code></td>
+<td>거래 내역</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/poomasi/feed?dong=</code></td>
+<td>우리 동 게시판</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/poomasi/posts</code></td>
+<td>글 작성</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/poomasi/posts/:id/apply</code></td>
+<td>매칭 신청</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/poomasi/reports</code></td>
+<td>신고</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/chat</code></td>
+<td>챗봇 질의 (스트리밍)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rate limit</strong>: User 60/min, IP 300/min (Gateway에서 통제)</p>
+<hr />
+<h2 id="6-12-mvp">6. 스프린트 로드맵 (12주 · MVP → 실증 준비)</h2>
+<table>
+<thead>
+<tr>
+<th>Sprint</th>
+<th>기간</th>
+<th>FE</th>
+<th>BE</th>
+<th>공통 산출물</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S0</strong></td>
+<td>1주</td>
+<td>레포 셋업·Tailwind 디자인 토큰·Storybook</td>
+<td>레포 셋업·CI/CD·DB 스키마 v1·인증 뼈대</td>
+<td>Kick-off 문서·환경변수 정책</td>
+</tr>
+<tr>
+<td><strong>S1</strong></td>
+<td>2주</td>
+<td>온보딩 3-step 폼·홈 스켈레톤</td>
+<td>SMS OTP 인증·JWT·<code>/me</code></td>
+<td>온보딩 E2E</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>2주</td>
+<td>복지 알리미 화면·카드 UI</td>
+<td>복지로 API 수집 잡·Rule Engine·<code>/welfare/*</code></td>
+<td>복지 추천 실작동</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>2주</td>
+<td>포인트 화면·인지 게임 1종</td>
+<td><code>/points/*</code>·원장 테이블</td>
+<td>포인트 적립·조회</td>
+</tr>
+<tr>
+<td><strong>S4</strong></td>
+<td>2주</td>
+<td>일자리 화면·지도(Kakao Map)</td>
+<td>노인인력개발원 수집·<code>/jobs/*</code></td>
+<td>일자리 검색</td>
+</tr>
+<tr>
+<td><strong>S5</strong></td>
+<td>2주</td>
+<td>품앗이 게시판·신고 플로우</td>
+<td>지오펜싱·<code>/poomasi/*</code>·신고 자동화</td>
+<td>품앗이 MVP</td>
+</tr>
+<tr>
+<td><strong>S6</strong></td>
+<td>1주</td>
+<td>접근성 감사(axe)·QA·디자인 폴리시</td>
+<td>로깅·Sentry·부하 테스트</td>
+<td><strong>실증 1곳 파일럿 배포 준비</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>마일스톤</strong>:
+- M1 (S2 말): 내부 데모 가능 (기획팀·엔지니어만)
+- M2 (S5 말): 클로즈드 베타 (지인 시니어 10~20명)
+- M3 (S6 말): 실증 지자체 1곳 공식 런칭</p>
+<hr />
+<h2 id="7">7. 역할 분장</h2>
+<table>
+<thead>
+<tr>
+<th>인원</th>
+<th>담당 영역</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FE 엔지니어</strong></td>
+<td>Next.js 앱, PWA 설정, 컴포넌트 라이브러리, 접근성(KWCAG), Storybook, 디자인 토큰 준수</td>
+</tr>
+<tr>
+<td><strong>BE 엔지니어</strong></td>
+<td>NestJS API, DB 스키마·마이그레이션, 공공 API 수집 잡(BullMQ/node-cron), 인증, 보안, 배포</td>
+</tr>
+<tr>
+<td><strong>주상윤 (대표)</strong></td>
+<td>제품 결정, 공공 API 발급·계약, 실증 지자체 섭외, 투자 유치, 우선순위 조정</td>
+</tr>
+<tr>
+<td><strong>김경림 (보조 기획)</strong></td>
+<td>QA 시나리오, 시니어 사용자 인터뷰, 운영 문서, 콘텐츠(도움말·FAQ)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>협업 도구</strong>:
+- 이슈 트래킹: GitHub Projects (Kanban)
+- 문서: 이 레포 <code>/docs</code>
+- 커뮤니케이션: Slack or Discord (결정) + 주 1회 스탠드업</p>
+<hr />
+<h2 id="8-non-functional-requirements">8. Non-Functional Requirements</h2>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>기준</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>성능</strong></td>
+<td>P95 API 응답 500ms 이하, 홈 LCP 2.5초 이하</td>
+</tr>
+<tr>
+<td><strong>접근성</strong></td>
+<td>KWCAG 2.2 AA · axe-core CI 통과 · 폰트 스케일 200%까지 깨지지 않음</td>
+</tr>
+<tr>
+<td><strong>보안</strong></td>
+<td>TLS 1.3 · AES-256 at rest · PII 최소 수집 · <code>.env</code> 커밋 금지</td>
+</tr>
+<tr>
+<td><strong>개인정보</strong></td>
+<td>수집 항목 사전 동의 화면 · 3년 후 자동 파기 배치</td>
+</tr>
+<tr>
+<td><strong>가용성</strong></td>
+<td>99.5% (월 약 3.6시간 장애 허용) · 자동 백업 일 1회</td>
+</tr>
+<tr>
+<td><strong>로깅</strong></td>
+<td>모든 인증·결제·포인트 이벤트 감사 로그 불변 기록</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9">9. 리스크 &amp; 대응</h2>
+<table>
+<thead>
+<tr>
+<th>리스크</th>
+<th>영향</th>
+<th>대응</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PASS 간편인증 비용</td>
+<td>건당 과금 → 초기 비용 부담</td>
+<td>S1~S4는 SMS OTP로 개발, S5에 PASS 연동</td>
+</tr>
+<tr>
+<td>공공 API 불안정</td>
+<td>복지로·노인인력개발원 장애 시 기능 정지</td>
+<td>일일 수집 캐시 + 장애 감지 시 stale 허용</td>
+</tr>
+<tr>
+<td>실증 지자체 미확보</td>
+<td>M3 런칭 지연</td>
+<td>대표가 S3 시점까지 MOU 1곳 확정, 미확보 시 지인 시니어 베타로 전환</td>
+</tr>
+<tr>
+<td>인력 확보 후 이탈</td>
+<td>12주 로드맵 붕괴</td>
+<td>스프린트 단위 검수 · 페어프로그래밍 · 문서화 강제</td>
+</tr>
+<tr>
+<td>접근성 미준수 지적</td>
+<td>B2G 납품 시 감점</td>
+<td>매 스프린트 axe CI · S6 전문가 감사 1회</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><strong>부록 A</strong>: UI 참고 — <code>/mockup-app/app/</code> 4대 기능 페이지 (welfare, activity, infographic, …)
+<strong>부록 B</strong>: 접근성 가이드 — KWCAG 2.2 AA 체크리스트 (별도 문서 예정)
+<strong>부록 C</strong>: 공공 API 원문 레퍼런스 — <code>/docs/public-api-refs.md</code> (BE 엔지니어가 초안 작성)</p>
+</body>
+</html>

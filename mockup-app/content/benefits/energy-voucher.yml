@@ -1,0 +1,53 @@
+# =============================================================================
+# 도우다 — 에너지바우처
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: energy-voucher
+name: 에너지바우처
+agency: 산업통상자원부 · 한국에너지공단
+category: 주거·에너지
+summary: |
+  에너지를 사기 어려운 저소득 어르신·장애인·영유아 가구에,
+  전기·가스·등유 등 난방비를 바우처로 지원해 드려요.
+
+eligibility:
+  citizenship: KR
+  median_income_pct: 40
+  income_recognition_max:
+    single: 891378    # 기준 중위소득 40% 이하 + 가구원 조건
+    couple: 1473019
+
+benefit:
+  type: one_time_cash
+  amount_krw_max:
+    single: 182000    # 하절기+동절기 합산 (1인 가구 기준)
+    couple: 182000
+
+documents:
+  - 신분증
+  - 주민등록등본
+  - 소득·재산 확인 서류 (수급자 증명서 등)
+
+apply:
+  online:
+    name: 에너지바우처
+    url: https://www.energyvoucher.or.kr
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.energyvoucher.or.kr
+
+delinquency_tags:
+  - utility
+
+show_condition:
+  has_delinquency: true
+
+last_verified: 2024-01-01
+
+notes: |
+  - 생계·의료급여 수급자 중 만 65세 이상, 장애인, 영유아 등이 있는 가구가 대상이에요.
+  - 하절기(7~9월)와 동절기(11~3월)로 나누어 지급돼요.
+  - 국민행복카드 또는 전용카드로 받으실 수 있어요.

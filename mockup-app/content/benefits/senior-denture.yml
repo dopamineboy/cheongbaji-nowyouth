@@ -1,0 +1,51 @@
+# =============================================================================
+# 도우다 — 노인 틀니·임플란트 건강보험
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: senior-denture
+name: 노인 틀니·임플란트
+agency: 보건복지부 · 국민건강보험공단
+category: 건강·의료
+summary: |
+  만 65세 이상 어르신의 틀니와 임플란트 치료에
+  건강보험이 적용되어 부담이 크게 줄어드는 제도예요.
+
+eligibility:
+  age_min: 65
+  citizenship: KR
+
+benefit:
+  type: discount
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증 (주민등록증)
+  - 건강보험증
+
+apply:
+  online:
+    name: 국민건강보험공단
+    url: https://www.nhis.or.kr/nhis/healthins/retrieveTimeTreatCnts.do
+  offline:
+    - 건강보험 적용 치과 (대부분의 치과에서 가능)
+
+sources:
+  - https://www.nhis.or.kr/nhis/healthins/retrieveTimeTreatCnts.do
+
+health_tags:
+  - teeth
+
+show_condition:
+  health_concerns:
+    - teeth
+
+last_verified: 2024-01-01
+
+notes: |
+  - 틀니: 본인부담 30% (수급자는 무료~5%).
+  - 임플란트: 평생 2개까지, 본인부담 30%.
+  - 별도 신청 없이 치과에서 바로 적용받으실 수 있어요.
+  - 7년마다 재제작 가능 (틀니 기준).

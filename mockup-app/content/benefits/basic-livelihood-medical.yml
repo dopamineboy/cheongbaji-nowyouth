@@ -1,0 +1,48 @@
+# =============================================================================
+# 도우다 — 기초생활보장 의료급여
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: basic-livelihood-medical
+name: 기초생활보장 의료급여
+agency: 보건복지부 · 지자체
+category: 기초생활보장
+summary: |
+  생활이 어려우신 분이 병원에 가실 때,
+  본인부담금을 크게 줄여 드리는 제도예요.
+
+eligibility:
+  citizenship: KR
+  median_income_pct: 40
+  income_recognition_max:
+    single: 891378    # 기준 중위소득 40% (2024년 1인 가구)
+    couple: 1473019   # 기준 중위소득 40% (2024년 2인 가구)
+
+benefit:
+  type: service
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증
+  - 소득·재산 확인 서류
+  - 통장 사본
+  - 건강보험 자격확인서
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00000102&wlfareInfoReldBztpCd=01
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00000102&wlfareInfoReldBztpCd=01
+
+last_verified: 2024-01-01
+
+notes: |
+  - 1종: 입원비 전액, 외래 1,000원 (약국 500원).
+  - 2종: 입원비 10%, 외래 1,000~1,500원.
+  - 만 65세 이상이시면 틀니·임플란트도 혜택 대상이에요.

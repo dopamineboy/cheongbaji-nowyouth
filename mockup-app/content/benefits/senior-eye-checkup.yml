@@ -1,0 +1,51 @@
+# =============================================================================
+# 도우다 — 노인 안검진 사업
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: senior-eye-checkup
+name: 노인 안검진 사업
+agency: 보건복지부 · 한국실명예방재단
+category: 건강·의료
+summary: |
+  만 60세 이상 어르신의 눈 건강을 지키기 위해,
+  안과 검진과 개안 수술을 무료로 지원해 드리는 사업이에요.
+
+eligibility:
+  age_min: 60
+  citizenship: KR
+
+benefit:
+  type: service
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증
+  - 건강보험증
+
+apply:
+  online:
+    name: 한국실명예방재단
+    url: https://www.kfpb.org/business/eyeExam.do
+  offline:
+    - 가까운 보건소
+    - 한국실명예방재단 지정 안과
+
+sources:
+  - https://www.kfpb.org/business/eyeExam.do
+
+health_tags:
+  - eyes
+
+show_condition:
+  health_concerns:
+    - eyes
+
+last_verified: 2024-01-01
+
+notes: |
+  - 백내장·녹내장·당뇨망막병증 등 주요 안질환을 검진해요.
+  - 수술이 필요한 경우 저소득 어르신은 무료 수술 지원도 있어요.
+  - 보건소를 통해 안경도 지원받으실 수 있어요 (지역에 따라 다름).

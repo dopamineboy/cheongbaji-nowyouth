@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>청바지(NowYouth) 서비스 구현·전달 실행 계획서</title>
+<style>
+@page { size: A4; margin: 20mm 18mm; }
+body {
+  font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+  font-size: 10.5pt; line-height: 1.6; color: #222;
+  max-width: 100%; margin: 0; padding: 0;
+}
+h1 {
+  font-size: 22pt; color: #0b4a96; border-bottom: 3px solid #1f6feb;
+  padding-bottom: 8px; margin-top: 24px; margin-bottom: 16px;
+  page-break-after: avoid;
+}
+h2 {
+  font-size: 16pt; color: #0b4a96; border-left: 5px solid #1f6feb;
+  padding-left: 12px; margin-top: 28px; margin-bottom: 12px;
+  page-break-after: avoid;
+}
+h3 {
+  font-size: 13pt; color: #2d5fb9; margin-top: 20px; margin-bottom: 8px;
+  page-break-after: avoid;
+}
+h4 { font-size: 11.5pt; color: #444; margin-top: 16px; }
+p { margin: 8px 0; }
+strong { color: #0b4a96; }
+blockquote {
+  border-left: 4px solid #ff9800; background: #fff8e7;
+  padding: 10px 16px; margin: 12px 0; color: #5a4420;
+  font-style: italic;
+}
+table {
+  border-collapse: collapse; width: 100%; margin: 12px 0;
+  font-size: 9.5pt; page-break-inside: avoid;
+}
+th {
+  background: #1f6feb; color: white; padding: 8px 10px;
+  text-align: left; border: 1px solid #0b4a96;
+}
+td {
+  padding: 7px 10px; border: 1px solid #d0d6e6; vertical-align: top;
+}
+tr:nth-child(even) td { background: #f4f8ff; }
+code {
+  background: #f3f4f8; padding: 2px 6px; border-radius: 3px;
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 9.5pt; color: #c0392b;
+}
+pre {
+  background: #f8f9fb; border: 1px solid #e0e4ef;
+  padding: 12px; border-radius: 4px; overflow-x: auto;
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 8pt; line-height: 1.35;
+  page-break-inside: avoid; white-space: pre;
+}
+pre code { background: none; padding: 0; color: #333; font-size: 8pt; }
+ul, ol { margin: 8px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+hr {
+  border: none; border-top: 2px solid #1f6feb;
+  margin: 28px 0; page-break-after: avoid;
+}
+a { color: #1f6feb; text-decoration: none; }
+</style>
+</head>
+<body>
+<h1 id="nowyouth">청바지(NowYouth) — 서비스 구현·전달 실행 계획서</h1>
+<p><strong>AC 투자 기획서 보완 문서 — 기술 구현 전략 + 서비스 전달 로드맵</strong></p>
+<blockquote>
+<p><strong>문서 버전</strong>: v1.0 (2026-04-19)
+<strong>용도</strong>: AC 심사위원·파트너·합류 예정 팀원에게 "청바지가 실제로 어떻게 만들어지고, 사용자에게 어떻게 전달되는지" 명확히 설명
+<strong>포지션</strong>: AC 기획서(비전·시장·BM)와 MVP 개발계획서(12주 스프린트) 사이의 <strong>3년 서비스 진화 계획</strong></p>
+</blockquote>
+<hr />
+<h2 id="1">1. 이 문서의 위치</h2>
+<p>청바지는 3개의 계층적 문서로 관리된다. 본 문서는 그 중간 레이어 — <strong>"현실적으로 어떻게 구현하고 무엇을 전달할지"</strong> 를 다룬다.</p>
+<table>
+<thead>
+<tr>
+<th>문서</th>
+<th>시점</th>
+<th>독자</th>
+<th>상세도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>청바지_AC투자_기획서.md</code></td>
+<td>0~3년</td>
+<td>AC·투자자</td>
+<td>비전·시장·BM·아키텍처 개요</td>
+</tr>
+<tr>
+<td><strong><code>청바지_서비스구현_실행계획서.md</code> (본 문서)</strong></td>
+<td><strong>0~36개월</strong></td>
+<td><strong>투자자·파트너·팀원</strong></td>
+<td><strong>단계별 구현·전달 전략</strong></td>
+</tr>
+<tr>
+<td><code>청바지_MVP_개발계획서.md</code></td>
+<td>0~12주</td>
+<td>FE/BE 엔지니어</td>
+<td>스프린트 단위 실행</td>
+</tr>
+</tbody>
+</table>
+<p>본 문서는 MVP 스프린트 이후의 <strong>확장·진화 경로</strong>를 포함하며, AC 기획서의 아키텍처 다이어그램이 실제로 <strong>사용자 경험·운영 체계·데이터 자산</strong>으로 어떻게 전환되는지 설명한다.</p>
+<hr />
+<h2 id="2-4">2. 서비스 구현 4단계 진화 모델</h2>
+<p>청바지는 단일 시점의 제품 출시가 아니라 <strong>4단계로 진화하는 서비스</strong>다. 각 단계는 명확한 산출물·사용자 규모·수익·팀 규모를 가진다.</p>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>기간</th>
+<th>핵심 산출물</th>
+<th>사용자</th>
+<th>수행기관</th>
+<th>팀 규모</th>
+<th>투자 단계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S0 · Paper/Prototype</strong></td>
+<td>0~3M</td>
+<td>기획서·목업·PoC PWA</td>
+<td>내부 10명</td>
+<td>—</td>
+<td>4명 (대표·기획·FE·BE)</td>
+<td>자기자본</td>
+</tr>
+<tr>
+<td><strong>S1 · Pilot Product</strong></td>
+<td>3~6M</td>
+<td>MVP 실가동 + 실증 1곳</td>
+<td>지인 + 파일럿 50~200명</td>
+<td>1곳 (무상)</td>
+<td>4~5명</td>
+<td>시드 유치 직전</td>
+</tr>
+<tr>
+<td><strong>S2 · Scalable Service</strong></td>
+<td>6~18M</td>
+<td>유료 구독 + B2G 첫 계약</td>
+<td>1,000~10,000명</td>
+<td>3~10곳 (일부 유료)</td>
+<td>8~12명</td>
+<td>시드 10억 집행</td>
+</tr>
+<tr>
+<td><strong>S3 · Platform/SaaS</strong></td>
+<td>18~36M</td>
+<td>멀티테넌트 B2G SaaS + 데이터 자산</td>
+<td>30,000~100,000명</td>
+<td>30~100곳</td>
+<td>20~30명</td>
+<td>Series A 준비</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>핵심 원칙</strong>: <strong>한 단계가 완성되기 전에 다음 단계로 넘어가지 않는다.</strong> "사용자 1,000명이 실제로 한 달 쓰는 서비스"가 없는 상태에서 멀티테넌트 SaaS를 만들지 않는다.</p>
+</blockquote>
+<hr />
+<h2 id="3-service-blueprint">3. 각 단계에서 <strong>실제로 전달되는 서비스</strong> (Service Blueprint)</h2>
+<p>본 섹션은 기술 아키텍처가 아니라 <strong>사용자가 실제로 경험하는 것</strong>을 단계별로 서술한다.</p>
+<h3 id="_1">📱 시니어 사용자 관점 — "매일 아침 청바지를 열면 무엇이 있는가"</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>시니어가 실제로 경험하는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S0</strong></td>
+<td>(사용 불가 — 내부 데모만)</td>
+</tr>
+<tr>
+<td><strong>S1</strong></td>
+<td>아침 8시 푸시: "오늘 받을 수 있는 혜택 1건이 있어요" → PWA 열면 카드 1장 → 탭하면 신청 서류 리스트 + 근처 행정복지센터 주소. 품앗이 게시판에서 같은 동 이웃 글 3~5개. 포인트는 수기 발급 편의점 상품권 교환.</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>개인화 피드 5~7장 (혜택·일자리·활동·품앗이 혼합). AI 챗봇에게 음성으로 "나 이번달에 받을 수 있는 거 뭐 있어?" → 읽어주는 답변. 걸음 수·인지 게임으로 포인트 자동 적립 → 카카오 기프티콘 즉시 발급. 품앗이 매칭 수락 알림.</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>시니어가 속한 <strong>지자체 브랜딩으로 청바지 제공</strong> (예: "서초구 어르신 앱"). 지자체 사회복지사가 긴급상황(낙상·고립) 감지 시 직접 연락. 포인트 → 지자체 특산품 교환 추가.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">👪 보호자·가족 관점</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>보호자가 실제로 할 수 있는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>대리 신청 계정으로 로그인 → 부모님 혜택 체크 대신해서 신청</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>부모님 활동 요약 주 1회 리포트 (걸음 수·포인트·품앗이 참여) · 이상 패턴 경고 (며칠째 앱 미사용)</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>응급 연락 네트워크 등록 · 지자체 모니터링과 연동</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_3">🏢 수행기관·지자체 담당자 관점</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>담당자가 실제로 쓰는 기능</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>실증 파일럿 1곳 담당자가 월 1회 간단 대시보드 보고서 PDF 수령 (우리 팀이 수동 생성)</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>웹 대시보드 로그인 → 관할 행정동 사용자 수·품앗이 활동량·복지 수급 전환율 조회 · 엑셀 내보내기</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>완전한 B2G SaaS — 담당자가 청바지 앱 사용자를 직접 관리 · 고위험군 스크리닝 · 지자체 브랜딩 설정</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">🛠 우리 팀 운영 관점 — "우리는 매일 무엇을 해야 하는가"</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>매일/매주 해야 하는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>50명 시니어 1:1 전화 CS (주상윤·김경림) · 매주 수행기관 미팅 · 수기 상품권 발송</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>CS 팀 2명 채용 · 콘텐츠 에디터 1명 (주간 복지 소식 카드) · 장애 대응 온콜 · 신규 지자체 영업</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>B2G 세일즈팀 3명 · 데이터 사이언티스트 · 정책 리에종 · 시니어 UX 리서처 상주</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4">4. 기술 구현 전략 — 아키텍처가 단계별로 진화하는 방식</h2>
+<p><strong>핵심 원칙: 오버엔지니어링을 피하되, 전환 비용이 높은 결정은 S0에서 미리 내린다.</strong></p>
+<h3 id="stage-01-db">🟢 Stage 0~1 — 단일 앱·단일 DB (심플)</h3>
+<pre><code>[Next.js PWA (Vercel)]
+        ↓
+[NestJS 단일 서버 (Fly.io)]
+        ↓
+[PostgreSQL 1개 인스턴스] + [Redis] + [S3]
+        ↓
+[공공 API 수집 크론 잡]
+</code></pre>
+<p><strong>특징</strong>:
+- 서비스 분리 없이 모듈로만 구분
+- 공공 API는 일 1회 배치 수집 → DB 캐시
+- 트래픽 수백~수천 MAU 전제
+- <strong>pgvector는 미설치</strong> (S2에서 추가)</p>
+<p><strong>왜 이렇게</strong>: 사용자 50~200명 수준에서 MSA·K8s·서비스 메시는 시간 낭비. 단일 DB 백업과 롤백이 훨씬 안전.</p>
+<h3 id="stage-2">🟡 Stage 2 — 서비스 분리·큐·캐시 (확장)</h3>
+<pre><code>[Next.js PWA + Native App Wrapper]
+        ↓
+[API Gateway (NestJS + Cloudflare Workers)]
+   ↓       ↓       ↓       ↓       ↓
+[복지] [포인트] [일자리] [품앗이] [알림]  ← 서비스 모듈 분리, 단일 DB 공유
+        ↓
+[PostgreSQL + pgvector] [Redis 클러스터] [S3]
+        ↓
+[BullMQ 큐] — 공공 API 수집·알림 발송·AI 요청 큐잉
+        ↓
+[OpenAI API Gateway + LLM 응답 캐싱]
+</code></pre>
+<p><strong>특징</strong>:
+- 서비스 모듈 간 인터페이스를 명시적으로 (메서드 호출 → HTTP/tRPC)
+- pgvector 추가로 AI Ranker·유사 품앗이 추천 가능
+- BullMQ로 외부 API 호출·AI 호출을 백그라운드 큐에 위임
+- 장애 격리 향상</p>
+<p><strong>전환 트리거</strong>: MAU 5,000 돌파 또는 수행기관 3곳 계약 시</p>
+<h3 id="stage-3-b2g-saas">🔴 Stage 3 — 멀티테넌트·데이터 플랫폼 (B2G SaaS)</h3>
+<pre><code>[PWA] [Native App] [지자체 담당자 대시보드(별도 도메인)]
+           ↓
+    [API Gateway + 테넌트 라우팅]
+           ↓
+  [복지][포인트][일자리][품앗이][알림][B2G 관리][분석]
+           ↓                        ↓
+[Operational DB (테넌트별 격리)] [Analytics Warehouse (ClickHouse)]
+           ↓                        ↓
+   [공공 + 파트너 API]         [Data Studio + 지자체 맞춤 리포트]
+</code></pre>
+<p><strong>특징</strong>:
+- 지자체별 <strong>데이터 격리</strong> (스키마 분리 또는 row-level policy)
+- 운영 DB와 분석 DB 분리 — 지자체 대시보드가 운영에 영향 주지 않음
+- 익명화 데이터 레이크 → 정책 인사이트·B2G 분석 상품화
+- 멀티리전·고가용성 구성</p>
+<p><strong>전환 트리거</strong>: B2G 유료 계약 5곳 이상 + 시리즈 A 완료</p>
+<hr />
+<h2 id="5-4">5. 4대 기능 — <strong>현실적으로 어떻게 만드는지</strong> (실행 관점)</h2>
+<p>각 기능은 "기획 → 아키텍처" 순이 아니라 <strong>"데이터 확보 → 가공 → 사용자 가치 → 지속 운영"</strong> 4단계로 현실적으로 구축된다.</p>
+<h3 id="1_1">① 복지 알리미</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>현실적 구현</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1 데이터 확보</strong></td>
+<td>복지로 Open API 일 1회 수집 → Postgres 캐시. 공공데이터포털 행정구역 코드 매핑.</td>
+</tr>
+<tr>
+<td><strong>S1 가공</strong></td>
+<td>보건복지부 원문 표현 → 시니어 친화 요약 (<strong>초기에는 수동 편집</strong>, 주상윤·김경림이 주 2회 3~5건 다듬음).</td>
+</tr>
+<tr>
+<td><strong>S1 매칭</strong></td>
+<td>SQL WHERE 절로 연령·지역·소득 구간 필터 → Top 5 카드 노출. AI 미사용.</td>
+</tr>
+<tr>
+<td><strong>S2 자동화</strong></td>
+<td>OpenAI로 요약 자동 생성 → 사람 검수만. pgvector로 "비슷한 혜택 받은 사용자들의 수급 패턴" 기반 추천.</td>
+</tr>
+<tr>
+<td><strong>S3 고도화</strong></td>
+<td>지자체별 복지사업 DB 통합 (개별 계약). 수급 예측 모델(LightGBM)로 "당신은 이 혜택을 받을 확률 87%" 점수 제공.</td>
+</tr>
+<tr>
+<td><strong>운영 부담</strong></td>
+<td>S1: 주 6시간 수동 편집. S2: 주 2시간 검수. S3: 전담 콘텐츠 에디터 1명.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>시니어가 받는 가치의 진화</strong>: 
+- S1: "내가 모르던 혜택 1건을 알게 됨"
+- S2: "내가 받을 수 있는 혜택 3건을 미리 알려줌"
+- S3: "내 소득 변화에 맞춰 실시간으로 받을 수 있는 혜택이 갱신됨"</p>
+<h3 id="2">② 활동 포인트</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>현실적 구현</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1 데이터 수집</strong></td>
+<td>인지 훈련 게임(자체 개발) 완료 이벤트만. 걷기·지하철·문화는 <strong>미지원</strong>.</td>
+</tr>
+<tr>
+<td><strong>S1 적립·교환</strong></td>
+<td><code>point_ledger</code> 테이블. 교환은 <strong>월 1회 수기</strong> — 우리가 편의점 상품권 구매해서 직접 발송. 소량(월 20건) 감당 가능.</td>
+</tr>
+<tr>
+<td><strong>S2 자동화</strong></td>
+<td>네이티브 앱 빌드 → HealthKit/Google Fit 걸음 수 자동 적립. 카카오 기프티콘 API로 즉시 발급.</td>
+</tr>
+<tr>
+<td><strong>S2 리워드 다각화</strong></td>
+<td>편의점 + 약국 + 문화시설 기프티콘 카탈로그 30종.</td>
+</tr>
+<tr>
+<td><strong>S3 문화누리카드 연동</strong></td>
+<td>카드사 제휴 완료 시 결제 내역 Webhook → 자동 포인트 적립.</td>
+</tr>
+<tr>
+<td><strong>운영 부담</strong></td>
+<td>S1: 월 2시간 상품권 발송. S2: 자동화 후 월 1시간 정산 확인. S3: 전담 운영 필요 없음.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>시니어가 받는 가치의 진화</strong>:
+- S1: "게임 하면 한 달에 편의점 상품권 1장 받음"
+- S2: "산책·게임·문화활동으로 매일 조금씩 쌓여 원하는 기프티콘 교환"
+- S3: "생활 전체가 포인트로 연결 — 혜택 신청·품앗이·운동 전부 통합"</p>
+<h3 id="3">③ 일자리 매칭</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>현실적 구현</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1 공급 확보</strong></td>
+<td>한국노인인력개발원 Open API 일 1회 수집. 행정동별 공고 인덱싱.</td>
+</tr>
+<tr>
+<td><strong>S1 매칭</strong></td>
+<td>키워드 · 거리(Haversine) · 시간대 필터. AI 없이 "가까운 일자리 N건" 노출.</td>
+</tr>
+<tr>
+<td><strong>S1 신청</strong></td>
+<td>앱에서 "관심 있음" 체크 → 담당자 이메일로 신청서 이관 (우리가 수동).</td>
+</tr>
+<tr>
+<td><strong>S2 AI 매칭</strong></td>
+<td>경력 태그·선호 시간대 → pgvector 코사인 유사도. 수행기관 담당자용 웹 대시보드(매칭 목록).</td>
+</tr>
+<tr>
+<td><strong>S2 대기자 알림</strong></td>
+<td>공급 대비 수요 초과(현재 시장 46.4% 충족률)의 공백을 활용 — 새 공고 발생 시 조건 맞는 대기자에게 즉시 푸시.</td>
+</tr>
+<tr>
+<td><strong>S3 수행기관 SaaS</strong></td>
+<td>담당자 1인당 280명 관리 → 자동화로 50명 수준 절감. 청바지가 수행기관 행정 백오피스 대체.</td>
+</tr>
+<tr>
+<td><strong>운영 부담</strong></td>
+<td>S1: 주 1~2건 신청 수동 이관. S2: 담당자 셀프서비스 전환. S3: B2G 계약 관리.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>핵심 레버리지</strong>: 시장조사 보고서(<code>청바지_시장조사_노인일자리.md</code>)에서 확인된 <strong>수행기관 담당자 1인당 280명 관리 과부하·대기자 9만명 급증</strong>이 이 기능의 근거. S3에서 B2G SaaS 수익 핵심이 됨.</p>
+<h3 id="4_1">④ 품앗이 커뮤니티</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>현실적 구현</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1 매칭 구조</strong></td>
+<td>행정동 지오펜싱(주소→좌표 Kakao Map API) · 게시판 · 1:1 요청/수락 · 휴대폰 번호 마스킹 노출.</td>
+</tr>
+<tr>
+<td><strong>S1 안전 장치</strong></td>
+<td>본인 인증 필수 · 3회 신고 시 자동 정지 · 금융/종교 카테고리 금지 키워드 필터.</td>
+</tr>
+<tr>
+<td><strong>S1 시드 콘텐츠</strong></td>
+<td>우리 팀이 실증 지역에서 초기 요청글 20건 시딩 (초기 사용자 외로움 방지).</td>
+</tr>
+<tr>
+<td><strong>S2 매칭 추천</strong></td>
+<td>경력·시간대 기반 "이 요청 당신과 잘 맞아요" 추천. 양방향 평점.</td>
+</tr>
+<tr>
+<td><strong>S3 지자체 연동</strong></td>
+<td>사회복지사가 고위험 사용자(며칠째 접속 없음) 감지 → 품앗이 요청 유도.</td>
+</tr>
+<tr>
+<td><strong>운영 부담</strong></td>
+<td>S1: 매일 신고 확인(평균 10분). S2: 커뮤니티 매니저 1명. S3: 지자체 담당자 역할 분담.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>시니어가 받는 가치의 진화</strong>:
+- S1: "같은 동네 이웃 3명과 김장 품앗이"
+- S2: "비슷한 상황의 이웃이 자동 추천됨"
+- S3: "외로울 때 동네 이웃이 자동으로 연결됨 — 고립 방지 시스템"</p>
+<hr />
+<h2 id="6">6. 데이터 확보·운영 전략</h2>
+<h3 id="_5">데이터 파이프라인 (단계별)</h3>
+<pre><code>S1: [공공 API] → [Cron Job (node-cron)] → [Postgres 테이블] → [앱 조회]
+                    ↓ 일 1회, 실패 시 Slack 알림
+
+S2: [공공 API + 파트너 API] → [BullMQ 큐 + 재시도] → [Postgres + Redis 캐시]
+                              ↓ 실시간 · 이벤트 기반
+
+S3: [공공 + 파트너 + 사용자 이벤트] → [Kafka] → [Operational DB + ClickHouse]
+                                       ↓ 분석·AI 학습 병렬
+</code></pre>
+<h3 id="_6">사용자 데이터 자산화 경로</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>축적 데이터</th>
+<th>가치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>지역·연령별 혜택 클릭·신청 전환율</td>
+<td>내부 제품 개선</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>복지·활동·일자리 크로스 행동 데이터</td>
+<td>AI 추천 학습셋 · 콘텐츠 우선순위</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>수년간 수급 패턴·전환 트리거</td>
+<td><strong>정책 인사이트 B2G 라이선스 수익</strong> · 학술 연구 협업</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_7">개인정보·규제 준수 원칙</h3>
+<ol>
+<li><strong>최소 수집</strong>: 혜택 매칭에 불필요한 항목 수집 금지 (예: 혈액형·질병 상세)</li>
+<li><strong>민감정보 분리 저장</strong>: 건강 정보는 별도 암호화 테이블 (S2부터)</li>
+<li><strong>3년 자동 파기 배치</strong>: <code>scheduled_deletion</code> 테이블 + 월 1회 크론 실행</li>
+<li><strong>고령자 보호</strong>: 약관 동의 화면에서 <strong>음성 낭독 기능 기본 제공</strong> (S1부터)</li>
+<li><strong>감사 로그</strong>: 모든 포인트·혜택·품앗이 거래 불변 원장</li>
+</ol>
+<hr />
+<h2 id="7">7. 서비스 운영 체계</h2>
+<p><strong>청바지는 기술 제품이 아니라 서비스 제품이다.</strong> 운영 체계가 없으면 시니어에게 닿지 않는다.</p>
+<h3 id="cs">CS(고객 지원) 모델 — 시니어 특성 반영</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>CS 채널</th>
+<th>응답 시간</th>
+<th>인력</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td><strong>전화 1개 회선</strong> (주상윤·김경림 교대) + 앱 내 챗봇</td>
+<td>평일 9~18시, 전화 30초 내 응답</td>
+<td>0.5명</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>전화 + 카카오톡 채널 + 앱 챗봇 → 전담 CS 2명</td>
+<td>평일 9~21시, 3분 내 응답</td>
+<td>2명</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>24시간 긴급 전화 + 지자체 사회복지사 연계</td>
+<td>응급 3분·일반 30분</td>
+<td>5명</td>
+</tr>
+</tbody>
+</table>
+<p><strong>시니어 특화 원칙</strong>: "클릭 대신 전화" — 시니어의 50% 이상이 챗봇보다 전화를 선호한다는 전제로 <strong>전화 창구를 S1부터 유지</strong>.</p>
+<h3 id="_8">사회복지사·보호자 협업 모델</h3>
+<ul>
+<li><strong>S1</strong>: 실증 지자체 사회복지사 2명과 주 1회 리뷰 미팅</li>
+<li><strong>S2</strong>: 보호자용 월간 요약 리포트 이메일 발송 (부모님 활동 요약)</li>
+<li><strong>S3</strong>: 지자체 사회복지사 대시보드 — 고위험군 스크리닝 자동 알림</li>
+</ul>
+<h3 id="_9">장애 대응 체계</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>기준</th>
+<th>대응</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>99% 가용성 목표</td>
+<td>Sentry 알림 → 주상윤·BE 엔지니어 즉시 대응</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>99.5% + 온콜 로테이션</td>
+<td>PagerDuty · 15분 내 대응</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>99.9% + SLO 공식화</td>
+<td>전담 SRE 1명 · 리전 페일오버</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_10">콘텐츠 운영 — "복지 소식 에디터"</h3>
+<ul>
+<li><strong>S1</strong>: 주 2회 혜택 카드 수동 작성 (주상윤·김경림 합 주 6시간)</li>
+<li><strong>S2</strong>: 전담 에디터 1명 · 월 20건 발행</li>
+<li><strong>S3</strong>: 지역별 맞춤 콘텐츠 + AI 초안 + 에디터 검수 (월 100건)</li>
+</ul>
+<hr />
+<h2 id="8">8. 품질·안정성 체계</h2>
+<h3 id="qa">시니어 특화 QA</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>기준</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>접근성</strong></td>
+<td>KWCAG 2.2 AA · axe-core CI 통과 필수</td>
+</tr>
+<tr>
+<td><strong>폰트 스케일</strong></td>
+<td>200%까지 깨지지 않아야 함</td>
+</tr>
+<tr>
+<td><strong>터치 타겟</strong></td>
+<td>최소 48×48dp (시니어 손떨림 고려 확장)</td>
+</tr>
+<tr>
+<td><strong>색 대비</strong></td>
+<td>WCAG AAA 수준 (7:1 이상) — 시니어 시력 저하 반영</td>
+</tr>
+<tr>
+<td><strong>음성 지원</strong></td>
+<td>모든 주요 텍스트 TTS 낭독 가능</td>
+</tr>
+<tr>
+<td><strong>네트워크</strong></td>
+<td>3G·LTE 약전파 시에도 핵심 기능 동작 (오프라인 캐싱)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_11">시니어 실사용자 베타 체계</h3>
+<ul>
+<li><strong>S1</strong>: 지인 베타 20명 · 매주 1:1 30분 리서치 세션 (주상윤 진행)</li>
+<li><strong>S2</strong>: 실증 지역 100명 포커스 그룹 월 1회 · 리서치 전담 인력 0.5명</li>
+<li><strong>S3</strong>: 시니어 UX 리서처 상주 · 지자체별 분기 1회 집중 테스트</li>
+</ul>
+<hr />
+<h2 id="9-go-to-market">9. Go-To-Market 실행 플레이북</h2>
+<h3 id="1-s1">실증 지자체 1곳 섭외 — S1 성패의 핵심</h3>
+<p><strong>후보군</strong> (주상윤 S0~S1 초기 6주 내 접촉):
+1. 서울 내 초고령화 자치구 (종로·중구·강북)
+2. 수도권 노인복지관 연계 (예: 성남시 노인종합복지관)
+3. 디지털 복지 혁신 의지 강한 지자체 (공공데이터 활용 우수 지자체)</p>
+<p><strong>접촉 경로</strong>:
+- 보건복지부·한국노인인력개발원 담당자 → 공식 소개
+- AC 네트워크 통한 지자체 접점
+- 시니어 관련 NGO(은빛복지회 등) 경유</p>
+<p><strong>성사 조건</strong>: S1은 <strong>무상 파일럿 + 공동 홍보</strong> 제공 대신, <strong>사용자 50~200명 확보 · 담당자 협업</strong>을 조건으로 제시.</p>
+<p><strong>Plan B</strong>: 지자체 확보 실패 시 → <strong>지인 시니어 20명 + 가족 네트워크 30명 = 50명 클로즈드 베타</strong>로 S1을 대체 시작. 지자체는 S2 시점에 재시도.</p>
+<h3 id="100-s1">첫 100명 사용자 모집 전략 (S1)</h3>
+<table>
+<thead>
+<tr>
+<th>채널</th>
+<th>목표</th>
+<th>방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>가족 네트워크</td>
+<td>20명</td>
+<td>팀원 부모·조부모 + 지인 5촌 이내</td>
+</tr>
+<tr>
+<td>실증 지자체</td>
+<td>50~100명</td>
+<td>파일럿 참여자 모집 공고 + 사회복지사 추천</td>
+</tr>
+<tr>
+<td>시니어 카페·경로당</td>
+<td>30명</td>
+<td>오프라인 홍보 (전단지·설명회)</td>
+</tr>
+<tr>
+<td>온라인 커뮤니티</td>
+<td>20명</td>
+<td>시니어 대상 블로그·카페 소개글</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b2g-s2-s3">B2G 확대 경로 (S2 → S3)</h3>
+<ol>
+<li><strong>S1 레퍼런스 확보</strong> — 파일럿 지자체 6개월 운영 지표 (사용자 수·수급 전환율·만족도)</li>
+<li><strong>S2 지자체 3곳 유료 계약</strong> — 월 30~100만원 구독형. 세일즈 담당자 1명 채용.</li>
+<li><strong>S2 말 한국노인인력개발원 MOU 제안</strong> — 2026.4.16 원장 선언을 레버리지로.</li>
+<li><strong>S3 중앙정부 PMO 참여</strong> — AX-Sprint 예산(300억) 또는 후속 예산 공모 참여.</li>
+</ol>
+<hr />
+<h2 id="10-10">10. 투자금 실집행 시나리오 (시드 10억 기준)</h2>
+<table>
+<thead>
+<tr>
+<th>카테고리</th>
+<th>1년차</th>
+<th>2년차</th>
+<th>3년차 누적</th>
+<th>비중</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>인력 (FE/BE/ML/기획/CS/세일즈)</strong></td>
+<td>3.5억</td>
+<td>5.0억</td>
+<td>약 10.5억</td>
+<td>약 55%</td>
+</tr>
+<tr>
+<td><strong>인프라·API 운영</strong> (AWS, OpenAI, 인증)</td>
+<td>0.3억</td>
+<td>0.6억</td>
+<td>약 1.2억</td>
+<td>약 6%</td>
+</tr>
+<tr>
+<td><strong>파트너십 계약·법무</strong> (PASS·결제·카드사 검토)</td>
+<td>0.5억</td>
+<td>1.0억</td>
+<td>약 2.0억</td>
+<td>약 10%</td>
+</tr>
+<tr>
+<td><strong>실증·마케팅·콘텐츠</strong></td>
+<td>0.4억</td>
+<td>1.0억</td>
+<td>약 1.8억</td>
+<td>약 9%</td>
+</tr>
+<tr>
+<td><strong>B2G 영업·행정</strong></td>
+<td>0.2억</td>
+<td>0.8억</td>
+<td>약 1.5억</td>
+<td>약 8%</td>
+</tr>
+<tr>
+<td><strong>예비비·법인·사무</strong></td>
+<td>0.3억</td>
+<td>0.5억</td>
+<td>약 1.0억</td>
+<td>약 5%</td>
+</tr>
+<tr>
+<td><strong>합계</strong></td>
+<td><strong>5.2억</strong></td>
+<td><strong>8.9억</strong></td>
+<td><strong>약 18억</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>주의</strong>: 시드 10억은 1~1.5년 운영 재원. S3 진입 전 시리즈 A 완료 전제. S2 후반 지표 기반으로 S3 이전에 후속 라운드 착수.</p>
+</blockquote>
+<h3 id="_12">인력 확보 순서 (현실)</h3>
+<ol>
+<li><strong>즉시</strong>: FE 1·BE 1 (확보 완료)</li>
+<li><strong>시드 직후 1개월 내</strong>: 디자이너 1 (시니어 UX 전문), CS 매니저 1</li>
+<li><strong>시드 후 3개월</strong>: ML 엔지니어 1 (pgvector·추천 모델), B2G 세일즈 1</li>
+<li><strong>시드 후 6개월</strong>: 커뮤니티 매니저 1, 콘텐츠 에디터 1</li>
+<li><strong>시리즈 A 후</strong>: 데이터 사이언티스트, SRE, 시니어 UX 리서처</li>
+</ol>
+<hr />
+<h2 id="11-plan-b">11. 실패 시나리오와 Plan B</h2>
+<p>투자자·심사위원이 묻는 "만약 안 되면?" 에 대한 사전 답변.</p>
+<table>
+<thead>
+<tr>
+<th>시나리오</th>
+<th>발생 확률</th>
+<th>대응</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>실증 지자체 확보 실패</strong></td>
+<td>중간</td>
+<td>지인·가족 50명 클로즈드 베타로 S1 대체 시작 · 지자체는 S2에 재시도</td>
+</tr>
+<tr>
+<td><strong>사용자 리텐션 저조 (MAU &lt; 500 at S1 end)</strong></td>
+<td>중간</td>
+<td>4대 기능 중 리텐션 가장 높은 1개에 집중 (가설: 품앗이 또는 복지) · 나머지 축소</td>
+</tr>
+<tr>
+<td><strong>정부가 직접 내부 구축</strong></td>
+<td>낮음~중간</td>
+<td><strong>PMO 수탁 파트너로 포지션 전환</strong> — 축적된 데이터·운영 노하우가 협상 레버리지</td>
+</tr>
+<tr>
+<td><strong>경쟁사(시니어즈 등)가 공공 영역 진출</strong></td>
+<td>중간</td>
+<td>청바지는 <strong>4대 기능 통합 + 지자체 밀착</strong> 차별점 유지 · 단일 일자리 경쟁은 회피</td>
+</tr>
+<tr>
+<td><strong>핵심 엔지니어 이탈</strong></td>
+<td>낮음</td>
+<td>문서화·페어 프로그래밍 강제 · 스톡옵션 베스팅 · 교체 15일 내 원칙</td>
+</tr>
+<tr>
+<td><strong>개인정보 사고</strong></td>
+<td>낮음</td>
+<td>최소 수집 원칙 + 보험 가입 · 사고 시 48시간 내 공개 + 사과 + 보상</td>
+</tr>
+<tr>
+<td><strong>시드 연장 필요 (12개월 내 추가 유치 실패)</strong></td>
+<td>중간</td>
+<td><strong>Burn 50% 감축 가능 시나리오 준비</strong> — CS 외주, 콘텐츠 축소, 신규 기능 동결 후 유료 전환 집중</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12-focus">12. 우리가 "하지 않는 것" — Focus 선언</h2>
+<p>AC 심사에서 "더 많이 한다"는 착시를 피하기 위해 명시적으로 배제:</p>
+<ul>
+<li>❌ <strong>시니어 전용 쇼핑몰</strong> — 건강식품·의료기기 판매 (이해상충)</li>
+<li>❌ <strong>시니어 금융·보험 상품</strong> — 취약 계층 규제 리스크</li>
+<li>❌ <strong>병원·의료 예약</strong> — 별도 규제 영역, S3 이후 파트너십만 검토</li>
+<li>❌ <strong>SNS·영상 피드</strong> — 시니어 타깃 콘텐츠 플랫폼 경쟁은 피함</li>
+<li>❌ <strong>전국 일괄 론칭</strong> — 지역 단위 실증·확산 원칙 고수</li>
+<li>❌ <strong>해외 진출</strong> (S3 이내) — 국내 B2G 모델 완성 후 검토</li>
+</ul>
+<hr />
+<h2 id="definition-of-done">부록 · 단계별 Definition of Done</h2>
+<p><strong>S1 완료 정의</strong> (시드 투자 제안 시점):
+- [ ] 사용자 50명 이상 · 30일 리텐션 30% 이상
+- [ ] 복지·일자리·품앗이·포인트 4대 기능 모두 실사용 이력
+- [ ] 실증 파일럿 1곳 최소 3개월 운영
+- [ ] 시니어 베타 인터뷰 20건 이상 · NPS 측정
+- [ ] 개인정보 처리방침·약관 법무 검토 완료</p>
+<p><strong>S2 완료 정의</strong> (시리즈 A 제안 시점):
+- [ ] MAU 5,000 이상 · 월간 리텐션 40% 이상
+- [ ] 유료 B2G 계약 3곳 이상 · ARR 5,000만원 이상
+- [ ] AI Ranker 작동 · pgvector 기반 추천 정확도 지표 공개
+- [ ] 네이티브 앱 양 스토어 출시 · HealthKit/Google Fit 연동
+- [ ] CS·콘텐츠·세일즈 전담 인력 구성 완료</p>
+<p><strong>S3 완료 정의</strong> (시리즈 B 또는 지속 성장):
+- [ ] 수행기관 30곳 이상 유료 계약 · ARR 10억원 이상
+- [ ] 지자체 사회복지사 대시보드 3곳 이상 실가동
+- [ ] 데이터 라이선스 첫 계약 체결
+- [ ] 한국노인인력개발원 공식 파트너십 또는 PMO 참여</p>
+<hr />
+<p><strong>문서 관리</strong>:
+- 본 문서는 S1 진입 시점(월 1~2회) · S2 진입 시점(분기 1회) 갱신
+- 변경 이력은 Git 커밋 로그로 관리
+- 관련 문서: <code>청바지_AC투자_기획서.md</code>, <code>청바지_MVP_개발계획서.md</code>, <code>청바지_시장조사_노인일자리.md</code></p>
+</body>
+</html>

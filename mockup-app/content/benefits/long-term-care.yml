@@ -1,0 +1,54 @@
+# =============================================================================
+# 도우다 — 노인 장기요양보험
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: long-term-care
+name: 노인 장기요양보험
+agency: 보건복지부 · 국민건강보험공단
+category: 돌봄서비스
+summary: |
+  만 65세 이상 어르신 중 혼자 일상생활이 어려우신 분께,
+  요양시설이나 방문 돌봄 서비스를 지원해 드리는 제도예요.
+
+eligibility:
+  age_min: 65
+  citizenship: KR
+
+benefit:
+  type: service
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증
+  - 건강보험증
+  - 장기요양인정 신청서 (건강보험공단에서 받으실 수 있어요)
+  - 의사 소견서 (해당 시)
+
+apply:
+  online:
+    name: 국민건강보험공단
+    url: https://www.longtermcare.or.kr
+  offline:
+    - 가까운 국민건강보험공단 지사
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.longtermcare.or.kr
+
+health_tags:
+  - daily_life
+
+show_condition:
+  health_concerns:
+    - daily_life
+
+last_verified: 2024-01-01
+
+notes: |
+  - 등급 판정(1~5등급)을 받으셔야 이용할 수 있어요.
+  - 재가급여(방문요양·목욕·간호 등)와 시설급여(요양원) 중 선택할 수 있어요.
+  - 본인부담금은 총 비용의 15%(재가) 또는 20%(시설)이에요.
+  - 기초생활수급자는 본인부담금이 면제돼요.

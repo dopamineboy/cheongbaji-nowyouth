@@ -1,0 +1,55 @@
+# =============================================================================
+# 도우다 — 장애인연금
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: disability-pension
+name: 장애인연금
+agency: 보건복지부 · 국민연금공단
+category: 장애인지원
+summary: |
+  만 18세 이상 중증장애인 분께,
+  매달 일정 금액을 지원해 드리는 제도예요.
+  만 65세 이상이시면 기초연금으로 전환돼요.
+
+eligibility:
+  citizenship: KR
+  age_min: 18
+  age_max: 64
+  requires_disability: true
+  income_recognition_max:
+    single: 1300000
+    couple: 2080000
+
+benefit:
+  type: monthly_cash
+  amount_krw_max:
+    single: 403180
+    couple: 403180
+
+documents:
+  - 신분증
+  - 장애인등록증
+  - 통장 사본
+  - 소득·재산 확인 서류
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003249&wlfareInfoReldBztpCd=01
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+    - 가까운 국민연금공단 지사
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003249&wlfareInfoReldBztpCd=01
+
+show_condition:
+  has_disability: true
+
+last_verified: 2024-01-01
+
+notes: |
+  - 기초급여(최대 약 40만 원) + 부가급여(최대 약 8만 원)로 구성돼요.
+  - 만 65세 이상이시면 기초연금으로 전환되므로 중복 수령은 안 돼요.
+  - 중증장애인: 장애의 정도가 심한 장애인(종전 1~3급).

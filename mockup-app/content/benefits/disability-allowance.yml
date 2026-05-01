@@ -1,0 +1,53 @@
+# =============================================================================
+# 도우다 — 장애수당
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: disability-allowance
+name: 장애수당
+agency: 보건복지부 · 지자체
+category: 장애인지원
+summary: |
+  만 18세 이상 등록 장애인(경증) 중 생활이 어려우신 분께,
+  매달 일정 금액을 지원해 드리는 제도예요.
+
+eligibility:
+  citizenship: KR
+  age_min: 18
+  requires_disability: true
+  median_income_pct: 40
+  income_recognition_max:
+    single: 891378
+    couple: 1473019
+
+benefit:
+  type: monthly_cash
+  amount_krw_max:
+    single: 60000     # 경증 장애수당 (재가, 생계·의료급여 수급자)
+    couple: 60000
+
+documents:
+  - 신분증
+  - 장애인등록증
+  - 통장 사본
+  - 수급자 증명서 (해당 시)
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003265
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003265
+
+show_condition:
+  has_disability: true
+
+last_verified: 2024-01-01
+
+notes: |
+  - 장애의 정도가 심하지 않은 장애인(종전 4~6급)이 대상이에요.
+  - 기초생활수급자·차상위계층이 주 대상이에요.
+  - 시설 입소자는 월 3만 원이에요.

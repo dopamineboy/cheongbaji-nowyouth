@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>청바지(NowYouth) 4대 통합 서비스 구현 상세 계획서</title>
+<style>
+@page { size: A4; margin: 20mm 18mm; }
+body {
+  font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+  font-size: 10.5pt; line-height: 1.6; color: #222;
+  max-width: 100%; margin: 0; padding: 0;
+}
+h1 {
+  font-size: 22pt; color: #0b4a96; border-bottom: 3px solid #1f6feb;
+  padding-bottom: 8px; margin-top: 24px; margin-bottom: 16px;
+  page-break-after: avoid;
+}
+h2 {
+  font-size: 16pt; color: #0b4a96; border-left: 5px solid #1f6feb;
+  padding-left: 12px; margin-top: 28px; margin-bottom: 12px;
+  page-break-after: avoid;
+}
+h3 {
+  font-size: 13pt; color: #2d5fb9; margin-top: 20px; margin-bottom: 8px;
+  page-break-after: avoid;
+}
+h4 { font-size: 11.5pt; color: #444; margin-top: 16px; }
+p { margin: 8px 0; }
+strong { color: #0b4a96; }
+blockquote {
+  border-left: 4px solid #ff9800; background: #fff8e7;
+  padding: 10px 16px; margin: 12px 0; color: #5a4420;
+  font-style: italic;
+}
+table {
+  border-collapse: collapse; width: 100%; margin: 12px 0;
+  font-size: 9.5pt; page-break-inside: avoid;
+}
+th {
+  background: #1f6feb; color: white; padding: 8px 10px;
+  text-align: left; border: 1px solid #0b4a96;
+}
+td {
+  padding: 7px 10px; border: 1px solid #d0d6e6; vertical-align: top;
+}
+tr:nth-child(even) td { background: #f4f8ff; }
+code {
+  background: #f3f4f8; padding: 2px 6px; border-radius: 3px;
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 9.5pt; color: #c0392b;
+}
+pre {
+  background: #f8f9fb; border: 1px solid #e0e4ef;
+  padding: 12px; border-radius: 4px; overflow-x: auto;
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 8pt; line-height: 1.35;
+  page-break-inside: avoid; white-space: pre;
+}
+pre code { background: none; padding: 0; color: #333; font-size: 8pt; }
+ul, ol { margin: 8px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+hr {
+  border: none; border-top: 2px solid #1f6feb;
+  margin: 28px 0; page-break-after: avoid;
+}
+a { color: #1f6feb; text-decoration: none; }
+</style>
+</head>
+<body>
+<h1 id="nowyouth-4">청바지(NowYouth) — 4대 통합 서비스 구현 상세 계획서</h1>
+<p><strong>플랫폼 내 서비스 제공·구현 방식 완전 명세</strong></p>
+<blockquote>
+<p><strong>문서 버전</strong>: v1.0 (2026-04-19)
+<strong>범위</strong>: 청바지가 제공할 4대 핵심 서비스(<strong>복지 알리미 · 활동 리워드 · 일자리 매칭 · 커뮤니티(품앗이)</strong>)가 플랫폼 내에서 어떻게 제공되고 현실적으로 구현되는지 완전 명세
+<strong>독자</strong>: AC 심사위원 · 파트너 기관 · 엔지니어링 팀 · 실증 지자체 담당자</p>
+</blockquote>
+<hr />
+<h2 id="0-4-1">0. 통합 철학 — "4개 앱이 아니라 1개 일상"</h2>
+<p>청바지는 <strong>4가지 서비스를 나열한 앱이 아니라, 시니어의 하루 전체를 덮는 단일 레이어</strong>다. 4대 서비스는 각각 독립적 가치를 제공하면서도, <strong>하나의 포인트·프로필·커뮤니티 엔진을 공유</strong>하여 교차 시너지를 만든다.</p>
+<p><strong>왜 통합인가</strong>:
+- 시니어는 앱을 <strong>여러 개 설치하고 전환하지 않는다</strong>. 단일 진입점이 필수.
+- 4대 서비스는 <strong>같은 프로필(연령·거주지·소득·관심사)</strong>을 기반으로 하므로 중복 입력을 피할 수 있다.
+- 한 서비스의 행동이 <strong>다른 서비스의 데이터</strong>가 된다 (예: 품앗이에서 드러난 기술 → 일자리 매칭 입력).</p>
+<pre><code>            ┌─────────────────────────┐
+            │  통합 프로필 · 포인트    │
+            │  행정동 지오펜싱 · 알림  │
+            └───────────┬─────────────┘
+                        │
+      ┌─────────┬───────┼───────┬─────────┐
+      ↓         ↓       ↓       ↓         ↓
+  ① 복지     ② 리워드  ③ 일자리  ④ 커뮤니티
+  알리미     시스템    매칭     (품앗이)
+      │         ↑       │         │
+      └─[혜택 신청 → 포인트 적립]─┘
+                ↑
+          [일자리 완료·품앗이 참여 → 포인트 적립]
+                ↑
+        [포인트 → 기프티콘·특산품·문화 바우처 교환]
+</code></pre>
+<hr />
+<h2 id="1-4">1. 4대 서비스 전체 맵 (한눈에)</h2>
+<table>
+<thead>
+<tr>
+<th>서비스</th>
+<th>핵심 가치</th>
+<th>주 데이터 소스</th>
+<th>수익 연결</th>
+<th>S1 범위</th>
+<th>S3 범위</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>① 복지 알리미</strong></td>
+<td>"내가 받을 수 있는 혜택 자동 알림"</td>
+<td>복지로 · 공공데이터포털 · 정부24</td>
+<td>B2G · 정부 위탁</td>
+<td>Rule 기반 매칭·수동 요약</td>
+<td>AI 예측·자동 요약·지자체 직연동</td>
+</tr>
+<tr>
+<td><strong>② 활동 리워드</strong></td>
+<td>"일상 행동이 혜택으로 돌아옴"</td>
+<td>HealthKit/Fit · 자체 이벤트 · 문화누리</td>
+<td>기프티콘 커머스·광고</td>
+<td>인지게임·수기 상품권</td>
+<td>걷기·지하철·문화·학습 통합</td>
+</tr>
+<tr>
+<td><strong>③ 일자리 매칭</strong></td>
+<td>"나에게 맞는 일을 미리 찾아줌"</td>
+<td>노인인력개발원 · 수행기관</td>
+<td>B2G SaaS (수행기관 월 구독)</td>
+<td>공공 API 목록·수동 전달</td>
+<td>AI 매칭·수행기관 백오피스</td>
+</tr>
+<tr>
+<td><strong>④ 커뮤니티(품앗이)</strong></td>
+<td>"우리 동네 이웃과 서로 도움"</td>
+<td>사용자 생성 · 행정동 지오펜싱</td>
+<td>지자체 사회복지사 연계</td>
+<td>게시판·1:1 매칭·신고</td>
+<td>자동 추천·위험 스크리닝·지자체 연동</td>
+</tr>
+</tbody>
+</table>
+<p><strong>4대 서비스 통합 KPI (핵심 1개)</strong>: <em>"월간 활성 사용자(MAU) 중 2개 이상 서비스를 사용한 비율"</em> → 목표 S1 30% · S2 50% · S3 70%.</p>
+<hr />
+<h2 id="2-1">2. ① 복지 알리미 — 구현 상세</h2>
+<h3 id="21">2.1 서비스 정의</h3>
+<p>"<strong>시니어가 받을 수 있지만 모르고 지나치는 복지 혜택</strong>을 자동으로 찾아 알려주고, <strong>신청 완료까지 도달하도록 끌고 가는 서비스</strong>."</p>
+<p>핵심 문제: 기초연금 사각지대 42만 명, 문화누리카드 70세+ 이용자 8.2% 미소진 — <strong>"알림이 닿지 않아서"</strong> 발생하는 사각지대.</p>
+<h3 id="22">2.2 사용자 경험 흐름 (구체 시나리오)</h3>
+<p><strong>시나리오 A — 아침 푸시 → 신청 완료</strong></p>
+<pre><code>08:00 푸시 알림
+  &quot;어머니, 오늘 받을 수 있는 혜택 1건이 있어요.
+   [기초연금 소득역전 감액 완화 적용] 월 약 4만원 추가&quot;
+        ↓
+사용자 앱 진입 → 카드 상세 화면
+  · 내가 받을 수 있는 이유 (요약 3줄)
+  · 필요 서류 체크리스트 (주민등록등본·소득 증빙)
+  · 가까운 행정복지센터 (Kakao Map 버튼)
+  · 예상 소요 시간 &quot;주민센터 방문 30분&quot;
+        ↓
+[신청하러 가기] 버튼
+  → 신청 상태 &quot;대기 중&quot;으로 표시
+  → 완료 시 [완료 체크]로 변경 → 100 포인트 적립
+</code></pre>
+<p><strong>시나리오 B — 챗봇 질의</strong></p>
+<pre><code>사용자 음성 입력: &quot;나 이번달에 뭐 받을 수 있어?&quot;
+        ↓
+AI 챗봇 응답 (TTS 낭독):
+  &quot;어머님, 이번 달 받으실 수 있는 혜택 3가지가 있어요.
+   첫째, 에너지바우처 겨울 지원 약 11만원.
+   둘째, 이동지원 서비스 월 8회 무료.
+   셋째, 어르신 일자리 신청 기간이 다음 주 시작돼요.&quot;
+        ↓
+&quot;첫번째 자세히 알려줘&quot; → 카드 전환
+</code></pre>
+<p><strong>시나리오 C — 신청 실패 구제</strong></p>
+<pre><code>복지로 API에서 신청 결과 &quot;반려&quot; 감지
+        ↓
+푸시: &quot;반려된 신청이 있어요. 서류 보완 도움 받으세요&quot;
+        ↓
+옵션 제시:
+  · 필요 서류 재안내
+  · 동네 품앗이 커뮤니티에서 &quot;주민센터 동행&quot; 요청글 작성 ← ④ 연결
+  · 관할 사회복지사 연결 (S3)
+</code></pre>
+<h3 id="23">2.3 데이터 소스·수집 파이프라인</h3>
+<table>
+<thead>
+<tr>
+<th>소스</th>
+<th>제공 내용</th>
+<th>수집 방식</th>
+<th>갱신 주기</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>복지로 Open API</strong></td>
+<td>중앙정부 복지 제도 약 360종 + 자격 요건</td>
+<td>일 1회 Cron 전체 동기화</td>
+<td>매일 새벽 4시</td>
+</tr>
+<tr>
+<td><strong>공공데이터포털</strong></td>
+<td>지자체 복지사업 DB · 행정구역 코드</td>
+<td>월 1회 배치</td>
+<td>월초</td>
+</tr>
+<tr>
+<td><strong>보건복지부 보도자료 RSS</strong></td>
+<td>신규 시행·개편 소식</td>
+<td>RSS 폴링 30분</td>
+<td>실시간</td>
+</tr>
+<tr>
+<td><strong>지자체 홈페이지 크롤링</strong> (S2+)</td>
+<td>지자체별 로컬 혜택</td>
+<td>주 1회 크롤링</td>
+<td>주간</td>
+</tr>
+<tr>
+<td><strong>정부24 알림 서비스 API</strong> (S3)</td>
+<td>사용자별 개인화 수급 가능 제도</td>
+<td>기관 협약 후 실시간</td>
+<td>실시간</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24">2.4 매칭·추천 로직 (단계별 진화)</h3>
+<p><strong>S1 — Rule Engine (SQL)</strong></p>
+<pre><code class="language-sql">-- 자격 조건 필터
+SELECT * FROM welfare_programs
+WHERE
+  :user_age BETWEEN age_min AND age_max
+  AND :user_dong_code = ANY(region_codes)
+  AND (:user_income IS NULL OR :user_income &lt;= income_max)
+  AND household_type @&gt; :user_household
+  AND deadline &gt; NOW()
+ORDER BY benefit_amount_krw DESC
+LIMIT 10;
+</code></pre>
+<p><strong>S2 — Rule + AI Ranker (pgvector)</strong></p>
+<pre><code>Candidate (SQL) → Top 50
+        ↓
+[pgvector 유사도] 사용자 행동 벡터 × 혜택 임베딩
+        ↓
+[LightGBM] 수급 전환율 예측 (과거 클릭·신청·완료 로그 학습)
+        ↓
+[LLM Re-rank] 시니어 친화 설명문 생성 · 상위 5~7건
+</code></pre>
+<p><strong>S3 — 예측 모델</strong></p>
+<p>사용자 소득·가구 변화(국민연금 수급 시작, 배우자 사망 등) 감지 시 <strong>선제적 알림</strong>. 변경 이벤트는 정부24 API 또는 사용자 직접 입력으로 확보.</p>
+<h3 id="25">2.5 콘텐츠·편집 운영 (숨은 핵심)</h3>
+<p><strong>원문 그대로는 시니어가 읽을 수 없다.</strong> 예시:</p>
+<ul>
+<li>원문 (복지로): "65세 이상 소득인정액 기준 선정기준액 이하 가구 구성원에게 지급하는 공적이전소득으로서..."</li>
+<li>편집본 (청바지): "만 65세 넘고, 가족 포함 월 소득이 187만원 이하면 받을 수 있어요. 매달 통장으로 최대 34만원."</li>
+</ul>
+<p><strong>편집 운영 실무</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>편집 주체</th>
+<th>월간 발행량</th>
+<th>품질 관리</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>주상윤·김경림 수동 작성</td>
+<td>주 2회 · 월 8건</td>
+<td>베타 사용자 피드백</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>전담 콘텐츠 에디터 1명 + LLM 초안</td>
+<td>월 20건</td>
+<td>시니어 리서처 주 1회 감수</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>에디터 2명 + AI 자동 초안</td>
+<td>월 100건 (지역별 맞춤)</td>
+<td>접근성·언어 품질 CI 검사</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26">2.6 다른 서비스와의 통합</h3>
+<ul>
+<li><strong>② 리워드</strong>: 혜택 신청 완료 시 <strong>100 포인트</strong> 적립. 반려 보완 제출 시 추가 50P.</li>
+<li><strong>④ 커뮤니티</strong>: 신청 어려움 겪는 사용자가 품앗이 "주민센터 동행" 요청글 1-탭 작성.</li>
+<li><strong>③ 일자리</strong>: 복지 혜택 중 "노인일자리 사업"은 일자리 서비스와 통합 카드로 노출.</li>
+</ul>
+<h3 id="27-kpi">2.7 성공 지표 (KPI)</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>핵심 지표</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>주간 혜택 카드 노출 수 · 클릭률 · "신청하러 가기" 전환율</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>혜택 신청 완료 인증률 · 인당 월 발견 혜택 수</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>사용자당 연간 추가 수급 금액 (정책 임팩트 지표)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="28">2.8 단계별 기능 진화 요약</h3>
+<table>
+<thead>
+<tr>
+<th>구성</th>
+<th>S1</th>
+<th>S2</th>
+<th>S3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>매칭</td>
+<td>Rule Engine</td>
+<td>Rule + AI Ranker</td>
+<td>예측 모델</td>
+</tr>
+<tr>
+<td>요약</td>
+<td>수동 편집</td>
+<td>LLM 초안 + 사람 검수</td>
+<td>지역별 맞춤 자동</td>
+</tr>
+<tr>
+<td>신청 흐름</td>
+<td>외부 링크 이관</td>
+<td>상태 추적 Polling</td>
+<td>정부24 직연동·1-Click</td>
+</tr>
+<tr>
+<td>지역 커버</td>
+<td>전국 중앙 + 파일럿 1곳</td>
+<td>전국 + 5곳 지자체 심화</td>
+<td>전국 + 30곳 지자체</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-2">3. ② 활동 리워드 시스템 — 구현 상세</h2>
+<h3 id="31">3.1 서비스 정의</h3>
+<p>"<strong>일상의 작은 활동(게임·걷기·문화·학습·이벤트)이 포인트로 쌓이고, 원하는 것으로 교환되는 경험.</strong>"</p>
+<p>이 서비스는 독립적 가치(건강·재미)도 있지만, <strong>4대 서비스 전체의 리텐션 엔진</strong>이다. 혜택 신청·일자리 참여·품앗이 도움도 전부 포인트로 연결된다.</p>
+<h3 id="32">3.2 활동 카탈로그 (포인트 적립 수단 전체)</h3>
+<table>
+<thead>
+<tr>
+<th>카테고리</th>
+<th>활동</th>
+<th>적립 단위</th>
+<th>구현 단계</th>
+<th>증빙 방식</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>인지 훈련</strong></td>
+<td>숫자 기억·한글 맞추기·초성 퀴즈</td>
+<td>게임 1판 완료 = 20P</td>
+<td>S1</td>
+<td>앱 내 이벤트</td>
+</tr>
+<tr>
+<td><strong>걷기</strong></td>
+<td>일일 걸음 수</td>
+<td>1,000보 = 10P (일 최대 100P)</td>
+<td>S2</td>
+<td>HealthKit/Google Fit (네이티브 앱)</td>
+</tr>
+<tr>
+<td><strong>지하철 탐방</strong></td>
+<td>서울 지하철 역 QR 스탬프</td>
+<td>1역 스탬프 = 50P</td>
+<td>S2~S3</td>
+<td>GPS + QR 스캔 (지자체·코레일 협업)</td>
+</tr>
+<tr>
+<td><strong>문화 활동</strong></td>
+<td>공연·전시·박물관 방문</td>
+<td>1회 인증 = 200P</td>
+<td>S2</td>
+<td>문화누리카드 결제 Webhook(S3) or 티켓 사진 업로드(S2)</td>
+</tr>
+<tr>
+<td><strong>학습</strong></td>
+<td>혜택 학습 퀴즈 (오늘의 혜택 내용 맞추기)</td>
+<td>1문제 정답 = 10P</td>
+<td>S1</td>
+<td>앱 내 이벤트</td>
+</tr>
+<tr>
+<td><strong>이벤트</strong></td>
+<td>지자체 오프라인 스탬프 투어</td>
+<td>이벤트별 상이</td>
+<td>S2</td>
+<td>기관 담당자 QR 발급</td>
+</tr>
+<tr>
+<td><strong>혜택 신청</strong></td>
+<td>복지 혜택 신청 완료</td>
+<td>1건 = 100P</td>
+<td>S1</td>
+<td>외부 시스템 확인 or 사용자 인증샷</td>
+</tr>
+<tr>
+<td><strong>일자리 참여</strong></td>
+<td>노인일자리 신청·근무 완료</td>
+<td>1회 = 200P</td>
+<td>S2</td>
+<td>수행기관 확인</td>
+</tr>
+<tr>
+<td><strong>품앗이</strong></td>
+<td>이웃 도움 제공 / 수령</td>
+<td>1회 = 100P 양쪽</td>
+<td>S1</td>
+<td>매칭 완료 + 상호 평가</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-ledger">3.3 포인트 원장 (Ledger) 설계</h3>
+<p><strong>불변 append-only 원칙</strong> — 감사·정산·분쟁 대응에 필수.</p>
+<pre><code>point_ledger (
+  id UUID PK,
+  user_id UUID,
+  type ENUM(WALK, GAME, STAMP, CULTURE, LEARN, EVENT, WELFARE, JOB, POOMASI, REDEEM, ADMIN_ADJUST),
+  amount INT,
+  metadata JSONB,  -- 예: {game_id, session_id, steps, station_code}
+  source ENUM(USER_ACTION, SYSTEM_AWARD, ADMIN_CORRECTION),
+  created_at TIMESTAMPTZ,
+  immutable BOOLEAN DEFAULT TRUE
+)
+</code></pre>
+<p><strong>잔액 계산</strong>: 매회 집계 대신 <strong><code>user_balance</code> 뷰 또는 자동 갱신 테이블</strong> 유지 — 대규모 내역이 쌓여도 조회 빠름.</p>
+<h3 id="34">3.4 리워드 카탈로그·교환</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>교환 옵션</th>
+<th>처리 방식</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>편의점 상품권 1,000P = 1,000원</td>
+<td>월 1회 수기 발송 (우리 팀 직접 구매·우편)</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>카카오톡·네이버페이 기프티콘 30종</td>
+<td>API 자동 발급 (파트너십 계약 후)</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>약국·문화시설 쿠폰</td>
+<td>부분 파트너십</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>지자체 특산품 (지자체별 상이)</td>
+<td>B2G 계약 옵션</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>문화누리카드 바우처 충전</td>
+<td>카드사 제휴 전제</td>
+</tr>
+</tbody>
+</table>
+<p><strong>원칙</strong>: 현금성 환급 금지(금융 규제) · 건강·문화·학습·식품 중심.</p>
+<h3 id="35">3.5 이벤트 운영 모델</h3>
+<p><strong>지하철 스탬프 투어</strong> (핵심 킬러 이벤트)</p>
+<ul>
+<li>시니어 지하철 무료 탑승 혜택과 결합 — 이동 비용 0원</li>
+<li>월 1회 테마 투어: "서울 역사 문화 5역 스탬프" 또는 "공원 5곳 스탬프"</li>
+<li>지자체 또는 서울교통공사와 협업 → 주요 역사에 QR 스티커 배치</li>
+<li>완주 시 특별 배지 · 500P 보너스 · 소정의 경품</li>
+</ul>
+<p><strong>구현 단계</strong>:
+- S1: <strong>미지원</strong> (S2 이후)
+- S2: 자체 스티커 주요 5개 역 시범 (사전 협조 공문만 제출)
+- S3: 코레일·지자체 공식 협약, 역사 내 배너·시니어센터 가이드 배포</p>
+<p><strong>경로당·노인복지관 오프라인 이벤트</strong></p>
+<ul>
+<li>수행기관 담당자가 QR 코드 발급 → 참여 시니어 스캔으로 포인트 지급</li>
+<li>프로그램 참여 유도에 활용 (치매 예방 교실, 건강 체조 등)</li>
+</ul>
+<h3 id="36">3.6 다른 서비스와의 통합</h3>
+<ul>
+<li><strong>① 복지</strong>: 혜택 신청 완료 · 학습 퀴즈 → 포인트</li>
+<li><strong>③ 일자리</strong>: 신청·근무 완료 → 포인트</li>
+<li><strong>④ 품앗이</strong>: 도움 주고받음 → 양쪽 포인트</li>
+<li><strong>리워드 역방향</strong>: 포인트로 <strong>문화누리카드 충전(S3)</strong> · 교통카드 충전(S3)</li>
+</ul>
+<h3 id="37">3.7 성공 지표</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>핵심 지표</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>사용자당 월 평균 적립 포인트 · 교환 신청률</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>일일 활성 사용자(DAU) · 활동 다양성 지수(한 주에 사용한 활동 종류 수)</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>포인트 기반 매출 (기프티콘 커머스 수수료) · 이벤트 참여 전환율</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-3">4. ③ 노인일자리 매칭 — 구현 상세</h2>
+<h3 id="41">4.1 서비스 정의</h3>
+<p>"<strong>공공 노인일자리(연 115만 개)를 시니어와 수행기관 양쪽에 직접 연결</strong>하고, 장기적으로 수행기관 행정 자동화 SaaS로 확장."</p>
+<p>시장조사 근거(<code>청바지_시장조사_노인일자리.md</code>):
+- 수요 충족률 46.4%, 대기자 9만 1,245명 (전년 +62%)
+- 담당자 1인당 280명 관리 과부하 · 41.5%가 "행정 과다" 호소
+- 2026.4.16 한국노인인력개발원장 AI 디지털 전환 공식 선언
+- 공공 노인일자리 + 수행기관 SaaS = 경쟁자 부재 블루오션</p>
+<h3 id="42">4.2 사용자 경험 흐름</h3>
+<p><strong>시니어 측 흐름</strong></p>
+<pre><code>S1:
+  홈 피드 → &quot;내 근처 일자리 3건&quot; 카드
+  → 탭 → 상세 (직무·근무시간·급여·수행기관 연락처)
+  → &quot;관심 있음&quot; 버튼 → 이메일로 수행기관에 신청 이관 (우리가 중계)
+  → 수행기관에서 별도 연락
+
+S2:
+  홈 피드 → AI 추천 &quot;나와 잘 맞는 일자리 2건&quot;
+  → 탭 → 상세 + &quot;예상 매칭 확률 82%&quot;
+  → &quot;신청&quot; 버튼 → 바로 수행기관 시스템 전송 (API 직연동)
+  → 면접 일정 푸시 → 근무 완료 확인 → 200 포인트
+
+S3:
+  대기자 등록 → 조건 맞는 새 공고 발생 시 즉시 푸시 (9만명 대기자 연결)
+  지자체 브랜딩으로 &quot;서초구 일자리&quot; 전용 채널
+</code></pre>
+<p><strong>수행기관 담당자 측 흐름 (S2~)</strong></p>
+<pre><code>S2 웹 대시보드:
+  · 관할 신청자 목록 · 프로필 조회 · 매칭 추천
+  · 엑셀 내보내기 · 근태 간이 기록
+  · 월 30~100만원 구독
+
+S3 완전 SaaS:
+  · 1인당 280명 관리 → 50명 수준 자동화
+  · 공고 등록 → 자동 후보자 추천
+  · 급여 정산 연동 (법률 검토 후)
+  · 성과 리포트 자동 생성
+</code></pre>
+<h3 id="43">4.3 데이터 소스·수집</h3>
+<table>
+<thead>
+<tr>
+<th>소스</th>
+<th>내용</th>
+<th>방식</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>한국노인인력개발원 Open API</strong></td>
+<td>연 115만 개 공공 노인일자리 공고</td>
+<td>일 1회 수집</td>
+</tr>
+<tr>
+<td><strong>지자체 수행기관 포털</strong> (S2+)</td>
+<td>지역 단위 시간제 일자리</td>
+<td>개별 B2B 계약 · Webhook</td>
+</tr>
+<tr>
+<td><strong>파트너 민간 플랫폼</strong> (S2+)</td>
+<td>로컬 소일거리 (정원·돌봄·경비)</td>
+<td>파트너 API</td>
+</tr>
+<tr>
+<td><strong>자체 수집 수행기관 DB</strong></td>
+<td>전국 1,200개소 연락처·담당자</td>
+<td>공개 자료 + 직접 통화로 구축</td>
+</tr>
+</tbody>
+</table>
+<h3 id="44">4.4 매칭 로직 (단계별)</h3>
+<p><strong>S1 — 필터 매칭</strong></p>
+<ul>
+<li>거주 반경(Haversine) · 요일·시간대 선호 · 키워드 검색</li>
+<li>AI 없음</li>
+</ul>
+<p><strong>S2 — 벡터 유사도</strong></p>
+<pre><code>[사용자 프로필]
+  경력 태그(예: &quot;경비&quot;, &quot;요양보호사&quot;), 신체 조건, 선호 시간대
+        ↓ 임베딩 (text-embedding-3-small)
+[pgvector 코사인 유사도] × [공고 임베딩]
+        ↓
+[거리·급여·신체 요건 필터]
+        ↓
+[Top-N + 매칭 확률 점수]
+</code></pre>
+<p><strong>S3 — 수요·공급 최적화</strong></p>
+<ul>
+<li>대기자 프로필 벡터 DB 유지 → 신규 공고 등록 시 조건 매칭 즉시 알림</li>
+<li>수행기관 담당자 후보자 추천 + 역배정(공고 대비 추천 시니어) 양방향</li>
+</ul>
+<h3 id="45">4.5 운영 실무</h3>
+<p><strong>S1 — 수기 이관</strong>
+- 주 1~2건 신청 이메일로 수행기관 담당자에게 전달 (주상윤 담당)
+- 담당자 연락처 DB 자체 구축 (공공데이터 기반)</p>
+<p><strong>S2 — 수행기관 대시보드 배포</strong>
+- 파일럿 3~5곳과 월 10~30만원 도입료 협상 (초기엔 무료 베타)
+- 담당자 교육 1회 (현장 방문 또는 Zoom)</p>
+<p><strong>S3 — B2G 세일즈 체계</strong>
+- 전담 영업 2~3명 · 분기당 지자체 3곳 신규 계약 목표</p>
+<h3 id="46">4.6 다른 서비스와의 통합</h3>
+<ul>
+<li><strong>① 복지</strong>: "노인일자리 사업" 혜택 카드 = 일자리 매칭 진입점</li>
+<li><strong>② 리워드</strong>: 신청 → 50P · 면접 참여 → 100P · 근무 완료 → 200P (월 상한)</li>
+<li><strong>④ 품앗이</strong>: 신청 어려움 시 "일자리 신청 같이 가주실 분?" 요청글 1-탭 연결</li>
+</ul>
+<h3 id="47">4.7 성공 지표</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>지표</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>공고 노출 수 · 관심 클릭률 · 수행기관 전달 건수</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>신청 완료율 · 면접 전환율 · 수행기관 대시보드 MAU</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>수행기관 유료 계약 수 · 담당자 시간 절감률 · ARR</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-4">5. ④ 커뮤니티(품앗이) — 구현 상세</h2>
+<h3 id="51">5.1 서비스 정의</h3>
+<p>"<strong>행정동 단위 소규모 커뮤니티에서 이웃이 서로 도와주는 상호부조 네트워크</strong>. 금전 거래 없음, 포인트로만 교환."</p>
+<p>핵심 문제: 시니어 고립 — 단순한 혜택 제공만으로는 해결 불가. <strong>"연결"이 실제 가치</strong>.</p>
+<h3 id="52">5.2 사용자 경험 흐름</h3>
+<p><strong>요청자 측</strong></p>
+<pre><code>홈 → 품앗이 탭 → &quot;우리 동 요청글 보기&quot;
+  → [요청글 작성] 버튼
+  → 카테고리 선택 (병원 동행 / 김장·청소 / 스마트폰 / 대화 상대 / 기타)
+  → 제목·내용·희망 시간 입력 (음성 입력 가능 — Whisper S2)
+  → 게시 → 같은 동 이웃에게 푸시
+  → 수락자 프로필 확인 → [수락] → 실명·전화번호 공개
+</code></pre>
+<p><strong>도움 제공자 측</strong></p>
+<pre><code>홈 → 품앗이 탭 → 요청글 리스트
+  → 관심 요청글 [지원하기]
+  → 요청자 수락 시 알림 → 연락
+  → 완료 후 서로 별점·후기 → 100P 양쪽 적립
+</code></pre>
+<h3 id="53">5.3 카테고리 구조</h3>
+<table>
+<thead>
+<tr>
+<th>카테고리</th>
+<th>예시</th>
+<th>평균 난이도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>생활 도움</strong></td>
+<td>병원 동행, 은행 업무, 관공서 방문</td>
+<td>중</td>
+</tr>
+<tr>
+<td><strong>가사 품앗이</strong></td>
+<td>김장, 대청소, 이사 도움</td>
+<td>고</td>
+</tr>
+<tr>
+<td><strong>디지털 도움</strong></td>
+<td>스마트폰 설정, 카카오톡 가르치기, 사진 인쇄</td>
+<td>저</td>
+</tr>
+<tr>
+<td><strong>대화 상대</strong></td>
+<td>산책 친구, 차 한 잔</td>
+<td>저</td>
+</tr>
+<tr>
+<td><strong>재능 나눔</strong></td>
+<td>한글·한자 교실, 악기 레슨, 요리</td>
+<td>중</td>
+</tr>
+<tr>
+<td><strong>긴급 도움</strong> (S3)</td>
+<td>응급 상황 알림 (낙상·고립)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>금지 카테고리</strong>: 금융·투자 권유 · 종교 포교 · 정치 활동 · 상업 홍보 — 키워드 필터 + 신고 즉시 삭제.</p>
+<h3 id="54">5.4 안전·모더레이션 체계</h3>
+<table>
+<thead>
+<tr>
+<th>계층</th>
+<th>장치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>가입 게이트</strong></td>
+<td>휴대폰 본인인증 필수 (S1) · S2부터 PASS 전환</td>
+</tr>
+<tr>
+<td><strong>프로필 신뢰도</strong></td>
+<td>품앗이 완료 누적 횟수 · 평균 별점 공개</td>
+</tr>
+<tr>
+<td><strong>연락처 보호</strong></td>
+<td>매칭 전까지 익명 · 수락 후에만 실명·전화 공개</td>
+</tr>
+<tr>
+<td><strong>신고 시스템</strong></td>
+<td>3회 누적 → 자동 정지 · 우리 팀 수동 재검토</td>
+</tr>
+<tr>
+<td><strong>키워드 필터</strong></td>
+<td>금융·종교·정치 관련 단어 게시 차단</td>
+</tr>
+<tr>
+<td><strong>위험 감지</strong> (S3)</td>
+<td>고위험 패턴(현금 요구·주소 집요 문의) 자동 플래그 → 사회복지사 알림</td>
+</tr>
+</tbody>
+</table>
+<h3 id="55">5.5 지오펜싱 구조</h3>
+<ul>
+<li>주소 → 좌표 변환 (Kakao Map Geocoding API)</li>
+<li>행정동 코드(10자리) 기준 커뮤니티 자동 배정</li>
+<li>초기 사용자 수 적은 동은 <strong>인접 3개 동까지 통합 노출</strong> (S1 콘텐츠 부족 대응)</li>
+</ul>
+<h3 id="56-cold-start">5.6 콘텐츠 초기화 (Cold Start) 대응</h3>
+<p>S1 실증 지역에서 사용자가 0명인 상태로는 게시판이 허전 → 이탈 위험. 대응:</p>
+<ol>
+<li><strong>시드 콘텐츠</strong> — 우리 팀이 실증 지역에서 초기 요청글 20건 시딩 (가명, 표시 명시)</li>
+<li><strong>운영진 응답 보장</strong> — 초기 요청글에 최소 1명 이상 수락자 확보 (우리 팀 또는 계약된 자원봉사자)</li>
+<li><strong>지자체 사회복지사 안내</strong> — 경로당 단체 가입 권유</li>
+</ol>
+<h3 id="57">5.7 다른 서비스와의 통합</h3>
+<ul>
+<li><strong>① 복지</strong>: "주민센터 동행 구함" 요청은 복지 알리미 반려 케이스에서 1-탭 작성 가능</li>
+<li><strong>② 리워드</strong>: 도움 1회당 양쪽 100P · 월 10회 상한 (남용 방지)</li>
+<li><strong>③ 일자리</strong>: 품앗이에서 드러난 기술(예: 컴퓨터 교실 운영 경험) → 일자리 매칭 프로필에 자동 태그 추가</li>
+</ul>
+<h3 id="58">5.8 성공 지표</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>지표</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>동별 주간 요청글 수 · 매칭 성사율 · 월 활성 사용자 중 품앗이 참여율</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>재참여율 · 카테고리별 평균 별점 · 신고율</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>지자체 사회복지사 개입 건수 · 위험 감지 정확도 · 고립 지표 개선</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-4">6. 4대 서비스 교차 시너지 — 통합 플랫폼의 진짜 가치</h2>
+<p>4대 서비스가 각각 독립적으로 존재하는 것이 아니라, <strong>서로를 강화</strong>하는 구조를 명시한다.</p>
+<h3 id="_1">시너지 매트릭스</h3>
+<table>
+<thead>
+<tr>
+<th>구분</th>
+<th>① 복지</th>
+<th>② 리워드</th>
+<th>③ 일자리</th>
+<th>④ 품앗이</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>① 복지</strong></td>
+<td>—</td>
+<td>신청 완료 → 100P</td>
+<td>혜택 중 일자리 사업 카드</td>
+<td>신청 도움 요청글 원터치</td>
+</tr>
+<tr>
+<td><strong>② 리워드</strong></td>
+<td>포인트로 문화 바우처(S3)</td>
+<td>—</td>
+<td>신청·근무 → 포인트</td>
+<td>도움 → 양쪽 포인트</td>
+</tr>
+<tr>
+<td><strong>③ 일자리</strong></td>
+<td>일자리 관련 지원금 혜택 교차 노출</td>
+<td>포인트 전환 수당</td>
+<td>—</td>
+<td>품앗이 기술 → 일자리 태그</td>
+</tr>
+<tr>
+<td><strong>④ 품앗이</strong></td>
+<td>혜택 신청 병목 해소</td>
+<td>포인트 적립원</td>
+<td>비공식 소일거리 카테고리</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-ac">핵심 시너지 3가지 (AC 심사 답변용)</h3>
+<p><strong>시너지 1 — "단일 프로필로 4배 가치"</strong>
+- 온보딩에서 입력한 4개 필드(생년월일·행정동·가구·관심사)가 4대 서비스 모두에 활용. 경쟁사는 각각 따로 입력 필요.</p>
+<p><strong>시너지 2 — "리워드 엔진이 모든 서비스의 재방문을 유도"</strong>
+- 혜택 신청만으로는 월 1~2회 접속에 그침. 리워드·품앗이가 일 단위 접속을 만들어 리텐션 확보 → 그래서 혜택도 놓치지 않음.</p>
+<p><strong>시너지 3 — "데이터 교차 학습"</strong>
+- 품앗이에서 "컴퓨터 가르쳐드립니다" 글을 자주 쓴 사용자 → 일자리 매칭에 IT 강사 카테고리 자동 추가
+- 복지 혜택 신청 포기율 높은 지역 → 품앗이 "신청 동행" 요청을 우선 노출
+- 이런 학습은 <strong>통합 플랫폼에서만 가능</strong>한 경쟁 우위.</p>
+<hr />
+<h2 id="7-ux">7. 통합 플랫폼 UX 구조 — 사용자가 실제로 앱에서 보는 것</h2>
+<h3 id="_2">홈 피드 믹스 전략</h3>
+<pre><code>홈 화면 (스크롤 피드)
+  [1] 인사말 + 포인트 잔액 + 오늘의 진행 (푸시형)
+
+  [2] 개인화 추천 카드 5~7장 (혼합 비율):
+      · 복지 혜택 2장
+      · 일자리 1~2장
+      · 품앗이 요청 1~2장 (같은 동)
+      · 리워드 도전 1장 (&quot;오늘 5,000보 걸으면 50P&quot;)
+      · 이벤트 1장 (월 1회 지하철 투어 등)
+
+  [3] 빠른 진입 4개 큰 버튼: 복지 · 일자리 · 품앗이 · 포인트
+
+  [4] AI 챗봇 고정 플로팅 버튼 (&quot;궁금한 거 물어보세요&quot;)
+</code></pre>
+<h3 id="s2">개인화 로직 (S2)</h3>
+<table>
+<thead>
+<tr>
+<th>시점</th>
+<th>추천 근거</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>아침 8시</td>
+<td>새로 등록된 혜택 (밤새 공공 API 동기화 결과)</td>
+</tr>
+<tr>
+<td>점심 12시</td>
+<td>근처 일자리 · 품앗이</td>
+</tr>
+<tr>
+<td>저녁 7시</td>
+<td>내일 해볼 활동 · 스탬프 추천</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-tab">네비게이션 (5-Tab 하단)</h3>
+<pre><code>[홈] [복지] [일자리] [품앗이] [내 정보]
+                                  ↑
+                   (포인트·설정·도움말·대리신청 관리 포함)
+</code></pre>
+<p><strong>큰 버튼·큰 글씨 원칙</strong>: 각 탭 아이콘 48dp 이상 · 라벨 14pt 이상.</p>
+<hr />
+<h2 id="8-4">8. 기술 구현 공통 레이어 — 4대 서비스를 받치는 엔진</h2>
+<p>4대 서비스 각각이 자체 코드·DB를 갖지 않는다. <strong>공통 엔진</strong>을 공유해서 운영 비용·UX 일관성을 확보.</p>
+<table>
+<thead>
+<tr>
+<th>공통 엔진</th>
+<th>책임</th>
+<th>4대 서비스 모두 활용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Identity</strong></td>
+<td>본인인증·프로필·동의 관리</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Geo</strong></td>
+<td>주소→좌표 변환·행정동 코드 매핑·반경 계산</td>
+<td>✅ (복지·일자리·품앗이)</td>
+</tr>
+<tr>
+<td><strong>Notification</strong></td>
+<td>푸시·SMS·음성 안내 · TTS</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Point Ledger</strong></td>
+<td>포인트 적립·차감·교환·감사</td>
+<td>✅ (리워드 중심이지만 4대 모두 기록)</td>
+</tr>
+<tr>
+<td><strong>AI Gateway</strong></td>
+<td>OpenAI 호출 · 캐시 · 레이트 리밋</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Audit Log</strong></td>
+<td>모든 주요 이벤트 불변 기록</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Accessibility</strong></td>
+<td>TTS·큰 글씨·음성 입력·고대비</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Tenant</strong> (S3)</td>
+<td>지자체별 데이터 격리</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 1개 플랫폼이 더 유리한가</strong> (AC 답변):
+- 시니어는 앱 여러 개 쓰지 않음 → 통합 진입
+- 공통 엔진으로 개발 비용 50% 절감
+- 데이터 교차 학습 → 경쟁사 대비 우위
+- 운영(CS·콘텐츠·세일즈) 공통 → 스케일업 유리</p>
+<hr />
+<h2 id="9">9. 단계별 서비스 제공 범위 요약 (한눈에)</h2>
+<table>
+<thead>
+<tr>
+<th>서비스</th>
+<th>S1 (0~6M)</th>
+<th>S2 (6~18M)</th>
+<th>S3 (18~36M)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>① 복지</strong></td>
+<td>Rule 매칭 · 수동 요약 · 외부 신청 링크</td>
+<td>AI Ranker · 상태 추적 · 자동 요약</td>
+<td>정부24 연동 · 예측 · 지자체 직연동</td>
+</tr>
+<tr>
+<td><strong>② 리워드</strong></td>
+<td>인지게임 · 학습 · 수기 상품권</td>
+<td>걷기·문화·이벤트 + 기프티콘 API</td>
+<td>지하철·특산품·문화누리 연동</td>
+</tr>
+<tr>
+<td><strong>③ 일자리</strong></td>
+<td>공공 API 목록 · 수동 전달</td>
+<td>AI 매칭 · 수행기관 대시보드 유료</td>
+<td>B2G SaaS · 급여 미들웨어(법무 후)</td>
+</tr>
+<tr>
+<td><strong>④ 품앗이</strong></td>
+<td>행정동 게시판 · 1:1 매칭 · 신고</td>
+<td>음성 입력 · 자동 추천 · 평점</td>
+<td>사회복지사 모니터링 · 위험 감지</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-kpi">10. 통합 KPI 대시보드 설계</h2>
+<h3 id="_3">서비스별 지표와 <strong>통합 지표</strong>를 분리 운영</h3>
+<p><strong>서비스별 지표</strong> (각 서비스의 건강성)</p>
+<ul>
+<li>① 복지: 혜택 노출 수 · 신청 전환율 · 수급 완료율</li>
+<li>② 리워드: 적립 포인트 · 교환 신청률 · 활동 다양성</li>
+<li>③ 일자리: 매칭 성사율 · 수행기관 만족도 · ARR</li>
+<li>④ 품앗이: 매칭 성사율 · 신고율 · 재참여율</li>
+</ul>
+<p><strong>통합 지표</strong> (통합 플랫폼 차별화)</p>
+<ul>
+<li><strong>크로스 사용률</strong>: MAU 중 2개 이상 서비스 사용 비율 → S1 30% · S2 50% · S3 70%</li>
+<li><strong>플랫폼 가치 점수</strong>: 사용자당 월 적립 포인트 평균 · 인당 연간 수급 혜택 총액</li>
+<li><strong>리텐션 (D30)</strong>: 가입 30일 후 재접속 비율 → S1 40% · S2 55% · S3 70%</li>
+<li><strong>고립 지표</strong> (S3): 주 1회 이상 접속 + 품앗이 또는 커뮤니티 상호작용 있는 사용자 비율</li>
+</ul>
+<h3 id="_4">지표 수집·리뷰 주기</h3>
+<ul>
+<li><strong>매일</strong>: 푸시 오픈율 · 홈 피드 클릭률 · 주요 서비스 진입률</li>
+<li><strong>주간</strong>: 사용자 1:1 인터뷰 3건 (주상윤·김경림 공동)</li>
+<li><strong>월간</strong>: 4대 서비스별·통합 KPI 대시보드 리뷰 미팅</li>
+<li><strong>분기</strong>: 전략 재조정 — 기능별 리소스 재배분 여부 결정</li>
+</ul>
+<hr />
+<h2 id="mvp-12">부록 · 구현 우선순위 요약 (MVP 첫 12주 기준)</h2>
+<table>
+<thead>
+<tr>
+<th>주차</th>
+<th>복지</th>
+<th>리워드</th>
+<th>일자리</th>
+<th>품앗이</th>
+<th>공통</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>W1~2</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>인증·프로필·홈 스켈레톤</td>
+</tr>
+<tr>
+<td>W3~4</td>
+<td>Rule 매칭 · 카드 UI</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>공공 API 수집</td>
+</tr>
+<tr>
+<td>W5~6</td>
+<td>상세·체크리스트</td>
+<td>원장 DB · 인지게임 1종</td>
+<td>—</td>
+<td>—</td>
+<td>포인트 UI</td>
+</tr>
+<tr>
+<td>W7~8</td>
+<td>—</td>
+<td>—</td>
+<td>공고 목록·검색</td>
+<td>—</td>
+<td>Kakao Map 통합</td>
+</tr>
+<tr>
+<td>W9~10</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>게시판·매칭·신고</td>
+<td>지오펜싱</td>
+</tr>
+<tr>
+<td>W11~12</td>
+<td>전체</td>
+<td>전체</td>
+<td>전체</td>
+<td>전체</td>
+<td>QA·접근성·실증 배포</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><strong>관련 문서</strong>:
+- <code>청바지_AC투자_기획서.md</code> — 비전·시장·BM
+- <code>청바지_서비스구현_실행계획서.md</code> — 36개월 서비스 진화
+- <code>청바지_MVP_개발계획서.md</code> — 12주 엔지니어 스프린트
+- <code>청바지_시장조사_노인일자리.md</code> — 일자리 매칭 근거 자료</p>
+</body>
+</html>

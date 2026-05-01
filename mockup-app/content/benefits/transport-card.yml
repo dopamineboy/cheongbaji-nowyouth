@@ -1,0 +1,47 @@
+# =============================================================================
+# 도우다 — 어르신 교통비 지원 (교통카드)
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: transport-card
+name: 어르신 교통비 지원
+agency: 지자체 · 한국교통안전공단
+category: 교통·이동
+summary: |
+  만 65세 이상 어르신은 지하철을 무료로 이용하실 수 있고,
+  일부 지역에서는 버스 요금 할인이나 교통비를 지원받으실 수 있어요.
+
+eligibility:
+  age_min: 65
+  citizenship: KR
+
+benefit:
+  type: discount
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증 (주민등록증)
+  - 우대용 교통카드 (해당 시)
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00000139
+  offline:
+    - 가까운 지하철역 고객안내센터
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00000139
+
+universal: true
+
+last_verified: 2024-01-01
+
+notes: |
+  - 서울·부산·대구·대전·광주 등 대도시 지하철은 무료예요.
+  - 경기도: 버스 요금 할인 + 별도 교통비 지원 사업이 있어요.
+  - 지역마다 다르므로 주민센터에 확인하시면 정확해요.
+  - 우대용 교통카드를 발급받으시면 더 편리해요.

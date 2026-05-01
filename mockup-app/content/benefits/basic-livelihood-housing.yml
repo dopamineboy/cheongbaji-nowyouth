@@ -1,0 +1,49 @@
+# =============================================================================
+# 도우다 — 기초생활보장 주거급여
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: basic-livelihood-housing
+name: 기초생활보장 주거급여
+agency: 국토교통부 · 한국토지주택공사
+category: 기초생활보장
+summary: |
+  소득이 적으신 분이 안정적으로 거주하실 수 있도록,
+  매달 임차료 또는 수선비를 지원해 드리는 제도예요.
+
+eligibility:
+  citizenship: KR
+  requires_renter: true
+  median_income_pct: 48
+  income_recognition_max:
+    single: 1069654   # 기준 중위소득 48% (2024년 1인 가구)
+    couple: 1767652   # 기준 중위소득 48% (2024년 2인 가구)
+
+benefit:
+  type: monthly_cash
+  amount_krw_max:
+    single: 341000    # 서울 1급지 기준 최대
+    couple: 341000
+
+documents:
+  - 신분증
+  - 소득·재산 확인 서류
+  - 임대차 계약서
+  - 통장 사본
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003201
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003201
+
+last_verified: 2024-01-01
+
+notes: |
+  - 임차(전·월세)가구: 실제 임차료 기준으로 지급 (지역별 상한 있음).
+  - 자가가구: 집 수리비(수선유지급여)를 지원받을 수 있어요.
+  - 지역에 따라 1~4급지로 나뉘어 지원 금액이 달라요.

@@ -1,0 +1,48 @@
+# =============================================================================
+# 도우다 — 노인일자리 및 사회활동 지원
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: senior-employment
+name: 노인일자리 및 사회활동 지원
+agency: 보건복지부 · 한국노인인력개발원
+category: 일자리·사회활동
+summary: |
+  만 65세 이상 어르신께 일자리와 사회활동 기회를 제공하고,
+  참여하신 만큼 활동비를 드리는 사업이에요.
+
+eligibility:
+  age_min: 65
+  citizenship: KR
+
+benefit:
+  type: monthly_cash
+  amount_krw_max:
+    single: 297000    # 공익활동 월 27만 원 + 추가수당 기준
+    couple: 297000
+
+documents:
+  - 신분증
+  - 주민등록등본
+  - 통장 사본
+
+apply:
+  online:
+    name: 한국노인인력개발원
+    url: https://www.kordi.or.kr/content/intro/user_guide.do
+  offline:
+    - 가까운 시니어클럽
+    - 대한노인회 지회
+    - 주소지 관할 행정복지센터(주민센터)
+
+sources:
+  - https://www.kordi.or.kr/content/intro/user_guide.do
+
+universal: true
+
+last_verified: 2024-01-01
+
+notes: |
+  - 공익활동(월 30시간 이상, 약 27만 원), 사회서비스형, 시장형 등 유형이 다양해요.
+  - 기초연금과 동시에 받으실 수 있어요.
+  - 매년 초(1~2월)에 참여자를 모집하고, 수시 모집도 있어요.

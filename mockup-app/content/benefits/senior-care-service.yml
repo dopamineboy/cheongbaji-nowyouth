@@ -1,0 +1,55 @@
+# =============================================================================
+# 도우다 — 노인돌봄종합서비스
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: senior-care-service
+name: 노인돌봄종합서비스
+agency: 보건복지부 · 지자체
+category: 돌봄서비스
+summary: |
+  혼자 지내시기 어려운 어르신께 가사·활동 지원 등
+  돌봄 서비스를 제공해 드리는 사업이에요.
+
+eligibility:
+  age_min: 65
+  citizenship: KR
+  income_recognition_max:
+    single: 2130000
+    couple: 3408000
+
+benefit:
+  type: service
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증
+  - 주민등록등본
+  - 소득·재산 확인 서류
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003191
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+    - 가까운 재가노인복지센터
+
+sources:
+  - https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003191
+
+health_tags:
+  - daily_life
+
+show_condition:
+  health_concerns:
+    - daily_life
+
+last_verified: 2024-01-01
+
+notes: |
+  - 장기요양등급 외(등급 밖) 판정을 받으신 분이 주 대상이에요.
+  - 식사·청소·빨래 등 가사 지원, 외출 동행 등을 도와드려요.
+  - 본인부담금이 있을 수 있어요 (소득 수준에 따라 달라요).
