@@ -290,7 +290,7 @@ function evaluateBenefit(
       pass("체납이 있으시면 긴급 지원 대상이 될 수 있어요.");
       relevanceScore += 3;
     } else {
-      status = status === "ineligible" ? status : "needs_more_info";
+      if ((status as MatchStatus) !== "ineligible") status = "needs_more_info";
       totalConditions++;
     }
   }
