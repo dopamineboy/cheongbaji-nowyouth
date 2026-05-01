@@ -1,6 +1,7 @@
 // 청바지 통합 홈 피드 — 4대 통합서비스 믹스
 // 4대통합서비스_구현계획서 §7 홈 피드 믹스 전략 적용
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   getBalance,
   getDemoUserId,
@@ -14,6 +15,9 @@ import {
   totalEligibleAmount,
 } from "./lib/welfare/matcher";
 import { toWelfareProfile } from "./lib/welfare/adapter";
+import { isOnboarded } from "./lib/auth";
+
+export const dynamic = "force-dynamic";
 
 function GreetingHeader({ name, dong }: { name: string; dong: string }) {
   return (
@@ -134,7 +138,12 @@ function TabBar() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  // 게이트: 온보딩(인터뷰) 안 했으면 환영 페이지로 자동 이동
+  if (!(await isOnboarded())) {
+    redirect("/welcome");
+  }
+
   const user = getUser(getDemoUserId());
   if (!user) return null;
 

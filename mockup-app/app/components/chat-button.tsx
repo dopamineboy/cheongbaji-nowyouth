@@ -63,6 +63,12 @@ interface Msg {
   text: string;
 }
 
+async function resetOnboarding() {
+  if (!confirm("인터뷰를 다시 진행하시겠어요? 현재 입력 정보는 초기화돼요.")) return;
+  await fetch("/api/onboarding/complete", { method: "DELETE" });
+  window.location.href = "/welcome";
+}
+
 export default function ChatButton() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([
@@ -158,6 +164,13 @@ export default function ChatButton() {
           <p className="mt-2 text-center text-[11px] text-[var(--color-muted)]">
             S1 단계: 자주 묻는 질문 응답 · S2부터 OpenAI 실시간 답변
           </p>
+          <button
+            type="button"
+            onClick={resetOnboarding}
+            className="mt-1 block w-full text-center text-[11px] text-[var(--color-muted)] underline"
+          >
+            인터뷰 다시 하기
+          </button>
         </div>
       </div>
     </div>

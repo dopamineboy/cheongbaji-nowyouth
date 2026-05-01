@@ -4,13 +4,17 @@
 // 각 단계 30초 이내 · 큰 버튼 · 진행 표시
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-type Step = 1 | 2 | 3 | 4 | "done";
+type Step = 0 | 1 | 2 | 3 | 4 | "saving" | "done";
 
 interface OnboardingState {
+  name: string;
   birthYear: number | null;
   region: string | null;
   district: string | null;
+  household: "single" | "couple" | "with_family" | null;
+  monthlyIncomeKrw: number | null;
   outdoorOk: boolean | null;
   walkingHeavyOk: boolean | null;
   daysPerWeek: number | null;
@@ -46,11 +50,16 @@ const OCCUPATIONS = [
 ];
 
 export default function OnboardingFlow() {
-  const [step, setStep] = useState<Step>(1);
+  const router = useRouter();
+  const [step, setStep] = useState<Step>(0);
+  const [error, setError] = useState<string | null>(null);
   const [s, setS] = useState<OnboardingState>({
+    name: "",
     birthYear: null,
     region: null,
     district: null,
+    household: null,
+    monthlyIncomeKrw: null,
     outdoorOk: null,
     walkingHeavyOk: null,
     daysPerWeek: null,
@@ -60,16 +69,67 @@ export default function OnboardingFlow() {
     preferredTimeSlots: [],
   });
 
-  const goNext = (next: Step) => setStep(next);
+  const goNext = (next: Step) => {
+    setError(null);
+    setStep(next);
+  };
 
   const toggle = (arr: string[], v: string): string[] =>
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+
+  const submit = async () => {
+    setStep("saving");
+    setError(null);
+    try {
+      const res = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: s.name,
+          birthYear: s.birthYear,
+          region: s.region,
+          district: s.district,
+          household: s.household ?? "single",
+          householdSize: s.household === "couple" ? 2 : s.household === "with_family" ? 3 : 1,
+          monthlyIncomeKrw: s.monthlyIncomeKrw,
+          outdoorOk: s.outdoorOk ?? false,
+          walkingHeavyOk: s.walkingHeavyOk ?? true,
+          daysPerWeek: s.daysPerWeek,
+          preferredJobTypes: s.preferredJobTypes,
+          pastOccupations: s.pastOccupations,
+          preferredTimeSlots: s.preferredTimeSlots,
+          desiredHourlyWageKrw: s.desiredHourlyWageKrw,
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error?.message ?? "저장에 실패했어요. 잠시 후 다시 시도해주세요.");
+        setStep(4);
+        return;
+      }
+      setStep("done");
+    } catch {
+      setError("네트워크 오류예요. 잠시 후 다시 시도해주세요.");
+      setStep(4);
+    }
+  };
 
   const yearOptions = (() => {
     const yrs = [];
     for (let y = 1965; y >= 1935; y -= 5) yrs.push(y);
     return yrs;
   })();
+
+  if (step === "saving") {
+    return (
+      <div className="mx-auto max-w-[420px] py-12 text-center">
+        <div className="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-[var(--color-primary)]/20 border-t-[var(--color-primary)]" />
+        <p className="text-[16px] font-semibold text-[var(--color-muted)]">
+          답변을 분석하고 받으실 수 있는 혜택을 찾고 있어요...
+        </p>
+      </div>
+    );
+  }
 
   if (step === "done") {
     return (
@@ -81,34 +141,86 @@ export default function OnboardingFlow() {
         <p className="mb-8 text-[16px] leading-relaxed text-[var(--color-muted)]">
           입력해주신 정보를 바탕으로 맞춤 혜택과 일자리를 찾아드릴게요.
         </p>
-        <Link
-          href="/"
-          className="inline-block rounded-2xl bg-[var(--color-primary)] px-8 py-4 text-[17px] font-bold text-white"
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="btn-primary inline-block rounded-2xl px-8 py-4 text-[17px] font-bold"
         >
-          홈으로 시작하기
-        </Link>
+          내 맞춤 혜택 보러가기 →
+        </button>
       </div>
     );
   }
 
   return (
     <div>
-      {/* 진행 표시 */}
-      <div className="mb-6">
-        <p className="mb-2 text-center text-[14px] font-bold text-[var(--color-muted)]">
-          {step}단계 / 4단계
-        </p>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4].map((n) => (
-            <div
-              key={n}
-              className={`h-2 flex-1 rounded-full ${
-                n <= step ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"
-              }`}
-            />
-          ))}
+      {/* 진행 표시 (1~4단계만 표시, 0은 인트로라서 제외) */}
+      {typeof step === "number" && step >= 1 && step <= 4 && (
+        <div className="mb-6">
+          <p className="mb-2 text-center text-[14px] font-bold text-[var(--color-muted)]">
+            {step}단계 / 4단계
+          </p>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4].map((n) => (
+              <div
+                key={n}
+                className={`h-2 flex-1 rounded-full ${
+                  n <= (step as number)
+                    ? "bg-[var(--color-primary)]"
+                    : "bg-[var(--color-border)]"
+                }`}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* STEP 0 — 인사말 + 약관 안내 */}
+      {step === 0 && (
+        <div className="flex flex-col gap-6">
+          <div className="rounded-2xl bg-white p-6 text-center card-soft">
+            <div className="text-5xl">👋</div>
+            <h2 className="mt-3 text-[22px] font-extrabold text-[var(--color-text)]">
+              어르신만의 맞춤 혜택을 찾아드릴게요
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-[var(--color-muted)]">
+              4가지 질문에 답해주시면 받으실 수 있는 복지·일자리·이웃을 자동으로 매칭해드려요.
+              <br />
+              1분이면 끝나요.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
+            <p className="mb-2 text-[14px] font-bold text-[var(--color-text)]">
+              어떻게 부르면 될까요? <span className="text-[var(--color-muted)]">(생략 가능)</span>
+            </p>
+            <input
+              type="text"
+              value={s.name}
+              onChange={(e) => setS({ ...s, name: e.target.value })}
+              placeholder="예: 김정숙"
+              className="w-full rounded-xl border-2 border-[var(--color-border)] bg-white px-4 py-3 text-[18px]"
+              maxLength={20}
+            />
+          </div>
+
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--bg-soft-blue)] p-4">
+            <p className="text-[13px] leading-relaxed text-[var(--color-muted)]">
+              <span className="font-bold text-[var(--color-text)]">개인정보 안내</span>
+              <br />
+              입력하시는 정보는 혜택·일자리 매칭에만 사용되며, 안전하게 보관돼요. 동의하시면 시작 버튼을 눌러주세요.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => goNext(1)}
+            className="btn-primary rounded-2xl py-5 text-[19px] font-bold"
+          >
+            동의하고 시작하기 →
+          </button>
+        </div>
+      )}
 
       {/* STEP 1 — 기본 조건 */}
       {step === 1 && (
@@ -177,11 +289,66 @@ export default function OnboardingFlow() {
             </>
           )}
 
+          <h2 className="mt-4 text-[20px] font-extrabold text-[var(--color-text)]">
+            가구 형태
+          </h2>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { v: "single", l: "혼자 살아요", icon: "🧓" },
+              { v: "couple", l: "부부예요", icon: "👫" },
+              { v: "with_family", l: "가족과 함께", icon: "👨‍👩‍👧" },
+            ].map((h) => (
+              <button
+                key={h.v}
+                type="button"
+                onClick={() => setS({ ...s, household: h.v as "single" | "couple" | "with_family" })}
+                className={`rounded-2xl py-4 ${
+                  s.household === h.v
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                }`}
+              >
+                <div className="text-2xl">{h.icon}</div>
+                <p className="mt-1 text-[14px] font-bold">{h.l}</p>
+              </button>
+            ))}
+          </div>
+
+          <h2 className="mt-4 text-[20px] font-extrabold text-[var(--color-text)]">
+            한 달 가구 소득은 대략 어느 정도세요?
+            <span className="ml-1 text-[14px] font-medium text-[var(--color-muted)]">
+              (대략적으로 OK · 생략 가능)
+            </span>
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { v: 500_000, l: "50만원 이하" },
+              { v: 1_000_000, l: "약 100만원" },
+              { v: 1_500_000, l: "약 150만원" },
+              { v: 2_000_000, l: "약 200만원" },
+              { v: 3_000_000, l: "약 300만원" },
+              { v: null, l: "잘 모르겠어요" },
+            ].map((opt) => (
+              <button
+                key={String(opt.v)}
+                type="button"
+                onClick={() => setS({ ...s, monthlyIncomeKrw: opt.v })}
+                className={`rounded-xl py-3 text-[15px] font-bold ${
+                  s.monthlyIncomeKrw === opt.v
+                    ? "bg-[var(--color-accent)] text-white"
+                    : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                }`}
+              >
+                {opt.l}
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
             onClick={() => goNext(2)}
-            disabled={!s.birthYear || !s.region}
-            className="mt-6 rounded-2xl bg-[var(--color-primary)] py-4 text-[17px] font-bold text-white disabled:opacity-40"
+            disabled={!s.birthYear || !s.region || !s.household}
+            className="btn-primary mt-6 rounded-2xl py-4 text-[17px] font-bold disabled:opacity-40"
           >
             다음 →
           </button>
@@ -420,6 +587,12 @@ export default function OnboardingFlow() {
             ))}
           </div>
 
+          {error && (
+            <p className="mt-4 rounded-xl bg-[var(--color-urgent)]/10 p-3 text-center text-[14px] font-semibold text-[var(--color-urgent)]">
+              {error}
+            </p>
+          )}
+
           <div className="mt-6 flex gap-2">
             <button
               type="button"
@@ -430,8 +603,8 @@ export default function OnboardingFlow() {
             </button>
             <button
               type="button"
-              onClick={() => goNext("done")}
-              className="flex-1 rounded-2xl bg-[var(--color-primary)] py-4 text-[17px] font-bold text-white"
+              onClick={submit}
+              className="btn-primary flex-1 rounded-2xl py-4 text-[17px] font-bold"
             >
               완료 ✓
             </button>
