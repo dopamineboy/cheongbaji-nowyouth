@@ -25,6 +25,15 @@ const EMPLYMSHP_TO_ACTIVITY: Record<string, JobActivityType> = {
   CM0105: "사회서비스형", // 기타
 };
 
+// 코드 → 한국어 이름 (실제 API가 emplymShpNm 자리에 코드를 반환하는 경우 폴백)
+const EMPLYMSHP_NAME: Record<string, string> = {
+  CM0101: "정규직",
+  CM0102: "계약직",
+  CM0103: "시간제일자리",
+  CM0104: "일당직",
+  CM0105: "기타",
+};
+
 interface SenuriJobItem {
   jobId: string;
   recrtTitle: string;
@@ -127,7 +136,7 @@ function toJob(item: SenuriJobItem): Job {
     wageKrwPerHour: 9620, // 명세에 시급이 없어서 최저시급으로 가정
     hoursPerWeek: 0,
     timeSlot: inferTimeSlot(item),
-    schedule: `${item.emplymShpNm} · 접수 ${item.frDd}~${item.toDd}`,
+    schedule: `${EMPLYMSHP_NAME[item.emplymShp] ?? item.emplymShpNm} · 접수 ${item.frDd}~${item.toDd}`,
     requirements: [item.acptMthd ? `접수: ${item.acptMthd}` : "기관 문의"],
     applyUrl: "https://www.work.go.kr/senuri/",
     contactPhone: "",

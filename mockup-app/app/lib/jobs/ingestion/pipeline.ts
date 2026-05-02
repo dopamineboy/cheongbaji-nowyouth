@@ -3,6 +3,7 @@
 // 시니어 일자리 매칭 보고서 §3.4 갱신 주기 표 구현.
 
 import type { Job } from "../../types";
+import { getStore } from "../../store";
 import { kordiAdapter } from "./adapters/kordi";
 import { manualAdapter } from "./adapters/manual";
 import { municipalAdapter } from "./adapters/municipal";
@@ -147,6 +148,11 @@ export async function runIngestion(
 
   const deduped = dedupeJobs(all);
 
+  // 결과를 store에 반영해서 /jobs · 홈 피드 · 매칭 모두 진짜 데이터로
+  if (deduped.length > 0) {
+    getStore().jobs = deduped;
+  }
+
   return {
     startedAt,
     endedAt: new Date().toISOString(),
@@ -154,6 +160,21 @@ export async function runIngestion(
     results,
     finalCount: deduped.length,
   };
+}
+
+/**
+ * /jobs · 홈 등에서 호출 — 게으른 첫 동기화.
+ * 키가 있고 한 번도 동기화 안 됐으면 즉시 실행.
+ */
+export async function ensureJobsLoaded(): Promise<void> {
+  const store = getStore();
+  // sample 시드 그대로면 (기본 길이 36) + 키 있으면 첫 ingestion
+  const lastSyncedAny = Array.from(
+    (globalThis.__cheongbajiJobsLastSync ?? new Map()).values(),
+  ).some((v) => v > 0);
+  if (!lastSyncedAny && process.env.KORDI_API_KEY) {
+    await runIngestion({ only: ["kordi"] });
+  }
 }
 
 export function adapterStatus(): {

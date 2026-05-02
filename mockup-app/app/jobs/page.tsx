@@ -4,7 +4,10 @@
 import Link from "next/link";
 import type { ScoredJob } from "../lib/jobs/match";
 import { matchJobsForUser } from "../lib/jobs/match";
+import { ensureJobsLoaded } from "../lib/jobs/ingestion/pipeline";
 import { getDemoUserId, getStore, getUser } from "../lib/store";
+
+export const dynamic = "force-dynamic";
 
 function pickedAsLabel(p?: ScoredJob["pickedAs"]): { text: string; color: string } | null {
   if (!p) return null;
@@ -111,7 +114,8 @@ function TabBar() {
   );
 }
 
-export default function JobsPage() {
+export default async function JobsPage() {
+  await ensureJobsLoaded();
   const user = getUser(getDemoUserId());
   const allJobs = getStore().jobs;
   const top5 = user ? matchJobsForUser(user, allJobs) : [];

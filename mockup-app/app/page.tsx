@@ -9,6 +9,7 @@ import {
   getUser,
 } from "./lib/store";
 import { matchJobsForUser } from "./lib/jobs/match";
+import { ensureJobsLoaded } from "./lib/jobs/ingestion/pipeline";
 import { loadAllBenefits } from "./lib/welfare/content";
 import {
   matchBenefits,
@@ -143,6 +144,8 @@ export default async function Home() {
   if (!(await isOnboarded())) {
     redirect("/welcome");
   }
+
+  await ensureJobsLoaded();
 
   const user = getUser(getDemoUserId());
   if (!user) return null;
