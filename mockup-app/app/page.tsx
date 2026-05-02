@@ -16,19 +16,23 @@ import {
 import { toWelfareProfile } from "./lib/welfare/adapter";
 import { isOnboarded } from "./lib/auth";
 import { getCurrentUser } from "./lib/current-user";
+import RestartButton from "./components/restart-button";
 
 export const dynamic = "force-dynamic";
 
 function GreetingHeader({ name, dong }: { name: string; dong: string }) {
   return (
-    <header className="px-5 pt-6 pb-4">
-      <p className="text-[15px] font-medium text-[var(--color-muted)]">
-        청바지 · 청춘은 바로 지금
-      </p>
-      <h1 className="mt-1 text-[24px] font-extrabold text-[var(--color-text)]">
-        안녕하세요, <span className="text-[var(--color-primary)]">{name}</span>님
-      </h1>
-      <p className="mt-1 text-[14px] text-[var(--color-muted)]">{dong}</p>
+    <header className="flex items-start justify-between px-5 pt-6 pb-4">
+      <div>
+        <p className="text-[15px] font-medium text-[var(--color-muted)]">
+          청바지 · 청춘은 바로 지금
+        </p>
+        <h1 className="mt-1 text-[24px] font-extrabold text-[var(--color-text)]">
+          안녕하세요, <span className="text-[var(--color-primary)]">{name}</span>님
+        </h1>
+        <p className="mt-1 text-[14px] text-[var(--color-muted)]">{dong}</p>
+      </div>
+      <RestartButton />
     </header>
   );
 }
