@@ -353,11 +353,22 @@ export default function OnboardingFlow() {
           </div>
 
           <h2 className="mt-4 text-[20px] font-extrabold text-[var(--color-text)]">
-            한 달 가구 소득은 대략 어느 정도세요?
-            <span className="ml-1 text-[14px] font-medium text-[var(--color-muted)]">
-              (대략적으로 OK · 생략 가능)
-            </span>
+            한 달 <span className="text-[var(--color-primary)]">가구 전체</span> 소득
           </h2>
+          <div className="rounded-xl bg-[var(--bg-soft-yellow)] border border-[var(--color-accent)]/40 p-3">
+            <p className="text-[13px] leading-relaxed text-[var(--color-text)]">
+              <span className="font-bold">⚠ 중요:</span>{" "}
+              {s.household === "single"
+                ? "혼자 사시니 본인 한 달 소득을 적어주세요."
+                : s.household === "couple"
+                ? "부부 두 분의 한 달 소득을 모두 합산한 금액이에요."
+                : s.household === "with_family"
+                ? "함께 사시는 가족 전원의 한 달 소득을 모두 합산한 금액이에요."
+                : "가구 전체(본인+배우자+가족) 한 달 소득을 모두 합산한 금액이에요."}
+              <br />
+              <span className="text-[var(--color-muted)]">대략적으로 OK · 생략 가능</span>
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {[
               { v: 500_000, l: "50만원 이하" },
@@ -365,6 +376,8 @@ export default function OnboardingFlow() {
               { v: 1_500_000, l: "약 150만원" },
               { v: 2_000_000, l: "약 200만원" },
               { v: 3_000_000, l: "약 300만원" },
+              { v: 4_000_000, l: "약 400만원" },
+              { v: 5_000_000, l: "약 500만원" },
               { v: null, l: "잘 모르겠어요" },
             ].map((opt) => (
               <button

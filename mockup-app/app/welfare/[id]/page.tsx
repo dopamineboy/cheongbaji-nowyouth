@@ -162,8 +162,11 @@ export default async function WelfareDetailPage({
               </li>
               {user.monthlyIncomeKrw !== null && incomeLimit !== undefined && (
                 <li>
-                  <span className="font-bold">월 소득: </span>
+                  <span className="font-bold">가구 합산 월 소득: </span>
                   약 {user.monthlyIncomeKrw.toLocaleString("ko-KR")}원
+                  <span className="ml-1 text-[12px] text-[var(--color-muted)]">
+                    (입력하신 값)
+                  </span>
                   {user.monthlyIncomeKrw <= incomeLimit ? (
                     <span className="mt-1 block font-bold text-[var(--color-success)]">
                       → 소득 기준 충족 (기준 {incomeLimit.toLocaleString("ko-KR")}원 이하)
@@ -177,6 +180,10 @@ export default async function WelfareDetailPage({
               )}
             </ul>
           </div>
+          <p className="mt-2 text-[12px] leading-relaxed text-[var(--color-muted)]">
+            ⚠ 실제 자격 판정은 <strong>소득인정액</strong>(가구 전체 소득 + 재산의 월 환산)을 기준으로 하며,{" "}
+            가구특성지출·재산공제 등이 추가로 반영됩니다. 정확한 자격은 주민센터·복지로에서 다시 확인해주세요.
+          </p>
         </section>
       )}
 
