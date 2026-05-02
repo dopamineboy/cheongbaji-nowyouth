@@ -250,49 +250,82 @@ export default function OnboardingFlow() {
             ))}
           </div>
 
-          <h2 className="mt-4 text-[20px] font-extrabold text-[var(--color-text)]">
-            거주하시는 시·도
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {REGIONS.slice(0, 6).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setS({ ...s, region: r, district: null })}
-                className={`rounded-2xl py-3 text-[16px] font-bold ${
-                  s.region === r
-                    ? "bg-[var(--color-primary)] text-white"
-                    : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
+          <div className="mt-2 rounded-2xl border-2 border-[var(--color-primary)]/30 bg-[var(--bg-soft-blue)] p-4">
+            <h2 className="text-[20px] font-extrabold text-[var(--color-text)]">
+              📍 거주 지역
+            </h2>
+            <p className="mt-1 text-[13px] text-[var(--color-muted)]">
+              혜택·일자리·이웃 매칭의 핵심이에요. 시·도와 시·군·구를 모두 골라주세요.
+            </p>
 
-          {s.region === "서울특별시" && (
-            <>
-              <p className="mt-2 text-[15px] font-bold text-[var(--color-text)]">
-                자치구
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {SEOUL_GU.map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => setS({ ...s, district: g })}
-                    className={`rounded-xl py-2 text-[14px] font-semibold ${
-                      s.district === g
-                        ? "bg-[var(--color-accent)] text-white"
-                        : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
+            <p className="mt-4 mb-2 text-[14px] font-bold text-[var(--color-text)]">
+              1) 시·도 (전체 17개)
+            </p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {REGIONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setS({ ...s, region: r, district: null })}
+                  className={`rounded-xl py-2 text-[12px] font-bold leading-tight ${
+                    s.region === r
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                  }`}
+                >
+                  {r.replace("특별시", "").replace("광역시", "").replace("특별자치도", "").replace("특별자치시", "")}
+                </button>
+              ))}
+            </div>
+
+            {s.region === "서울특별시" && (
+              <>
+                <p className="mt-4 mb-2 text-[14px] font-bold text-[var(--color-text)]">
+                  2) 자치구 ← <span className="text-[var(--color-urgent)]">선택 필수</span>
+                </p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {SEOUL_GU.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setS({ ...s, district: g })}
+                      className={`rounded-lg py-2 text-[12px] font-semibold ${
+                        s.district === g
+                          ? "bg-[var(--color-accent)] text-white"
+                          : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {s.region && s.region !== "서울특별시" && (
+              <div className="mt-4 rounded-xl bg-white p-3">
+                <p className="text-[14px] font-bold text-[var(--color-text)]">
+                  2) 시·군·구 직접 입력
+                </p>
+                <input
+                  type="text"
+                  placeholder="예: 수원시 영통구"
+                  value={s.district ?? ""}
+                  onChange={(e) => setS({ ...s, district: e.target.value })}
+                  className="mt-2 w-full rounded-lg border-2 border-[var(--color-border)] bg-white px-3 py-2 text-[15px]"
+                />
+                <p className="mt-1 text-[11px] text-[var(--color-muted)]">
+                  💡 서울 외 지역은 텍스트로 입력해주세요. 카카오 지도가 자동 좌표 변환합니다.
+                </p>
               </div>
-            </>
-          )}
+            )}
+
+            {s.region && (
+              <p className="mt-3 text-[13px] font-bold text-[var(--color-success)]">
+                ✓ {s.region} {s.district ?? "(시·군·구 선택해주세요)"}
+              </p>
+            )}
+          </div>
 
           <h2 className="mt-4 text-[20px] font-extrabold text-[var(--color-text)]">
             가구 형태
@@ -352,11 +385,22 @@ export default function OnboardingFlow() {
           <button
             type="button"
             onClick={() => goNext(2)}
-            disabled={!s.birthYear || !s.region || !s.household}
+            disabled={
+              !s.birthYear ||
+              !s.region ||
+              !s.district ||
+              !s.district.trim() ||
+              !s.household
+            }
             className="btn-primary mt-6 rounded-2xl py-4 text-[17px] font-bold disabled:opacity-40"
           >
             다음 →
           </button>
+          {(!s.district || !s.district.trim()) && s.region && (
+            <p className="mt-1 text-center text-[13px] text-[var(--color-urgent)]">
+              ⚠ 시·군·구까지 입력하시면 다음으로 갈 수 있어요
+            </p>
+          )}
         </div>
       )}
 

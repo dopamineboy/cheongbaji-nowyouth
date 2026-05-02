@@ -74,15 +74,20 @@ export async function POST(req: NextRequest) {
 
   const dong = body.district ? DONG_BY_DISTRICT[body.district] : null;
 
-  // Kakao Geocoding으로 정확한 좌표 시도 (실패 시 자치구 중심값)
+  // Kakao Geocoding 우선 → 실패 시 정적 매핑 → 그것도 없으면 sampleUser 좌표
   let geoLat = dong?.lat ?? existing.lat;
   let geoLng = dong?.lng ?? existing.lng;
+  let resolvedDongName = dong?.name ?? `${body.region ?? ""} ${body.district ?? ""}`.trim();
+  let resolvedDongCode = dong?.code ?? existing.dongCode;
+
   if (isKakaoAvailable() && body.region && body.district) {
     const fullAddr = `${body.region} ${body.district}`;
     const geo = await geocodeAddress(fullAddr);
     if (geo) {
       geoLat = geo.lat;
       geoLng = geo.lng;
+      // 카카오가 반환한 매칭된 주소명 사용 (더 정확)
+      if (geo.matchedAddress) resolvedDongName = geo.matchedAddress;
     }
   }
 
@@ -98,8 +103,8 @@ export async function POST(req: NextRequest) {
       body.monthlyIncomeKrw === undefined
         ? existing.monthlyIncomeKrw
         : body.monthlyIncomeKrw,
-    dongCode: dong?.code ?? existing.dongCode,
-    dongName: dong?.name ?? existing.dongName,
+    dongCode: resolvedDongCode,
+    dongName: resolvedDongName,
     lat: geoLat,
     lng: geoLng,
     jobPreferences: {
