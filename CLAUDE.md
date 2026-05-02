@@ -196,7 +196,20 @@
 
 ---
 
-## 14. 참고: 샘플 분석 요약 (PetPulse)
+## 14. Windows 환경 도구 사용 가드
+
+**`netstat`을 Bash 도구에서 호출 금지** — Git-Bash 파이프(`netstat | grep | grep`)가 Windows TTY 처리 버그로 무한 hang에 걸려 Claude 세션 자체가 멈춥니다 (2026-05-03 청바지 remote-control 세션 5h+ hang 사례).
+
+대체:
+- 포트 점검 → `Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 3000,3001 }`
+- 프로세스 점검 → `Get-Process` / `Get-CimInstance Win32_Process`
+- HTTP 점검 → `Invoke-WebRequest -TimeoutSec 5`
+
+PowerShell 도구는 즉시 응답합니다.
+
+---
+
+## 15. 참고: 샘플 분석 요약 (PetPulse)
 
 다른 참가자 샘플에서 관찰한 '모두의 창업' 실제 표준:
 
