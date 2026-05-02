@@ -241,12 +241,60 @@ export function diversifiedTop5(scored: ScoredJob[]): ScoredJob[] {
 }
 
 // 통합 함수: Hard Filter → Score → Top-5 Diversity
+// 0건이면 통근 시간을 자동 완화해서 재시도 (30 → 60 → 120분)
+export interface MatchResult {
+  jobs: ScoredJob[];
+  appliedMaxCommuteMinutes: number;
+  relaxed: boolean; // 통근 시간 자동 확장 여부
+  totalCandidates: number;
+}
+
 export function matchJobsForUser(
   user: UserProfile,
   jobs: Job[],
   now: Date = new Date(),
 ): ScoredJob[] {
-  const passed = jobs.filter((j) => passHardFilter(user, j, now));
-  const scored = passed.map((j) => scoreJob(user, j));
-  return diversifiedTop5(scored);
+  return matchJobsWithDetails(user, jobs, now).jobs;
+}
+
+export function matchJobsWithDetails(
+  user: UserProfile,
+  jobs: Job[],
+  now: Date = new Date(),
+): MatchResult {
+  const baseMax = user.jobPreferences?.maxCommuteMinutes ?? 30;
+  const tries = [baseMax, 60, 120, 9999]; // 999는 사실상 무제한
+  let lastResult: ScoredJob[] = [];
+  let appliedMax = baseMax;
+  let relaxed = false;
+
+  for (const maxMin of tries) {
+    appliedMax = maxMin;
+    relaxed = maxMin !== baseMax;
+    // 사용자 프로필 임시 클론 (원본 변경 X)
+    const profile: UserProfile = {
+      ...user,
+      jobPreferences: user.jobPreferences
+        ? { ...user.jobPreferences, maxCommuteMinutes: maxMin }
+        : undefined,
+    };
+    const passed = jobs.filter((j) => passHardFilter(profile, j, now));
+    const scored = passed.map((j) => scoreJob(profile, j));
+    lastResult = diversifiedTop5(scored);
+    if (lastResult.length > 0) {
+      return {
+        jobs: lastResult,
+        appliedMaxCommuteMinutes: maxMin,
+        relaxed,
+        totalCandidates: passed.length,
+      };
+    }
+  }
+
+  return {
+    jobs: lastResult,
+    appliedMaxCommuteMinutes: appliedMax,
+    relaxed,
+    totalCandidates: 0,
+  };
 }

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import type { ScoredJob } from "../lib/jobs/match";
-import { matchJobsForUser } from "../lib/jobs/match";
+import { matchJobsWithDetails } from "../lib/jobs/match";
 import { ensureJobsLoaded } from "../lib/jobs/ingestion/pipeline";
 import { getStore } from "../lib/store";
 import { getCurrentUser } from "../lib/current-user";
@@ -119,7 +119,10 @@ export default async function JobsPage() {
   await ensureJobsLoaded();
   const user = await getCurrentUser();
   const allJobs = getStore().jobs;
-  const top5 = user ? matchJobsForUser(user, allJobs) : [];
+  const result = user
+    ? matchJobsWithDetails(user, allJobs)
+    : { jobs: [], appliedMaxCommuteMinutes: 30, relaxed: false, totalCandidates: 0 };
+  const top5 = result.jobs;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
@@ -143,20 +146,46 @@ export default async function JobsPage() {
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-[40px] font-extrabold leading-tight">{top5.length}</span>
           <span className="text-[18px] font-medium">건 추천</span>
+          {result.totalCandidates > top5.length && (
+            <span className="ml-auto text-[12px] text-white/70">
+              전체 후보 {result.totalCandidates}건
+            </span>
+          )}
         </div>
         <p className="mt-2 text-[14px] text-white/70">
-          나이·거주지·경력·시간 기준 100점 적합도 매칭 (워크넷 + 지자체)
+          나이·거주지·경력·시간 기준 100점 적합도 매칭 (한국노인인력개발원)
         </p>
       </section>
+
+      {result.relaxed && top5.length > 0 && (
+        <div className="mx-5 mb-4 rounded-xl bg-[var(--bg-soft-yellow)] border border-[var(--color-accent)]/40 p-3">
+          <p className="text-[13px] leading-relaxed text-[var(--color-text)]">
+            <span className="font-bold">📍 통근 거리 자동 확장</span>
+            <br />
+            가까운 곳에 맞는 일자리가 적어 통근{" "}
+            {result.appliedMaxCommuteMinutes >= 9999
+              ? "전국"
+              : `${result.appliedMaxCommuteMinutes}분`}{" "}
+            범위까지 보여드립니다. 거리는 카드에서 확인하세요.
+          </p>
+        </div>
+      )}
 
       <section className="flex flex-col gap-4 px-5">
         {top5.map((j) => (
           <JobCard key={j.id} j={j} />
         ))}
         {top5.length === 0 && (
-          <p className="rounded-2xl bg-white p-5 text-center text-[15px] text-[var(--color-muted)]">
-            조건에 맞는 일자리를 찾지 못했어요. 잠시 후 다시 확인해주세요.
-          </p>
+          <div className="rounded-2xl bg-white p-5 text-center">
+            <p className="text-[15px] text-[var(--color-muted)]">
+              지금 우리 동네에 맞는 노인일자리 공고가 없어요.
+            </p>
+            <p className="mt-2 text-[13px] text-[var(--color-muted)]">
+              매일 자동 갱신되며, 새 공고는 즉시 알려드립니다.
+              <br />
+              품앗이 게시판에서 이웃과 연결될 수도 있어요.
+            </p>
+          </div>
         )}
       </section>
 

@@ -208,35 +208,46 @@ export const kordiAdapter: JobAdapter = {
       return [...realSampleJobs];
     }
 
-    const url = new URL(`${KORDI_BASE}/getJobList`);
-    url.searchParams.set("ServiceKey", process.env.KORDI_API_KEY!);
-    url.searchParams.set("pageNo", "1");
-    url.searchParams.set("numOfRows", "100");
+    // 5 페이지(× 100건) = 최대 500건 풀로 확장 — 전국 지역 다양성 확보
+    const PAGES = 5;
+    const PER_PAGE = 100;
+    const allItems: SenuriJobItem[] = [];
 
-    const res = await fetch(url, {
-      next: { revalidate: 60 * 60 * 24 },
-    });
+    for (let p = 1; p <= PAGES; p++) {
+      const url = new URL(`${KORDI_BASE}/getJobList`);
+      url.searchParams.set("ServiceKey", process.env.KORDI_API_KEY!);
+      url.searchParams.set("pageNo", String(p));
+      url.searchParams.set("numOfRows", String(PER_PAGE));
 
-    // HTTP 401 / 500 등 — 키 미활성 또는 API 장애
-    if (!res.ok) {
-      console.warn(`[kordi] HTTP ${res.status} — 키 활성화 대기 또는 일시 장애. sample 폴백.`);
-      return [...realSampleJobs];
+      try {
+        const res = await fetch(url, { next: { revalidate: 60 * 60 * 24 } });
+        if (!res.ok) {
+          console.warn(`[kordi] page ${p} HTTP ${res.status}`);
+          if (p === 1) return [...realSampleJobs]; // 첫 페이지 실패 시 sample 폴백
+          break;
+        }
+        const text = await res.text();
+        const { code, msg } = parseResultCode(text);
+        if (code && code !== "00" && code !== "0000") {
+          console.warn(`[kordi] page ${p} resultCode=${code} (${msg})`);
+          if (p === 1) return [...realSampleJobs];
+          break;
+        }
+        const items = parseSenuriXML(text);
+        if (items.length === 0) break; // 더 이상 데이터 없음
+        allItems.push(...items);
+        if (items.length < PER_PAGE) break; // 마지막 페이지
+      } catch (e) {
+        console.warn(`[kordi] page ${p} error`, e);
+        if (p === 1) return [...realSampleJobs];
+        break;
+      }
     }
 
-    const text = await res.text();
+    if (allItems.length === 0) return [...realSampleJobs];
 
-    // resultCode 검사
-    const { code, msg } = parseResultCode(text);
-    if (code && code !== "00" && code !== "0000") {
-      console.warn(`[kordi] resultCode=${code} (${msg}) — sample 폴백.`);
-      return [...realSampleJobs];
-    }
-
-    const items = parseSenuriXML(text);
-    if (items.length === 0) return [...realSampleJobs];
-
-    // 병렬 geocoding — Kakao 7일 캐시 활용으로 동일 지역명은 1회만
-    const jobs = await Promise.all(items.map((it) => toJob(it)));
+    // 병렬 geocoding — Kakao 7일 캐시 활용 (동일 지역명은 1회만 호출)
+    const jobs = await Promise.all(allItems.map((it) => toJob(it)));
     return jobs;
   },
 };
