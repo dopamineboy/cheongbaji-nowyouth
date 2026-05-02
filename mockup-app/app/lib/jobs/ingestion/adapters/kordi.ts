@@ -1,48 +1,218 @@
-// 한국노인인력개발원 어댑터
-// 갱신 주기: 1일 — 시니어 일자리 매칭 보고서 §3.4
+// 한국노인인력개발원 100세누리 구인정보 API 어댑터
+// 공식 활용가이드 v1.1 (서비스 ID B552474 / SenuriService) 기반.
+// 갱신 주기: 일 1회.
 //
-// ⚠ 실시간 공고 목록 API는 공식 미개방 (2026-04 기준).
-// 데이터 확보 경로:
-//   1) 공공데이터포털 "노인일자리 통합정보" CSV — 매년 12월 업데이트 (정적)
-//   2) 노인일자리포털 (seniorro.or.kr) 크롤링 — robots.txt 확인 필요
-//   3) 기관 정보(기관코드·지역코드·수행기관) 일부 API 제공
+// 환경 변수:
+//   KORDI_API_KEY        — 공공데이터포털에서 발급받은 인증키 (URL-Encode 또는 raw hex)
+//   KORDI_API_ENDPOINT   — 선택. 기본 http://apis.data.go.kr/B552474/SenuriService
 //
-// 현재 구현: env.KORDI_CSV_URL 환경변수 설정 시 CSV 다운로드 → 파싱.
-// 키 없으면 sample-jobs-real.ts 의 정적 데이터 사용.
+// 응답: XML (가이드 표준). 본 어댑터에서 정규식으로 파싱.
 
-import type { Job } from "../../../types";
+import type { Job, JobActivityType, JobDifficulty, TimeSlotJob } from "../../../types";
 import { realSampleJobs } from "../../../sample-jobs-real";
 import type { JobAdapter } from "../types";
 
+const KORDI_BASE =
+  process.env.KORDI_API_ENDPOINT ??
+  "http://apis.data.go.kr/B552474/SenuriService";
+
+// 고용형태 코드 → 활동유형 매핑 (가이드 §4.1 emplymShp)
+const EMPLYMSHP_TO_ACTIVITY: Record<string, JobActivityType> = {
+  CM0101: "민간",      // 정규직
+  CM0102: "민간",      // 계약직
+  CM0103: "시장형",    // 시간제일자리
+  CM0104: "시장형",    // 일당직
+  CM0105: "사회서비스형", // 기타
+};
+
+interface SenuriJobItem {
+  jobId: string;
+  recrtTitle: string;
+  oranNm: string; // 기업명
+  workPlcNm: string;
+  workPlc: string;
+  emplymShp: string;
+  emplymShpNm: string;
+  jobcls: string;
+  jobclsNm: string;
+  frDd: string; // 시작접수일 yyyymmdd
+  toDd: string; // 종료접수일 yyyymmdd
+  deadline: string; // 마감 여부
+  acptMthd: string; // 접수방법
+  stmId: string;
+  stmNm: string;
+}
+
+function parseDate(yyyymmdd: string): Date {
+  if (!/^\d{8}$/.test(yyyymmdd)) return new Date();
+  return new Date(
+    `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}T23:59:59Z`,
+  );
+}
+
+function inferDifficulty(item: SenuriJobItem): JobDifficulty {
+  const t = `${item.recrtTitle} ${item.jobclsNm}`;
+  if (/물류|건설|이사|생산|제조/.test(t)) return "high";
+  if (/안내|응대|돌봄|학습|선생님/.test(t)) return "low";
+  return "mid";
+}
+
+function inferTimeSlot(item: SenuriJobItem): TimeSlotJob {
+  const t = item.recrtTitle;
+  if (/오전|아침/.test(t)) return "morning";
+  if (/오후/.test(t)) return "afternoon";
+  if (/저녁|야간|심야/.test(t)) return "evening";
+  return "flexible";
+}
+
+// 서울 자치구 → 좌표 (Geocoding 안 거치고 가구 중심값으로 근사)
+const SEOUL_GU_LATLNG: Record<string, [number, number]> = {
+  종로구: [37.5734, 126.9789],
+  중구: [37.5641, 126.9979],
+  용산구: [37.5326, 126.9909],
+  성동구: [37.5635, 127.0367],
+  광진구: [37.5384, 127.0822],
+  동대문구: [37.5744, 127.0395],
+  중랑구: [37.6065, 127.0928],
+  성북구: [37.5894, 127.0167],
+  강북구: [37.6396, 127.0257],
+  도봉구: [37.6688, 127.0471],
+  노원구: [37.6541, 127.0568],
+  은평구: [37.6027, 126.9291],
+  서대문구: [37.5793, 126.9368],
+  마포구: [37.5663, 126.9019],
+  양천구: [37.5169, 126.8665],
+  강서구: [37.5509, 126.8495],
+  구로구: [37.4954, 126.8874],
+  금천구: [37.4564, 126.8954],
+  영등포구: [37.5263, 126.8966],
+  동작구: [37.5124, 126.9393],
+  관악구: [37.4784, 126.9516],
+  서초구: [37.4837, 127.0324],
+  강남구: [37.5172, 127.0473],
+  송파구: [37.5145, 127.1059],
+  강동구: [37.5301, 127.1238],
+};
+
+function locateByName(workPlcNm: string): { lat: number; lng: number } {
+  const fallback = { lat: 37.5703, lng: 126.9824 };
+  for (const [gu, [lat, lng]] of Object.entries(SEOUL_GU_LATLNG)) {
+    if (workPlcNm.includes(gu)) return { lat, lng };
+  }
+  return fallback;
+}
+
+function toJob(item: SenuriJobItem): Job {
+  const activity = EMPLYMSHP_TO_ACTIVITY[item.emplymShp] ?? "민간";
+  const { lat, lng } = locateByName(item.workPlcNm);
+  const expiresAt = parseDate(item.toDd).toISOString();
+  return {
+    id: `j-senuri-${item.jobId}`,
+    source: "노인인력개발원",
+    sourceId: item.jobId,
+    title: item.recrtTitle,
+    org: item.oranNm || "(기업 정보 없음)",
+    regionCode: item.workPlc, // 코드 그대로 (행정구역 매핑은 S2)
+    regionName: item.workPlcNm,
+    lat,
+    lng,
+    jobTags: item.jobclsNm ? [item.jobclsNm] : [],
+    activityType: activity,
+    difficulty: inferDifficulty(item),
+    outdoor: false,
+    walkingHeavy: /건설|배달|환경/.test(item.jobclsNm),
+    drivingRequired: /운전|배달/.test(item.jobclsNm),
+    ageMin: 60,
+    agePreferred: null,
+    wageKrwPerHour: 9620, // 명세에 시급이 없어서 최저시급으로 가정
+    hoursPerWeek: 0,
+    timeSlot: inferTimeSlot(item),
+    schedule: `${item.emplymShpNm} · 접수 ${item.frDd}~${item.toDd}`,
+    requirements: [item.acptMthd ? `접수: ${item.acptMthd}` : "기관 문의"],
+    applyUrl: "https://www.work.go.kr/senuri/",
+    contactPhone: "",
+    expiresAt,
+  };
+}
+
+// XML body.items.item[] 파싱 (외부 의존성 없이 정규식)
+function parseSenuriXML(xml: string): SenuriJobItem[] {
+  const result: SenuriJobItem[] = [];
+  const itemRe = /<item>([\s\S]*?)<\/item>/g;
+  let m: RegExpExecArray | null;
+  while ((m = itemRe.exec(xml)) !== null) {
+    const body = m[1];
+    const get = (tag: string): string => {
+      const r = new RegExp(`<${tag}>([\\s\\S]*?)<\/${tag}>`).exec(body);
+      return (r?.[1] ?? "").trim();
+    };
+    result.push({
+      jobId: get("jobId"),
+      recrtTitle: get("recrtTitle"),
+      oranNm: get("oranNm"),
+      workPlcNm: get("workPlcNm"),
+      workPlc: get("workPlc"),
+      emplymShp: get("emplymShp"),
+      emplymShpNm: get("emplymShpNm"),
+      jobcls: get("jobcls"),
+      jobclsNm: get("jobclsNm"),
+      frDd: get("frDd"),
+      toDd: get("toDd"),
+      deadline: get("deadline"),
+      acptMthd: get("acptMthd"),
+      stmId: get("stmId"),
+      stmNm: get("stmNm"),
+    });
+  }
+  return result;
+}
+
+// resultCode 추출 — 00 정상, 그 외 에러
+function parseResultCode(xml: string): { code: string; msg: string } {
+  const code = /<resultCode>(.*?)<\/resultCode>/.exec(xml)?.[1]?.trim() ?? "";
+  const msg = /<resultMsg>(.*?)<\/resultMsg>/.exec(xml)?.[1]?.trim() ?? "";
+  return { code, msg };
+}
+
 export const kordiAdapter: JobAdapter = {
   source: "kordi",
-  refreshIntervalMin: 60 * 24, // 1일
+  refreshIntervalMin: 60 * 24, // 일 1회 (가이드 §4.1)
   isAvailable() {
-    // CSV URL 또는 협약 API 키 둘 중 하나라도 있으면
-    return Boolean(process.env.KORDI_API_KEY || process.env.KORDI_CSV_URL);
+    return Boolean(process.env.KORDI_API_KEY);
   },
   async fetch(): Promise<Job[]> {
-    if (process.env.KORDI_API_KEY) {
-      // 협약 후 공식 API 사용 — 엔드포인트 확정 시 구현
-      const endpoint =
-        process.env.KORDI_API_ENDPOINT ??
-        "https://api.seniorro.or.kr/v1/programs"; // 가상 placeholder
-      const res = await fetch(endpoint, {
-        headers: { Authorization: `Bearer ${process.env.KORDI_API_KEY}` },
-        next: { revalidate: 60 * 60 * 24 },
-      });
-      if (!res.ok) throw new Error(`kordi ${res.status}`);
-      const json = (await res.json()) as { jobs?: Job[] };
-      return json.jobs ?? [];
-    }
-
-    if (process.env.KORDI_CSV_URL) {
-      // CSV 다운로드 → 파싱 (간단화: build 스크립트 사전 변환 권장)
-      // 여기서는 폴백 — 정적 변환된 realSampleJobs 사용
+    if (!process.env.KORDI_API_KEY) {
+      // 키 없으면 정적 시드(2020 CSV 기반 36건)로 폴백
       return [...realSampleJobs];
     }
 
-    // 폴백: 사전 변환된 정적 데이터
-    return [...realSampleJobs];
+    const url = new URL(`${KORDI_BASE}/getJobList`);
+    url.searchParams.set("ServiceKey", process.env.KORDI_API_KEY!);
+    url.searchParams.set("pageNo", "1");
+    url.searchParams.set("numOfRows", "100");
+
+    const res = await fetch(url, {
+      next: { revalidate: 60 * 60 * 24 },
+    });
+
+    // HTTP 401 / 500 등 — 키 미활성 또는 API 장애
+    if (!res.ok) {
+      console.warn(`[kordi] HTTP ${res.status} — 키 활성화 대기 또는 일시 장애. sample 폴백.`);
+      return [...realSampleJobs];
+    }
+
+    const text = await res.text();
+
+    // resultCode 검사
+    const { code, msg } = parseResultCode(text);
+    if (code && code !== "00" && code !== "0000") {
+      console.warn(`[kordi] resultCode=${code} (${msg}) — sample 폴백.`);
+      return [...realSampleJobs];
+    }
+
+    const items = parseSenuriXML(text);
+    if (items.length === 0) return [...realSampleJobs];
+
+    return items.map(toJob);
   },
 };
