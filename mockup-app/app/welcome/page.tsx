@@ -13,15 +13,27 @@ export default async function WelcomePage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col px-6 pb-10">
-      {/* 로고 */}
-      <header className="flex flex-col items-center pt-10 pb-6">
-        <p className="text-[15px] font-medium text-[var(--color-muted)]">
-          청춘은 바로 지금
-        </p>
-        <h1 className="mt-2 text-[60px] font-extrabold leading-none text-[var(--color-primary)]">
-          청바지
+      {/* 슬로건 + 축약 브랜드 */}
+      <header className="flex flex-col items-center pt-12 pb-8">
+        {/* 메인 슬로건 — 약자 글자 색상 강조 */}
+        <h1 className="text-center text-[44px] font-black leading-[1.15] tracking-tight text-[var(--color-text)]">
+          <span className="text-[var(--color-primary)]">청</span>춘은
+          <br />
+          <span className="text-[var(--color-primary)]">바</span>로{" "}
+          <span className="text-[var(--color-primary)]">지</span>금
         </h1>
-        <p className="mt-2 text-[14px] text-[var(--color-muted)]">
+
+        {/* 축약 브랜드 — 점 사이 강조 */}
+        <div className="mt-6 flex items-center gap-3">
+          <span className="h-[1px] w-8 bg-[var(--color-primary)]/40" />
+          <p className="text-[26px] font-black tracking-[0.4em] text-[var(--color-primary)]">
+            청·바·지
+          </p>
+          <span className="h-[1px] w-8 bg-[var(--color-primary)]/40" />
+        </div>
+
+        {/* 영문 부제 */}
+        <p className="mt-3 text-[13px] font-medium tracking-wide text-[var(--color-muted)]">
           Now Is Youth · 시니어 라이프스타일
         </p>
       </header>
