@@ -13,27 +13,41 @@ export default async function WelcomePage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col px-6 pb-10">
-      {/* 슬로건 + 축약 브랜드 */}
+      {/* 약자 풀이 — 청·바·지 + 춘은·로·금 */}
       <header className="flex flex-col items-center pt-12 pb-8">
-        {/* 메인 슬로건 — 약자 글자 색상 강조 */}
-        <h1 className="text-center text-[44px] font-black leading-[1.15] tracking-tight text-[var(--color-text)]">
-          <span className="text-[var(--color-primary)]">청</span>춘은
-          <br />
-          <span className="text-[var(--color-primary)]">바</span>로{" "}
-          <span className="text-[var(--color-primary)]">지</span>금
-        </h1>
-
-        {/* 축약 브랜드 — 점 사이 강조 */}
-        <div className="mt-6 flex items-center gap-3">
-          <span className="h-[1px] w-8 bg-[var(--color-primary)]/40" />
-          <p className="text-[26px] font-black tracking-[0.4em] text-[var(--color-primary)]">
-            청·바·지
-          </p>
-          <span className="h-[1px] w-8 bg-[var(--color-primary)]/40" />
+        <div className="flex items-baseline gap-1.5">
+          {[
+            { acro: "청", rest: "춘은" },
+            { acro: "바", rest: "로" },
+            { acro: "지", rest: "금" },
+          ].map((p, i) => (
+            <div key={i} className="contents">
+              {/* 약자 글자 + 풀이 한 칸 */}
+              <div className="flex flex-col items-center">
+                <span className="text-[68px] font-black leading-none text-[var(--color-primary)]">
+                  {p.acro}
+                </span>
+                <span className="mt-1 text-[18px] font-bold text-[var(--color-text)]">
+                  {p.rest}
+                </span>
+              </div>
+              {/* 단어 사이 점 */}
+              {i < 2 && (
+                <span className="self-start pt-6 text-[28px] font-bold text-[var(--color-primary)]/35">
+                  ·
+                </span>
+              )}
+            </div>
+          ))}
         </div>
 
+        {/* 풀어쓴 슬로건 — 작게 부연 */}
+        <p className="mt-5 text-[16px] font-bold tracking-wide text-[var(--color-muted)]">
+          = 청춘은 바로 지금 =
+        </p>
+
         {/* 영문 부제 */}
-        <p className="mt-3 text-[13px] font-medium tracking-wide text-[var(--color-muted)]">
+        <p className="mt-2 text-[12px] font-medium tracking-wide text-[var(--color-muted)]">
           Now Is Youth · 시니어 라이프스타일
         </p>
       </header>
