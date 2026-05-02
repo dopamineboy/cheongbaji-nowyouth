@@ -8,8 +8,13 @@ import type { Job, JobActivityType, JobDifficulty, TimeSlotJob } from "../../../
 import type { JobAdapter } from "../types";
 
 // 워크넷 채용정보 API (공공데이터포털 / work24) — 고령자 채용정보 포함 일반 채용 목록.
-// 사용자 확인 endpoint (2026-05): callOpenApiSvcInfo210L01.do
-// 키: env.WORKNET_API_KEY 에 일반 인증키 입력 후 어댑터 자동 활성화.
+//
+// ⚠ 발급 제약 (2026-05 기준):
+//   - work24 / 공공데이터포털 모두 **사업자등록증 필수** — 개인 개발자 신청 불가.
+//   - 우리 사업: 법인 설립 또는 실증 지자체 협업 명의로 시드 단계에서 발급.
+//   - 발급 즉시 env.WORKNET_API_KEY 만 채우면 어댑터 자동 활성화 (코드 변경 없음).
+//
+// 사용자 확인 endpoint: callOpenApiSvcInfo210L01.do
 const WORKNET_ENDPOINT =
   process.env.WORKNET_API_ENDPOINT ??
   "https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo210L01.do";
