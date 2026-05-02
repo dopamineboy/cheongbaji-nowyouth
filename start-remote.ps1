@@ -11,7 +11,7 @@ Write-Host "==============================================" -ForegroundColor Cya
 Write-Host ""
 
 # 프로젝트 디렉터리 이동
-$projectDir = "C:\Users\User\Desktop\모두의창업-도우다"
+$projectDir = "C:\Users\User\Desktop\cheongbaji-nowyouth"
 Set-Location $projectDir
 Write-Host "프로젝트 디렉터리: $projectDir" -ForegroundColor Green
 Write-Host ""
