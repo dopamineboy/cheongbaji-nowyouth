@@ -7,6 +7,8 @@ import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { getDemoUserId, getStore } from "../../../lib/store";
 import type { JobActivityType, TimeSlot, UserProfile } from "../../../lib/types";
+import { geocodeAddress, isKakaoAvailable } from "../../../lib/geo/kakao";
+import { saveProfileToCookie, clearAllSessionCookies } from "../../../lib/auth";
 
 const COOKIE_NAME = "cb_onboarded";
 const COOKIE_TTL = 60 * 60 * 24 * 30; // 30일
@@ -72,6 +74,18 @@ export async function POST(req: NextRequest) {
 
   const dong = body.district ? DONG_BY_DISTRICT[body.district] : null;
 
+  // Kakao Geocoding으로 정확한 좌표 시도 (실패 시 자치구 중심값)
+  let geoLat = dong?.lat ?? existing.lat;
+  let geoLng = dong?.lng ?? existing.lng;
+  if (isKakaoAvailable() && body.region && body.district) {
+    const fullAddr = `${body.region} ${body.district}`;
+    const geo = await geocodeAddress(fullAddr);
+    if (geo) {
+      geoLat = geo.lat;
+      geoLng = geo.lng;
+    }
+  }
+
   const updated: UserProfile = {
     ...existing,
     birthYear: body.birthYear,
@@ -86,8 +100,8 @@ export async function POST(req: NextRequest) {
         : body.monthlyIncomeKrw,
     dongCode: dong?.code ?? existing.dongCode,
     dongName: dong?.name ?? existing.dongName,
-    lat: dong?.lat ?? existing.lat,
-    lng: dong?.lng ?? existing.lng,
+    lat: geoLat,
+    lng: geoLng,
     jobPreferences: {
       ...(existing.jobPreferences ?? {
         preferredJobTypes: [],
@@ -120,19 +134,34 @@ export async function POST(req: NextRequest) {
   // 온보딩 완료 쿠키
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, "1", {
-    httpOnly: false, // 클라이언트에서도 확인 가능 (UX)
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: COOKIE_TTL,
     path: "/",
   });
 
+  // 프로필을 쿠키에 영속화 — Vercel cold start 시 in-memory store 리셋되어도 복원
+  await saveProfileToCookie({
+    name: updated.name,
+    birthYear: updated.birthYear,
+    region: updated.region,
+    district: updated.district,
+    dongCode: updated.dongCode,
+    dongName: updated.dongName,
+    household: updated.household,
+    householdSize: updated.householdSize,
+    monthlyIncomeKrw: updated.monthlyIncomeKrw,
+    lat: updated.lat,
+    lng: updated.lng,
+    jobPreferences: updated.jobPreferences,
+  });
+
   return Response.json({ ok: true, data: { userId, profile: updated } });
 }
 
 export async function DELETE() {
-  // 온보딩 리셋 (테스트·재인터뷰용)
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  // 온보딩 리셋 (테스트·재인터뷰용) — 프로필도 함께 삭제
+  await clearAllSessionCookies();
   return Response.json({ ok: true });
 }

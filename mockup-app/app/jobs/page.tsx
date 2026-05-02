@@ -5,7 +5,8 @@ import Link from "next/link";
 import type { ScoredJob } from "../lib/jobs/match";
 import { matchJobsForUser } from "../lib/jobs/match";
 import { ensureJobsLoaded } from "../lib/jobs/ingestion/pipeline";
-import { getDemoUserId, getStore, getUser } from "../lib/store";
+import { getStore } from "../lib/store";
+import { getCurrentUser } from "../lib/current-user";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +117,7 @@ function TabBar() {
 
 export default async function JobsPage() {
   await ensureJobsLoaded();
-  const user = getUser(getDemoUserId());
+  const user = await getCurrentUser();
   const allJobs = getStore().jobs;
   const top5 = user ? matchJobsForUser(user, allJobs) : [];
 

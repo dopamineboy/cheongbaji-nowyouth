@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { getBalance, getDemoUserId, getLedger, getUser } from "../lib/store";
+import { getBalance, getLedger } from "../lib/store";
+import { getCurrentUser } from "../lib/current-user";
 import { rewards, totalRedeemed, isRedeemable } from "../lib/rewards";
 import RedeemCard from "./redeem-card";
 
 export const dynamic = "force-dynamic";
 
-export default function RewardsPage() {
-  const user = getUser(getDemoUserId());
+export default async function RewardsPage() {
+  const user = await getCurrentUser();
   const balance = user ? getBalance(user.id) : 0;
   const ledger = user ? getLedger(user.id, 100) : [];
   const totalRedeemP = totalRedeemed(ledger);

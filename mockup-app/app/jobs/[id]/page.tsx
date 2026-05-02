@@ -1,7 +1,8 @@
 // 일자리 디테일 페이지
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDemoUserId, getStore, getUser } from "../../lib/store";
+import { getStore } from "../../lib/store";
+import { getCurrentUser } from "../../lib/current-user";
 import { haversineKm, scoreJob } from "../../lib/jobs/match";
 import ApplyButton from "./apply-button";
 
@@ -32,7 +33,7 @@ export default async function JobDetailPage({
   const { id } = await params;
   const job = getStore().jobs.find((j) => j.id === id);
   if (!job) notFound();
-  const user = getUser(getDemoUserId());
+  const user = await getCurrentUser();
   const distanceKm = user
     ? haversineKm(user.lat, user.lng, job.lat, job.lng)
     : 0;

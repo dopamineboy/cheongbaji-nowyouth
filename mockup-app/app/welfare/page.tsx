@@ -1,6 +1,6 @@
 // ① 복지 알리미 — 도우다 matcher 기반
 import Link from "next/link";
-import { getDemoUserId, getUser } from "../lib/store";
+import { getCurrentUser } from "../lib/current-user";
 import { loadAllBenefits } from "../lib/welfare/content";
 import {
   matchBenefits,
@@ -167,8 +167,10 @@ function TabBar() {
   );
 }
 
-export default function WelfarePage() {
-  const user = getUser(getDemoUserId());
+export const dynamic = "force-dynamic";
+
+export default async function WelfarePage() {
+  const user = await getCurrentUser();
   const benefits = loadAllBenefits();
   const matched = user ? matchBenefits(toWelfareProfile(user), benefits) : [];
 

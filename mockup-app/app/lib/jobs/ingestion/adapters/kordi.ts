@@ -10,6 +10,7 @@
 
 import type { Job, JobActivityType, JobDifficulty, TimeSlotJob } from "../../../types";
 import { realSampleJobs } from "../../../sample-jobs-real";
+import { geocodeKeyword, isKakaoAvailable } from "../../../geo/kakao";
 import type { JobAdapter } from "../types";
 
 const KORDI_BASE =
@@ -103,17 +104,29 @@ const SEOUL_GU_LATLNG: Record<string, [number, number]> = {
   강동구: [37.5301, 127.1238],
 };
 
-function locateByName(workPlcNm: string): { lat: number; lng: number } {
-  const fallback = { lat: 37.5703, lng: 126.9824 };
+function locateByNameSync(workPlcNm: string): { lat: number; lng: number } | null {
   for (const [gu, [lat, lng]] of Object.entries(SEOUL_GU_LATLNG)) {
     if (workPlcNm.includes(gu)) return { lat, lng };
   }
-  return fallback;
+  return null;
 }
 
-function toJob(item: SenuriJobItem): Job {
+/** 서울 자치구 fallback 우선 → 안 맞으면 Kakao geocoding (서울 외 지역) → 둘 다 실패 시 종로 중심값 */
+async function locateByName(workPlcNm: string): Promise<{ lat: number; lng: number }> {
+  const sync = locateByNameSync(workPlcNm);
+  if (sync) return sync;
+
+  if (isKakaoAvailable() && workPlcNm.trim()) {
+    const geo = await geocodeKeyword(workPlcNm);
+    if (geo) return { lat: geo.lat, lng: geo.lng };
+  }
+
+  return { lat: 37.5703, lng: 126.9824 }; // 최종 폴백 (종로구)
+}
+
+async function toJob(item: SenuriJobItem): Promise<Job> {
   const activity = EMPLYMSHP_TO_ACTIVITY[item.emplymShp] ?? "민간";
-  const { lat, lng } = locateByName(item.workPlcNm);
+  const { lat, lng } = await locateByName(item.workPlcNm);
   const expiresAt = parseDate(item.toDd).toISOString();
   return {
     id: `j-senuri-${item.jobId}`,
@@ -222,6 +235,8 @@ export const kordiAdapter: JobAdapter = {
     const items = parseSenuriXML(text);
     if (items.length === 0) return [...realSampleJobs];
 
-    return items.map(toJob);
+    // 병렬 geocoding — Kakao 7일 캐시 활용으로 동일 지역명은 1회만
+    const jobs = await Promise.all(items.map((it) => toJob(it)));
+    return jobs;
   },
 };

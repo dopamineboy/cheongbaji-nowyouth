@@ -1,7 +1,10 @@
 // ④ 품앗이 커뮤니티 — 우리 동 게시판
 import Link from "next/link";
 import type { PoomasiCategory, PoomasiPost } from "../lib/types";
-import { getDemoUserId, getStore, getUser } from "../lib/store";
+import { getStore } from "../lib/store";
+import { getCurrentUser } from "../lib/current-user";
+
+export const dynamic = "force-dynamic";
 
 const CAT_LABEL: Record<PoomasiCategory, { ko: string; icon: string }> = {
   life_help: { ko: "생활 도움", icon: "🏥" },
@@ -89,8 +92,8 @@ function TabBar() {
   );
 }
 
-export default function CommunityPage() {
-  const user = getUser(getDemoUserId());
+export default async function CommunityPage() {
+  const user = await getCurrentUser();
   const all = getStore().poomasi;
   const myDong = user?.dongCode ?? "";
   const open = all

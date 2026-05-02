@@ -1,11 +1,13 @@
 // 품앗이 글쓰기 페이지
 import Link from "next/link";
 import { Suspense } from "react";
-import { getDemoUserId, getUser } from "../../lib/store";
+import { getCurrentUser } from "../../lib/current-user";
 import PoomasiForm from "./poomasi-form";
 
-export default function NewPoomasiPage() {
-  const user = getUser(getDemoUserId());
+export const dynamic = "force-dynamic";
+
+export default async function NewPoomasiPage() {
+  const user = await getCurrentUser();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-12">

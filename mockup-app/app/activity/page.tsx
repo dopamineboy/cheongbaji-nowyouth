@@ -1,6 +1,7 @@
 // ② 활동 리워드 — 포인트 잔액·주간 차트·게임 허브·배지·이력
 import Link from "next/link";
-import { getBalance, getDemoUserId, getLedger, getUser } from "../lib/store";
+import { getBalance, getLedger } from "../lib/store";
+import { getCurrentUser } from "../lib/current-user";
 import { computeBadges } from "../lib/badges";
 import GameMission from "./game-mission";
 import HangulMission from "./hangul-mission";
@@ -87,8 +88,8 @@ function TabBar() {
 
 export const dynamic = "force-dynamic";
 
-export default function ActivityPage() {
-  const user = getUser(getDemoUserId());
+export default async function ActivityPage() {
+  const user = await getCurrentUser();
   const balance = user ? getBalance(user.id) : 0;
   const recent = user ? getLedger(user.id, 12) : [];
   const all = user ? getLedger(user.id, 1000) : [];

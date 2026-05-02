@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadBenefitById } from "../../lib/welfare/content";
-import { getDemoUserId, getUser } from "../../lib/store";
+import { getCurrentUser } from "../../lib/current-user";
 
 const DOC_GUIDE: Record<string, { how: string; url?: string; urlLabel?: string }> = {
   신분증: { how: "주민등록증 또는 운전면허증을 준비하세요. 이미 가지고 계실 거예요." },
@@ -69,7 +69,7 @@ export default async function WelfareDetailPage({
   const b = loadBenefitById(id);
   if (!b) notFound();
 
-  const user = getUser(getDemoUserId());
+  const user = await getCurrentUser();
 
   const amountKey: "single" | "couple" =
     (user?.householdSize ?? 1) >= 2 ? "couple" : "single";

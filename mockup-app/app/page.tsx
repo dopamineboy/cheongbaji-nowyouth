@@ -4,9 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   getBalance,
-  getDemoUserId,
   getStore,
-  getUser,
 } from "./lib/store";
 import { matchJobsForUser } from "./lib/jobs/match";
 import { ensureJobsLoaded } from "./lib/jobs/ingestion/pipeline";
@@ -17,6 +15,7 @@ import {
 } from "./lib/welfare/matcher";
 import { toWelfareProfile } from "./lib/welfare/adapter";
 import { isOnboarded } from "./lib/auth";
+import { getCurrentUser } from "./lib/current-user";
 
 export const dynamic = "force-dynamic";
 
@@ -147,7 +146,7 @@ export default async function Home() {
 
   await ensureJobsLoaded();
 
-  const user = getUser(getDemoUserId());
+  const user = await getCurrentUser();
   if (!user) return null;
 
   const balance = getBalance(user.id);
