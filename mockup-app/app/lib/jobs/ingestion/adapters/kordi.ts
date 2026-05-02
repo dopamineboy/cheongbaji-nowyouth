@@ -75,7 +75,7 @@ function inferTimeSlot(item: SenuriJobItem): TimeSlotJob {
   return "flexible";
 }
 
-// 서울 자치구 → 좌표 (Geocoding 안 거치고 가구 중심값으로 근사)
+// 서울 자치구 → 좌표 (Geocoding 안 거치고 자치구 중심값으로 근사)
 const SEOUL_GU_LATLNG: Record<string, [number, number]> = {
   종로구: [37.5734, 126.9789],
   중구: [37.5641, 126.9979],
@@ -104,9 +104,39 @@ const SEOUL_GU_LATLNG: Record<string, [number, number]> = {
   강동구: [37.5301, 127.1238],
 };
 
+// 17개 광역 시·도 중심 좌표 — workPlcNm prefix로 매칭해서 빠른 폴백
+// (KORDI workPlcNm 형식: "서울 강남구", "부산 해운대구", "강원 원주시" 등)
+const REGION_PREFIX_LATLNG: Record<string, [number, number]> = {
+  서울: [37.5665, 126.978], // 서울 자치구는 SEOUL_GU_LATLNG 우선 매칭
+  부산: [35.1796, 129.0756],
+  대구: [35.8714, 128.6014],
+  인천: [37.4563, 126.7052],
+  광주: [35.1595, 126.8526],
+  대전: [36.3504, 127.3845],
+  울산: [35.5384, 129.3114],
+  세종: [36.4801, 127.289],
+  경기: [37.4138, 127.5183],
+  강원: [37.8228, 128.1555],
+  충북: [36.6357, 127.4917],
+  충남: [36.5184, 126.8],
+  전북: [35.7175, 127.153],
+  전남: [34.8161, 126.463],
+  경북: [36.4919, 128.8889],
+  경남: [35.4606, 128.2132],
+  제주: [33.4996, 126.5312],
+};
+
 function locateByNameSync(workPlcNm: string): { lat: number; lng: number } | null {
-  for (const [gu, [lat, lng]] of Object.entries(SEOUL_GU_LATLNG)) {
-    if (workPlcNm.includes(gu)) return { lat, lng };
+  // 1) 서울 명시 시작 → 자치구 정확 매칭 (다른 시의 동명 자치구 오매칭 방지)
+  if (workPlcNm.startsWith("서울")) {
+    for (const [gu, [lat, lng]] of Object.entries(SEOUL_GU_LATLNG)) {
+      if (workPlcNm.includes(gu)) return { lat, lng };
+    }
+    return { lat: 37.5665, lng: 126.978 };
+  }
+  // 2) 다른 광역 시·도 prefix → 시 중심값 (정확도는 덜하지만 거리 필터에 충분)
+  for (const [prefix, [lat, lng]] of Object.entries(REGION_PREFIX_LATLNG)) {
+    if (workPlcNm.startsWith(prefix)) return { lat, lng };
   }
   return null;
 }
