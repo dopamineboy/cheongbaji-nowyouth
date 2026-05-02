@@ -74,11 +74,17 @@ export async function POST(req: NextRequest) {
 
   const dong = body.district ? DONG_BY_DISTRICT[body.district] : null;
 
+  // dongCode는 region+district 조합으로 표준화 — 비-서울 district도 고유 식별 보장
+  // (이전엔 매핑 없으면 sampleUser의 종로 dongCode로 떨어져서 일산서구 사용자가 종로 시드 글 보던 버그 수정)
+  const standardizedDongCode = body.region && body.district
+    ? `R_${body.region}_${body.district}`.replace(/\s+/g, "_")
+    : (dong?.code ?? existing.dongCode);
+
   // Kakao Geocoding 우선 → 실패 시 정적 매핑 → 그것도 없으면 sampleUser 좌표
   let geoLat = dong?.lat ?? existing.lat;
   let geoLng = dong?.lng ?? existing.lng;
   let resolvedDongName = dong?.name ?? `${body.region ?? ""} ${body.district ?? ""}`.trim();
-  let resolvedDongCode = dong?.code ?? existing.dongCode;
+  const resolvedDongCode = standardizedDongCode;
 
   if (isKakaoAvailable() && body.region && body.district) {
     const fullAddr = `${body.region} ${body.district}`;

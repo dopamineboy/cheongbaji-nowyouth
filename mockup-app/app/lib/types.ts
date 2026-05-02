@@ -161,6 +161,8 @@ export interface PoomasiPost {
   helperId: string | null;
   reportCount: number;
   createdAt: string;
+  // 시연용 시드 데이터 표시 (UI에 "예시" 라벨)
+  isSeed?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────

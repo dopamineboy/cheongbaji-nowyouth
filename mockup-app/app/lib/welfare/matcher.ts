@@ -120,7 +120,7 @@ export interface MatchedBenefit {
 // =====================================================================
 
 const DEFAULT_DISCLAIMER =
-  "마지막 신청 버튼은 어르신이 직접 누르셔야 안전합니다. 정확한 자격은 주민센터나 복지로에서 다시 확인해 주세요.";
+  "여기 표시된 결과는 입력하신 정보 기반의 1차 안내예요. 최종 자격은 소득인정액·재산환산·가구특성 검토 후 주민센터·복지로에서 결정됩니다.";
 
 // 2024년 기준 중위소득 (가구원 수별, 원/월) — 보건복지부 고시
 const MEDIAN_INCOME_2024: Record<number, number> = {
@@ -337,10 +337,28 @@ function evaluateBenefit(
     }
   }
 
-  // universal은 eligible 승격 차단
+  // 정확도 보수화 — eligible 승격은 인증된 자격이 있을 때만
+  const requiresIncomeVerification = Boolean(
+    e.income_recognition_max || e.median_income_pct,
+  );
+  const requiresPropertyVerification = requiresIncomeVerification; // 소득 검증 = 재산 환산도 필요
+  const userVerified =
+    profile.welfareStatus === "basic_livelihood" ||
+    profile.welfareStatus === "near_poverty";
+
   if (!benefit.universal) {
     if (status === "likely_eligible" && missing.length === 0 && reasons.length > 0) {
-      status = "eligible";
+      if (requiresIncomeVerification && !userVerified) {
+        // 소득 검증이 필요한데 인증 안 된 일반 사용자
+        // → 단순 월소득 입력만으로 "확실"이라고 못 함 (재산 환산·가구특성 미검증)
+        // → likely_eligible 유지 + 추가 확인 필요 안내
+        if (!missing.includes("주민센터에서 정확한 소득인정액·재산 검증 필요")) {
+          missing.push("주민센터에서 정확한 소득인정액·재산 검증 필요");
+        }
+      } else {
+        // 단순 자격(나이·국적 등)만 검증되거나 사용자가 인증서 보유자
+        status = "eligible";
+      }
     }
   }
 

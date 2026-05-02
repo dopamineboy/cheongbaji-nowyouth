@@ -30,14 +30,24 @@ function PoomasiCard({ p }: { p: PoomasiPost }) {
   const cat = CAT_LABEL[p.category];
   return (
     <article className="card-soft rounded-2xl bg-white p-5">
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-[var(--color-accent)]/15 px-3 py-1 text-[13px] font-semibold text-[#8A5E00]">
           {cat.icon} {cat.ko}
         </span>
+        {p.isSeed && (
+          <span className="rounded-full bg-[var(--color-muted)]/15 px-2 py-0.5 text-[11px] font-bold text-[var(--color-muted)]">
+            예시
+          </span>
+        )}
         <span className="text-[13px] text-[var(--color-muted)]">
           {p.authorMaskedName} · {timeAgo(p.createdAt)}
         </span>
       </div>
+      {p.isSeed && (
+        <p className="mb-2 text-[11px] text-[var(--color-muted)]">
+          📍 {p.dongName}
+        </p>
+      )}
 
       <h3 className="mb-2 text-[18px] font-bold leading-tight text-[var(--color-text)]">
         {p.title}
@@ -96,9 +106,19 @@ export default async function CommunityPage() {
   const user = await getCurrentUser();
   const all = getStore().poomasi;
   const myDong = user?.dongCode ?? "";
-  const open = all
+
+  // 우리 동 실제 요청글 (사용자가 작성한 글 + 같은 dongCode)
+  const myDongPosts = all
     .filter((p) => p.status === "open" && p.dongCode === myDong && p.reportCount < 3)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  // 우리 동에 글이 0건이면 시연용 시드 글을 "예시"로 일부 노출
+  const seedPosts = all
+    .filter((p) => p.isSeed && p.status === "open" && p.reportCount < 3)
+    .slice(0, 5);
+
+  const showingSeeds = myDongPosts.length === 0 && seedPosts.length > 0;
+  const open = showingSeeds ? seedPosts : myDongPosts;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
@@ -112,15 +132,31 @@ export default async function CommunityPage() {
       </header>
 
       <section className="hero-emerald mx-5 mb-5 rounded-2xl p-5">
-        <p className="text-[15px] font-medium text-white/80">우리 동 요청글</p>
+        <p className="text-[15px] font-medium text-white/80">
+          {showingSeeds ? "우리 동에 아직 요청글이 없어요" : "우리 동 요청글"}
+        </p>
         <div className="mt-1 flex items-baseline gap-2">
-          <span className="text-[40px] font-extrabold leading-tight">{open.length}</span>
+          <span className="text-[40px] font-extrabold leading-tight">
+            {showingSeeds ? 0 : open.length}
+          </span>
           <span className="text-[18px] font-medium">건</span>
         </div>
         <p className="mt-2 text-[14px] text-white/70">
-          도움 1회당 양쪽 100P 적립 · 금전 거래 X
+          {showingSeeds
+            ? "첫 요청글을 남겨보세요 · 도움 1회당 양쪽 100P"
+            : "도움 1회당 양쪽 100P 적립 · 금전 거래 X"}
         </p>
       </section>
+
+      {showingSeeds && (
+        <div className="mx-5 mb-4 rounded-xl bg-[var(--bg-soft-yellow)] border border-[var(--color-accent)]/40 p-3">
+          <p className="text-[13px] leading-relaxed text-[var(--color-text)]">
+            <span className="font-bold">📌 시연용 예시 글</span>
+            <br />
+            아래는 다른 지역(종로구) 시연 글이에요. 우리 동네에서 첫 글을 남기시면 이웃들과 직접 연결됩니다.
+          </p>
+        </div>
+      )}
 
       <div className="mx-5 mb-4 flex gap-2">
         <Link

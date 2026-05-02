@@ -12,27 +12,31 @@ import { toWelfareProfile } from "../lib/welfare/adapter";
 
 const STATUS_META: Record<
   MatchStatus,
-  { label: string; color: string; stripe: string }
+  { label: string; color: string; stripe: string; nextAction: string }
 > = {
   eligible: {
-    label: "신청 가능",
+    label: "바로 신청 가능",
     color: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
     stripe: "bg-[var(--color-success)]",
+    nextAction: "신청 페이지에서 즉시 신청하실 수 있어요.",
   },
   likely_eligible: {
-    label: "받으실 가능성 높음",
+    label: "주민센터 확인 후 신청",
     color: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
     stripe: "bg-[var(--color-primary)]",
+    nextAction: "입력 정보로는 자격이 있어 보이나, 정확한 소득인정액·재산환산 검토가 필요해요. 주민센터 문의 권장.",
   },
   needs_more_info: {
-    label: "정보 보완 필요",
+    label: "추가 정보 필요",
     color: "bg-[var(--color-accent)]/15 text-[#8A5E00]",
     stripe: "bg-[var(--color-accent)]",
+    nextAction: "아래 누락된 정보를 알려주시면 정확히 매칭해드릴게요.",
   },
   ineligible: {
-    label: "이번엔 어려움",
+    label: "조건 미부합",
     color: "bg-[var(--color-muted)]/15 text-[var(--color-muted)]",
     stripe: "bg-[var(--color-muted)]",
+    nextAction: "현재 입력 정보 기준으로는 받기 어려워요.",
   },
 };
 
@@ -267,28 +271,32 @@ export default async function WelfarePage() {
         </section>
       )}
 
-      {/* ✨ 받을 수 있는 혜택 — eligible & not received */}
+      {/* ✅ 바로 신청 가능 — eligible & not received */}
       <section className="flex flex-col gap-4 px-5">
         <h2 className="text-[19px] font-bold text-[var(--color-text)]">
-          ✨ 받으실 수 있는 혜택 ({availableList.length}건)
+          ✅ 바로 신청 가능한 혜택 ({availableList.length}건)
         </h2>
+        <p className="text-[13px] text-[var(--color-muted)]">
+          단순 자격(나이·국적 등)만으로 받으실 수 있는 혜택이에요. 신청 페이지에서 바로 신청하세요.
+        </p>
         {availableList.length > 0 ? (
           availableList.map((m) => <BenefitCard key={m.benefit.id} m={m} />)
         ) : (
           <p className="rounded-2xl bg-white p-5 text-center text-[15px] text-[var(--color-muted)]">
-            지금 새로 자동 매칭되는 혜택은 없어요. 아래 "서류·정보 보완 시" 항목을 확인해주세요.
+            바로 신청 가능한 혜택은 없어요. 아래 "주민센터 확인 후" 항목을 살펴봐주세요.
           </p>
         )}
       </section>
 
-      {/* 📋 서류·정보 보완 시 — likely + needs_more_info */}
+      {/* 📋 주민센터 확인 후 신청 — likely + needs_more_info */}
       {needsDocsList.length > 0 && (
         <section className="mt-6 flex flex-col gap-4 px-5">
           <h2 className="text-[19px] font-bold text-[var(--color-text)]">
-            📋 서류·정보 보완 시 받으실 수 있는 혜택 ({needsDocsList.length}건)
+            📋 주민센터 확인 후 신청 가능 ({needsDocsList.length}건)
           </h2>
           <p className="text-[13px] text-[var(--color-muted)]">
-            추가 자료를 알려주시거나 주민센터에서 자격을 확인하시면 받으실 수 있어요.
+            입력하신 정보로는 가능성이 보이나, <strong>최종 자격은 소득인정액·재산환산·가구특성 검토</strong>가 필요해요.
+            주민센터 방문하시면 정확히 안내받으실 수 있어요.
           </p>
           {needsDocsList.map((m) => (
             <BenefitCard key={m.benefit.id} m={m} />

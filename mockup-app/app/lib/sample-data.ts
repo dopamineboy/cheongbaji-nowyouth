@@ -449,6 +449,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(2),
+    isSeed: true,
   },
   {
     id: "p-002",
@@ -465,6 +466,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(5),
+    isSeed: true,
   },
   {
     id: "p-003",
@@ -481,6 +483,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(11),
+    isSeed: true,
   },
   {
     id: "p-004",
@@ -497,6 +500,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(20),
+    isSeed: true,
   },
   {
     id: "p-005",
@@ -513,6 +517,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(28),
+    isSeed: true,
   },
   {
     id: "p-006",
@@ -529,6 +534,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: "u-demo-099",
     reportCount: 0,
     createdAt: _hAgo(36),
+    isSeed: true,
   },
   {
     id: "p-007",
@@ -545,6 +551,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(44),
+    isSeed: true,
   },
   {
     id: "p-008",
@@ -561,6 +568,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(60),
+    isSeed: true,
   },
   {
     id: "p-009",
@@ -577,6 +585,7 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(72),
+    isSeed: true,
   },
   {
     id: "p-010",
@@ -593,5 +602,6 @@ export const samplePoomasiPosts: PoomasiPost[] = [
     helperId: null,
     reportCount: 0,
     createdAt: _hAgo(96),
+    isSeed: true,
   },
 ];
