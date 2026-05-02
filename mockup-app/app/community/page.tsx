@@ -76,8 +76,8 @@ function TabBar() {
     { label: "홈", icon: "🏠", href: "/" },
     { label: "복지", icon: "📋", href: "/welfare" },
     { label: "일자리", icon: "💼", href: "/jobs" },
-    { label: "품앗이", icon: "💬", href: "/community", active: true },
     { label: "포인트", icon: "🎯", href: "/activity" },
+    { label: "품앗이", icon: "💬", href: "/community", active: true },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 border-t border-[var(--color-border)] bg-white">
