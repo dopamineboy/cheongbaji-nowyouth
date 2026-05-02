@@ -7,9 +7,12 @@
 import type { Job, JobActivityType, JobDifficulty, TimeSlotJob } from "../../../types";
 import type { JobAdapter } from "../types";
 
+// 워크넷 채용정보 API (공공데이터포털 / work24) — 고령자 채용정보 포함 일반 채용 목록.
+// 사용자 확인 endpoint (2026-05): callOpenApiSvcInfo210L01.do
+// 키: env.WORKNET_API_KEY 에 일반 인증키 입력 후 어댑터 자동 활성화.
 const WORKNET_ENDPOINT =
   process.env.WORKNET_API_ENDPOINT ??
-  "https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfoR210L.do";
+  "https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo210L01.do";
 
 interface WorknetJobItem {
   // 워크넷 응답 필드 — 실제 키 받은 후 키 이름 확정.
@@ -90,17 +93,16 @@ export const worknetAdapter: JobAdapter = {
   },
   async fetch() {
     if (!process.env.WORKNET_API_KEY) {
-      // 키 없으면 빈 배열 (호출자가 sample-jobs-real.ts로 폴백)
       return [];
     }
-    // ⚠ 실제 워크넷 API 응답 스펙은 공공데이터포털 활용 문서 확인 필요
     const url = new URL(WORKNET_ENDPOINT);
     url.searchParams.set("authKey", process.env.WORKNET_API_KEY!);
     url.searchParams.set("returnType", "JSON");
+    url.searchParams.set("callTp", "L"); // 목록 조회
     url.searchParams.set("startPage", "1");
     url.searchParams.set("display", "100");
-    // 고령자 필터 — 워크넷 분류코드 확인 후 추가 (예: ageLim=60)
-    url.searchParams.set("ageLim", "60");
+    // 고령자 채용정보 — 60세 이상 우대 (필요 시 mClcd/clcd 등 분류코드 추가)
+    url.searchParams.set("minAge", "60");
 
     const res = await fetch(url, {
       next: { revalidate: 60 * 60 }, // 1시간 캐시
@@ -108,7 +110,45 @@ export const worknetAdapter: JobAdapter = {
     if (!res.ok) {
       throw new Error(`worknet ${res.status}: ${await res.text()}`);
     }
-    const json = (await res.json()) as { items?: WorknetJobItem[] };
-    return (json.items ?? []).map(toJob);
+
+    const text = await res.text();
+
+    // XML 응답 fallback: 일부 work24 endpoint는 returnType 무시하고 XML만 반환.
+    // 핵심 필드만 정규식으로 추출 (간이 파서, 한국어 토큰 안전).
+    if (text.trim().startsWith("<")) {
+      const items: WorknetJobItem[] = [];
+      const blockRe = /<wanted>([\s\S]*?)<\/wanted>/g;
+      const tagRe = (tag: string) =>
+        new RegExp(`<${tag}>([\\s\\S]*?)<\/${tag}>`);
+      let m: RegExpExecArray | null;
+      while ((m = blockRe.exec(text)) !== null) {
+        const block = m[1];
+        const get = (tag: string) =>
+          (block.match(tagRe(tag))?.[1] ?? "").trim();
+        items.push({
+          wantedAuthNo: get("wantedAuthNo"),
+          wantedTitle: get("wantedTitle"),
+          company: get("company"),
+          region: get("region"),
+          salTpNm: get("salTpNm"),
+          empWantedTypeNm: get("empWantedTypeNm"),
+          jobsCd: get("jobsCd"),
+          ageLim: get("ageLim"),
+          closeDt: get("closeDt"),
+          regDt: get("regDt"),
+          url: get("infoSvcUrl") || get("url"),
+        });
+      }
+      return items.map(toJob);
+    }
+
+    // JSON 응답
+    const json = (await JSON.parse(text)) as
+      | { items?: WorknetJobItem[]; wantedRoot?: { wanted?: WorknetJobItem[] } }
+      | WorknetJobItem[];
+    const items: WorknetJobItem[] = Array.isArray(json)
+      ? json
+      : json.items ?? json.wantedRoot?.wanted ?? [];
+    return items.map(toJob);
   },
 };
