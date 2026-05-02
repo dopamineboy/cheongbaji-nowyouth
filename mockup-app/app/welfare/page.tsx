@@ -220,22 +220,24 @@ export default async function WelfarePage() {
         <p className="text-[15px] font-medium text-white/80">
           {user?.region} {user?.district} · 전체 {benefits.length}개 제도 검토
         </p>
-        <div className="mt-2 grid grid-cols-2 gap-2 text-[13px]">
-          <div className="rounded-xl bg-white/15 px-3 py-3">
-            <p className="text-white/70">지금 받고 계신 혜택</p>
-            <p className="mt-1 text-[24px] font-extrabold leading-tight">
-              {receivingList.length}건
-            </p>
-            {receivingMonthly > 0 && (
-              <p className="text-[12px] text-white/80">
-                매달 약 {receivingMonthly.toLocaleString("ko-KR")}원
+        <div className={`mt-2 grid gap-2 text-[13px] ${receivingList.length > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
+          {receivingList.length > 0 && (
+            <div className="rounded-xl bg-white/15 px-3 py-3">
+              <p className="text-white/70">지금 받고 계신 혜택</p>
+              <p className="mt-1 text-[24px] font-extrabold leading-tight">
+                {receivingList.length}건
               </p>
-            )}
-          </div>
+              {receivingMonthly > 0 && (
+                <p className="text-[12px] text-white/80">
+                  매달 약 {receivingMonthly.toLocaleString("ko-KR")}원
+                </p>
+              )}
+            </div>
+          )}
           <div className="rounded-xl bg-white/15 px-3 py-3">
             <p className="text-white/70">받으실 수 있는 혜택</p>
             <p className="mt-1 text-[24px] font-extrabold leading-tight">
-              +{availableList.length}건
+              {receivingList.length > 0 ? "+" : ""}{availableList.length}건
             </p>
             {availableMonthly > 0 && (
               <p className="text-[12px] text-white/80">

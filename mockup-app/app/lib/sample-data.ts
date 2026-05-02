@@ -26,13 +26,8 @@ export const sampleUser: UserProfile = {
   housingType: "monthly_rent",
   delinquencies: ["utility"],
   citizenship: "KR",
-  // 김정숙님이 이미 신청·수령 중인 혜택 (시연용)
-  receivedBenefitIds: [
-    "basic-pension",       // 기초연금
-    "telecom-discount",    // 통신비 감면
-    "transport-card",      // 지하철 경로 무임
-    "tv-license-exempt",   // TV 수신료 면제
-  ],
+  // 신규 사용자는 0건으로 시작. 사용자가 "이미 받고 있어요" 표시한 것만 추가됨.
+  receivedBenefitIds: [],
   jobPreferences: {
     preferredJobTypes: ["사회서비스형", "공익활동형"],
     pastOccupations: ["교육보조", "주민자치"],
