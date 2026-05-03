@@ -17,34 +17,50 @@ import type { UserProfile } from "../../lib/types";
 
 export const dynamic = "force-dynamic";
 
-const SYSTEM_PROMPT = `당신은 청바지(NowYouth) — 65세 이상 시니어를 위한 통합 라이프스타일 플랫폼의 친절한 도우미 에이전트입니다.
+const SYSTEM_PROMPT = `당신은 청바지(NowYouth) — 65세 이상 시니어를 위한 통합 라이프스타일 플랫폼의 에이전트입니다.
 
-응답 원칙:
+[핵심 행동 원칙]
+사용자 의도가 "특정 페이지에서 확인할 수 있는 정보"이면, **즉시 navigate 도구를 호출**해서 그 페이지로 데려가세요.
+긴 답변보다 정확한 페이지로 이동시키는 것이 시니어 친화적입니다.
+
+[응답 톤]
 - 반드시 **존댓말**, 따뜻하고 부드러운 어조
-- 문장은 짧고 명료하게 (시니어가 읽기 좋게)
-- 어려운 단어는 풀어 설명
-- 모르는 것은 솔직하게 말하고, 주민센터·복지로 등 신뢰할 출처로 안내
-- 응답은 3~5문장 이내, 너무 길지 않게
+- 답변 본문은 1~2문장 이내로 짧게 ("OO 페이지로 안내드릴게요" 정도)
+- 답변 후 navigate 도구를 호출하면 사용자가 자동 이동됨
 
-[중요] 사용자 질문이 데이터 조회·매칭이 필요하면 **반드시 도구를 호출**하세요:
-- searchJobs: 일자리 키워드·조건 검색
-- searchBenefits: 복지 혜택 카테고리·금액별 검색
-- getOutingByPreference: 0원 나들이 코스 (날씨·체력별)
-- getTrainingByCareer: 경력 기반 무료 교육 추천
-- estimateMonthlyTotal: 사용자 매칭된 모든 혜택+일자리 월 합계 추정
+[도구 사용 우선순위]
+1. **navigate(path, reason)** — 사용자를 특정 페이지로 이동시킴. 가장 자주 사용.
+   사용자가 "보여줘 / 알려줘 / 신청 / 가고 싶어 / 추천해줘" 같은 행동 의도 → 적절한 페이지로 navigate
 
-도구 호출 후 결과를 자연스러운 한국어로 정리해 답변합니다.
+2. **searchBenefits / searchJobs / getOutingByPreference / getTrainingByCareer** —
+   사용자가 구체 조건을 줬는데 어느 페이지인지 명확하지 않을 때 검색 후 결과 1~3개를 본문에 요약,
+   가장 적합한 1건의 상세 페이지로 navigate
 
-[중요] 답변 끝에 1~3개 액션 카드를 다음 형식으로 포함:
-[[/welfare|복지 알리미 보기]]
-[[/jobs|일자리 매칭 보기]]
-[[/training|무료 연계 교육 보기]]
-[[/activity/outings|0원 나들이 보기]]
-[[/activity/culture|문화누리카드 추천 활동]]
-[[/activity/transport-card|교통카드 발급 안내]]
-[[/community|우리 동 커뮤니티]]
-[[/welfare/{id}|특정 혜택 상세]]  (id 예: basic-pension, energy-voucher 등)
-형식: [[경로|버튼 표시 한국어]]`;
+3. **estimateMonthlyTotal** — "내가 받을 수 있는 총 금액?" 같은 직접 답변이 필요한 질문에만 사용
+   (이 경우는 navigate보다 답변이 더 가치 있음)
+
+[사용 가능한 경로]
+- / — 홈 (매칭 결과 요약)
+- /welfare — 복지 알리미 목록
+- /welfare/{id} — 특정 혜택 상세 (id 예: basic-pension, energy-voucher, culture-voucher, telecom-discount, senior-employment 등)
+- /jobs — 일자리 매칭 목록
+- /jobs/{id} — 일자리 상세 (id는 검색 결과의 id 사용)
+- /training — 무료 연계 교육 목록
+- /activity — 활동 리워드 메인
+- /activity/outings — 0원 나들이 코스 목록
+- /activity/outings/{id} — 코스 상세
+- /activity/culture — 문화누리카드 추천 활동
+- /activity/transport-card — 경로우대 교통카드 발급 안내
+- /rewards — 포인트 교환
+- /community — 우리 동 커뮤니티
+- /community/new?category={cat}&prefill={text} — 글 작성 (cat: life_help/digital/talk/share, prefill은 본문 미리채움)
+
+[예시]
+- "기초연금 신청하고 싶어" → navigate("/welfare/basic-pension", "기초연금 신청 가이드로 안내드릴게요")
+- "비 오는 날 갈 만한 곳?" → getOutingByPreference({weather:"indoor"}) → 결과 보고 → navigate("/activity/outings", "비 오는 날 OK 코스로 안내드릴게요")
+- "교통카드 어디서 받아?" → navigate("/activity/transport-card", "교통카드 발급 안내로 안내드릴게요")
+- "병원 동행 도와줄 사람 찾고 싶어" → navigate("/community/new?category=life_help&prefill=병원 동행 부탁드려요", "커뮤니티 글 작성 페이지로 안내드릴게요")
+- "내가 매월 받을 수 있는 총 금액?" → estimateMonthlyTotal() → 본문에 답변 (이 질문은 페이지 이동보다 직접 답이 가치)`;
 
 interface ChatBody {
   messages: { role: "user" | "assistant"; content: string }[];
@@ -81,6 +97,30 @@ function describePath(path?: string): string {
 // 도구 정의 (OpenAI tools schema)
 // ─────────────────────────────────────
 const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "navigate",
+      description:
+        "사용자를 특정 페이지로 이동시킵니다. 가장 자주 사용하는 도구. 사용자가 '보여줘/알려줘/신청/가고 싶어' 등의 의도를 보이면 적합한 페이지로 navigate 호출.",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description:
+              "이동할 절대 경로 (예: /welfare/basic-pension, /jobs, /activity/outings). system prompt의 사용 가능 경로 목록 내에서만 사용.",
+          },
+          reason: {
+            type: "string",
+            description:
+              "왜 이 페이지로 안내하는지 1줄 한국어 안내 (예: '기초연금 신청 가이드로 안내드릴게요')",
+          },
+        },
+        required: ["path", "reason"],
+      },
+    },
+  },
   {
     type: "function",
     function: {
@@ -176,6 +216,7 @@ type ToolHandler = (
 ) => Promise<unknown>;
 
 const TOOL_LABEL: Record<string, string> = {
+  navigate: "페이지로 안내",
   searchJobs: "일자리 검색",
   searchBenefits: "복지 매칭 분석",
   getOutingByPreference: "0원 나들이 추천",
@@ -184,6 +225,12 @@ const TOOL_LABEL: Record<string, string> = {
 };
 
 const TOOL_HANDLERS: Record<string, ToolHandler> = {
+  async navigate(args) {
+    const path = (args.path as string | undefined) ?? "/";
+    const reason = (args.reason as string | undefined) ?? "안내드릴게요";
+    return { ok: true, path, reason };
+  },
+
   async searchJobs(args, user) {
     await ensureJobsLoaded();
     const keyword = (args.keyword as string | undefined)?.toLowerCase();
@@ -419,12 +466,30 @@ export async function POST(req: NextRequest) {
             } catch (e) {
               result = { error: e instanceof Error ? e.message : "tool 실행 오류" };
             }
-            // tool_result 이벤트 — 클라이언트가 "✓ N건 찾았어요" 표시
-            const summary =
-              typeof result === "object" && result !== null && "count" in result
-                ? `${(result as { count: number }).count}건 찾았어요`
-                : "결과 받았어요";
-            enq("status", { stage: "tool_result", label, name, summary });
+
+            // navigate 도구는 별도 이벤트로 클라이언트에 라우팅 신호
+            if (
+              name === "navigate" &&
+              typeof result === "object" &&
+              result !== null &&
+              "path" in result
+            ) {
+              const r = result as { path: string; reason?: string };
+              enq("navigate", { path: r.path, reason: r.reason ?? "" });
+              enq("status", {
+                stage: "tool_result",
+                label,
+                name,
+                summary: `📍 ${r.path}`,
+              });
+            } else {
+              // 일반 도구 결과 — 건수 요약
+              const summary =
+                typeof result === "object" && result !== null && "count" in result
+                  ? `${(result as { count: number }).count}건 찾았어요`
+                  : "결과 받았어요";
+              enq("status", { stage: "tool_result", label, name, summary });
+            }
             messages.push({
               role: "tool",
               tool_call_id: tc.id,

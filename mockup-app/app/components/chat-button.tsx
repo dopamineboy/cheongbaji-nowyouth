@@ -8,7 +8,7 @@
 // STT/TTS는 브라우저 내장 Web Speech API 사용 (추가 비용 0, 한국어 지원)
 // iOS Safari는 SpeechRecognition 미지원 — 마이크 버튼 자동 숨김
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 
 // 챗봇 응답 텍스트를 파싱해서 [[/path|label]] 액션을 추출하고 본문은 따로 분리
@@ -209,8 +209,10 @@ async function resetOnboarding() {
 
 export default function ChatButton() {
   const pathname = usePathname();
+  const router = useRouter();
   const prompts = getPromptsByPath(pathname);
   const [open, setOpen] = useState(false);
+  const [navHint, setNavHint] = useState<string | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [corner, setCorner] = useState<Corner>("br");
   const [hidden, setHidden] = useState(false);
@@ -451,6 +453,18 @@ export default function ChatButton() {
                 icon: STAGE_ICON[stage] ?? "•",
               });
             }
+          } else if (eventName === "navigate") {
+            // 에이전트가 페이지 이동 결정 — 짧은 안내 후 즉시 router.push
+            const path = (data.path as string) ?? "/";
+            const reason = (data.reason as string) ?? "안내드릴게요";
+            setNavHint(`📍 ${reason}`);
+            // 모달은 닫고 라우터로 이동 (chatbot 답변 토큰까지 받지 않고 즉시)
+            // 사용자가 인지할 수 있게 짧은 텀(500ms) 후 이동
+            setTimeout(() => {
+              setNavHint(null);
+              handleClose();
+              router.push(path);
+            }, 700);
           } else if (eventName === "answer_delta") {
             const delta = (data.delta as string) ?? "";
             accAnswer += delta;
@@ -584,6 +598,18 @@ export default function ChatButton() {
             </button>
           </div>
         </header>
+
+        {/* 에이전트 라우팅 안내 — navigate 이벤트 도착 시 0.7초 노출 후 자동 이동 */}
+        {navHint && (
+          <div className="border-b border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 p-3 text-center">
+            <p className="text-[14px] font-bold text-[var(--color-primary)]">
+              {navHint}
+            </p>
+            <p className="mt-0.5 text-[11px] text-[var(--color-primary)]/70">
+              잠시 후 페이지로 이동합니다
+            </p>
+          </div>
+        )}
 
         {/* 옵션 패널 — 위치 변경 + 잠시 숨기기 */}
         {showOptions && (
