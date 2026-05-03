@@ -11,18 +11,32 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 
-// 챗봇 응답 텍스트를 파싱해서 [[/path|label]] 액션을 추출하고 본문은 따로 분리
+// 챗봇 응답 텍스트를 파싱해서 두 종류 액션 마크업을 추출, 본문은 따로 분리
+//   1. [[/path|label]]                    — 의도된 마크업
+//   2. navigate("/path", "label")          — LLM이 가끔 도구 호출 대신 텍스트로 적는 케이스 fallback
+//   3. navigate(/path, "label") 변형 등도 흡수
 function parseMessage(text: string): {
   body: string;
   actions: { href: string; label: string }[];
 } {
-  const re = /\[\[(\/[^|\]]+)\|([^\]]+)\]\]/g;
   const actions: { href: string; label: string }[] = [];
-  const body = text.replace(re, (_m, href: string, label: string) => {
+
+  // 1. 정상 마크업 [[/path|label]]
+  const cardRe = /\[\[(\/[^|\]]+)\|([^\]]+)\]\]/g;
+  let body = text.replace(cardRe, (_m, href: string, label: string) => {
     actions.push({ href: href.trim(), label: label.trim() });
-    return ""; // 본문에서 제거
-  }).trim();
-  return { body, actions };
+    return "";
+  });
+
+  // 2. navigate("/path", "reason") — 텍스트로 새어 나온 함수 호출 코드 fallback
+  const navRe =
+    /navigate\s*\(\s*["'`]?(\/[^"'`,)]+)["'`]?\s*,\s*["'`]([^"'`]+)["'`]\s*\)/g;
+  body = body.replace(navRe, (_m, href: string, label: string) => {
+    actions.push({ href: href.trim(), label: label.trim() });
+    return "";
+  });
+
+  return { body: body.trim(), actions };
 }
 
 interface AgentStage {
