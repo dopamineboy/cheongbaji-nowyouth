@@ -512,6 +512,20 @@ export default function ChatButton() {
     setOpen(false);
   };
 
+  // 빠른 탐색 — 이전 화면 / 첫 화면
+  const goBack = () => {
+    handleClose();
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+  const goHome = () => {
+    handleClose();
+    router.push("/");
+  };
+
   // 첫 인사뿐일 때만 빠른 질문 칩 노출
   const showQuickPrompts = msgs.length === 1 && !streaming;
 
@@ -777,6 +791,24 @@ export default function ChatButton() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* 빠른 탐색 — 이전 화면 / 첫 화면 (항상 보임, 시니어가 길 잃었을 때 안전망) */}
+        <div className="flex gap-2 border-t border-[var(--color-border)] bg-[var(--bg-page)] px-3 py-2">
+          <button
+            type="button"
+            onClick={goBack}
+            className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-[14px] font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)]"
+          >
+            ← 이전 화면
+          </button>
+          <button
+            type="button"
+            onClick={goHome}
+            className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-[14px] font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)]"
+          >
+            🏠 첫 화면
+          </button>
         </div>
 
         <div className="border-t border-[var(--color-border)] p-3">
