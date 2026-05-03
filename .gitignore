@@ -53,3 +53,8 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# 진단·디버그 임시 파일
+cookies.txt
+resp.json
+home.html

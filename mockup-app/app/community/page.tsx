@@ -106,19 +106,27 @@ export default async function CommunityPage() {
   const user = await getCurrentUser();
   const all = getStore().poomasi;
   const myDong = user?.dongCode ?? "";
+  const myDongName = user?.dongName ?? "우리 동";
 
-  // 우리 동 실제 요청글 (사용자가 작성한 글 + 같은 dongCode)
-  const myDongPosts = all
-    .filter((p) => p.status === "open" && p.dongCode === myDong && p.reportCount < 3)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // 본인이 작성한 실제 글 (시드 제외)
+  const ownPosts = all.filter(
+    (p) =>
+      !p.isSeed &&
+      p.status === "open" &&
+      p.dongCode === myDong &&
+      p.reportCount < 3,
+  );
 
-  // 우리 동에 글이 0건이면 시연용 시드 글을 "예시"로 일부 노출
+  // MVP — 시드 글은 콘텐츠는 그대로 두되 표시 지역만 사용자 본인 동으로 swap
+  // (실제 운영 전엔 모든 사용자에게 같은 시드를 본인 동네 글처럼 보여주기 위함)
   const seedPosts = all
     .filter((p) => p.isSeed && p.status === "open" && p.reportCount < 3)
-    .slice(0, 5);
+    .map((p) => ({ ...p, dongCode: myDong, dongName: myDongName }));
 
-  const showingSeeds = myDongPosts.length === 0 && seedPosts.length > 0;
-  const open = showingSeeds ? seedPosts : myDongPosts;
+  const open = [...ownPosts, ...seedPosts].sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt),
+  );
+  const showingSeeds = ownPosts.length === 0 && seedPosts.length > 0;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
@@ -133,27 +141,25 @@ export default async function CommunityPage() {
 
       <section className="hero-emerald mx-5 mb-5 rounded-2xl p-5">
         <p className="text-[15px] font-medium text-white/80">
-          {showingSeeds ? "우리 동에 아직 요청글이 없어요" : "우리 동 요청글"}
+          우리 동 요청글
         </p>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-[40px] font-extrabold leading-tight">
-            {showingSeeds ? 0 : open.length}
+            {open.length}
           </span>
           <span className="text-[18px] font-medium">건</span>
         </div>
         <p className="mt-2 text-[14px] text-white/70">
-          {showingSeeds
-            ? "첫 요청글을 남겨보세요 · 도움 1회당 양쪽 100P"
-            : "도움 1회당 양쪽 100P 적립 · 금전 거래 X"}
+          도움 1회당 양쪽 100P 적립 · 금전 거래 X
         </p>
       </section>
 
       {showingSeeds && (
         <div className="mx-5 mb-4 rounded-xl bg-[var(--bg-soft-yellow)] border border-[var(--color-accent)]/40 p-3">
           <p className="text-[13px] leading-relaxed text-[var(--color-text)]">
-            <span className="font-bold">📌 시연용 예시 글</span>
+            <span className="font-bold">📌 MVP 시연 안내</span>
             <br />
-            아래는 다른 지역(종로구) 시연 글이에요. 우리 동네에서 첫 글을 남기시면 이웃들과 직접 연결됩니다.
+            아래 글은 시연용 예시예요. 직접 글을 남기시면 같은 동네 이웃과 실제로 연결됩니다.
           </p>
         </div>
       )}
