@@ -1,21 +1,29 @@
 @import "tailwindcss";
+/* Pretendard — 한국어 가독성 우선 시니어 친화 폰트 (브랜드 가이드: 또박또박함) */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
 :root {
   /* 화사 팔레트 — 시니어 친화 + 청춘(청바지) 톤
-     기존: 네이비/머스타드/베이지 → 신선·따뜻·밝게 */
-  --bg-page: #FFFBF1;          /* 매우 옅은 크림-피치 */
+     브랜드 가이드: 따뜻한 블루 메인 / 화이트·아이보리 서브 / 부드러운 오렌지 포인트 */
+  --bg-page: #FFFBF1;          /* 매우 옅은 크림-피치 (아이보리) */
   --bg-surface: #FFFFFF;
   --bg-soft-blue: #EAF1FF;     /* 청바지 light tint */
   --bg-soft-yellow: #FFF6DD;
   --bg-soft-pink: #FFEEEC;
+  --bg-soft-orange: #FFEEDC;   /* 부드러운 오렌지 light tint (브랜드 포인트) */
 
   --color-primary: #2855F0;        /* 선명한 청바지 블루 */
   --color-primary-strong: #1A3FCA; /* 강조 hover */
   --color-primary-soft: #DCE7FF;
 
-  --color-accent: #FFB627;          /* 따뜻한 골드 */
+  --color-accent: #FFB627;          /* 따뜻한 골드 (기존 미션·하이라이트용) */
   --color-accent-strong: #E6970A;
   --color-accent-soft: #FFEAB7;
+
+  /* 브랜드 포인트 — 부드러운 오렌지 (warmth·welcoming) */
+  --color-warm: #FF8C42;
+  --color-warm-strong: #E66F1F;
+  --color-warm-soft: #FFEEDC;
 
   --color-urgent: #F25C54;          /* 산호색 (친근한 빨강) */
   --color-urgent-soft: #FFE4E0;
@@ -26,12 +34,17 @@
   --color-text: #1A1A1A;
   --color-muted: #5A5A5A;
   --color-border: #F0E2C9;
+
+  /* 시니어 친화 디자인 토큰 */
+  --tap-min: 56px;             /* 터치 타겟 최소 높이 (44px iOS 권장 + 시니어 여유) */
+  --focus-ring: 0 0 0 3px rgba(40, 85, 240, 0.35);
 }
 
 @theme inline {
   --color-background: var(--bg-page);
   --color-foreground: var(--color-text);
-  --font-sans: var(--font-noto-kr), ui-sans-serif, system-ui;
+  /* Pretendard 우선 → Noto Sans KR fallback → system */
+  --font-sans: 'Pretendard Variable', Pretendard, var(--font-noto-kr), ui-sans-serif, system-ui;
 }
 
 html, body {
@@ -42,14 +55,22 @@ html, body {
     var(--bg-page);
   background-attachment: fixed;
   color: var(--color-text);
-  font-family: var(--font-noto-kr), ui-sans-serif, system-ui;
+  font-family: 'Pretendard Variable', Pretendard, var(--font-noto-kr), ui-sans-serif, system-ui;
   font-size: 18px;
-  line-height: 1.55;
+  line-height: 1.65;            /* 시니어 가독성 — 기존 1.55에서 상향 */
+  letter-spacing: -0.01em;      /* Pretendard에 맞춘 미세 조정 */
   -webkit-font-smoothing: antialiased;
 }
 
 button {
   font-family: inherit;
+}
+
+/* 키보드 사용 시 명확한 focus ring (접근성·시니어 보조기기 사용) */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 0.5rem;
 }
 
 /* ──────────────────────────────────────────────────────
@@ -100,10 +121,11 @@ button {
     0 4px 16px rgba(40, 85, 240, 0.06);
 }
 
-/* CTA 버튼 — 그라데이션 */
+/* CTA 버튼 — 그라데이션 + 시니어 터치 타겟 보장 */
 .btn-primary {
   background: linear-gradient(135deg, #2855F0 0%, #4F73FF 100%);
   color: white;
+  min-height: var(--tap-min);   /* 시니어 터치 타겟 56px 보장 */
   transition: transform 0.1s ease, box-shadow 0.1s ease;
   box-shadow: 0 2px 8px rgba(40, 85, 240, 0.25);
 }
@@ -113,6 +135,25 @@ button {
 }
 .btn-primary:disabled {
   opacity: 0.4;
+}
+
+/* 부드러운 오렌지 — 환영·따뜻한 안내용 (브랜드 포인트) */
+.hero-warm {
+  background: linear-gradient(135deg, #FF8C42 0%, #FFB373 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.hero-warm::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.18) 0%, transparent 50%);
+  pointer-events: none;
+}
+.hero-warm > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* 카드 hover 살짝 떠오름 */
