@@ -94,6 +94,29 @@ function OutingCard({ o }: { o: Outing }) {
   );
 }
 
+function FilterChip({
+  label,
+  href,
+  active,
+}: {
+  label: string;
+  href: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`rounded-xl px-2 py-2.5 text-center text-[13px] font-bold transition ${
+        active
+          ? "bg-[var(--color-warm)] text-white"
+          : "border-2 border-[var(--color-border)] bg-white text-[var(--color-text)]"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
 function SpotCard({ s }: { s: Spot }) {
   return (
     <article className="card-soft rounded-2xl bg-white p-4">
@@ -150,12 +173,27 @@ function TabBar() {
   );
 }
 
-export default async function OutingsPage() {
+export default async function OutingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ stamina?: string; weather?: string }>;
+}) {
+  const sp = await searchParams;
+  const staminaFilter = sp.stamina as "easy" | "mid" | "heavy" | undefined;
+  const weatherFilter = sp.weather as "indoor" | "outdoor" | undefined;
   const user = await getCurrentUser();
-  const outings = recommendOutings({
+  let outings = recommendOutings({
     region: user?.region,
     walkingHeavyOk: user?.jobPreferences?.walkingHeavyOk,
   });
+  if (staminaFilter) {
+    outings = outings.filter((o) => o.stamina === staminaFilter);
+  }
+  if (weatherFilter === "indoor") {
+    outings = outings.filter(
+      (o) => o.weatherFit === "indoor" || o.weatherFit === "any",
+    );
+  }
   const subwayFree = isSubwayFree(user?.region);
 
   // 카테고리별 명소 그룹
@@ -217,6 +255,53 @@ export default async function OutingsPage() {
             </span>
           </li>
         </ul>
+        <Link
+          href="/activity/transport-card"
+          className="mt-3 block rounded-xl border-2 border-[var(--color-warm)] bg-white py-3 text-center text-[14px] font-bold text-[var(--color-warm-strong)]"
+        >
+          교통카드 발급 자세히 보기 →
+        </Link>
+      </section>
+
+      {/* 체력 필터 + 날씨 필터 (B-2) */}
+      <section className="mx-5 mb-3">
+        <p className="mb-2 text-[13px] font-bold text-[var(--color-muted)]">
+          🦶 내 체력에 맞춰 보기
+        </p>
+        <div className="grid grid-cols-4 gap-1.5">
+          <FilterChip
+            label="전체"
+            href="/activity/outings"
+            active={!staminaFilter && !weatherFilter}
+          />
+          <FilterChip
+            label="🟢 쉬움"
+            href="/activity/outings?stamina=easy"
+            active={staminaFilter === "easy"}
+          />
+          <FilterChip
+            label="🟡 보통"
+            href="/activity/outings?stamina=mid"
+            active={staminaFilter === "mid"}
+          />
+          <FilterChip
+            label="🟠 많이"
+            href="/activity/outings?stamina=heavy"
+            active={staminaFilter === "heavy"}
+          />
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
+          <FilterChip
+            label="🏠 비 와도 OK"
+            href="/activity/outings?weather=indoor"
+            active={weatherFilter === "indoor"}
+          />
+          <FilterChip
+            label="☀️ 야외 산책"
+            href="/activity/outings?stamina=mid"
+            active={!weatherFilter && staminaFilter === "mid"}
+          />
+        </div>
       </section>
 
       {/* 추천 코스 */}
@@ -230,9 +315,14 @@ export default async function OutingsPage() {
           </span>
         </div>
         <div className="flex flex-col gap-3">
-          {outings.map((o) => (
-            <OutingCard key={o.id} o={o} />
-          ))}
+          {outings.length > 0 ? (
+            outings.map((o) => <OutingCard key={o.id} o={o} />)
+          ) : (
+            <div className="rounded-2xl bg-white p-6 text-center text-[14px] text-[var(--color-muted)]">
+              조건에 맞는 코스가 아직 없어요. <br />
+              위에서 다른 필터를 선택해주세요.
+            </div>
+          )}
         </div>
       </section>
 

@@ -218,7 +218,7 @@ export default async function ActivityPage() {
       })()}
 
       {/* 🌳 오늘의 0원 나들이 — AC 추천 핵심 진입점 */}
-      <section className="mx-5 mb-6">
+      <section className="mx-5 mb-3">
         <Link
           href="/activity/outings"
           className="card-link card-soft block overflow-hidden rounded-2xl bg-white"
@@ -252,6 +252,34 @@ export default async function ActivityPage() {
             </span>
             <span className="text-[18px] text-[var(--color-warm-strong)]">→</span>
           </div>
+        </Link>
+      </section>
+
+      {/* 🎬 문화누리카드로 즐기기 + 🪪 교통카드 발급 — 2칼럼 진입 */}
+      <section className="mx-5 mb-6 grid grid-cols-2 gap-2">
+        <Link
+          href="/activity/culture"
+          className="card-link rounded-2xl border-2 border-[var(--color-warm)]/30 bg-white p-4"
+        >
+          <div className="text-2xl" aria-hidden>🎬</div>
+          <p className="mt-1 text-[14px] font-bold text-[var(--color-text)]">
+            문화누리카드로 즐기기
+          </p>
+          <p className="mt-0.5 text-[12px] leading-snug text-[var(--color-muted)]">
+            영화·공연·전시·여행
+          </p>
+        </Link>
+        <Link
+          href="/activity/transport-card"
+          className="card-link rounded-2xl border-2 border-[var(--color-warm)]/30 bg-white p-4"
+        >
+          <div className="text-2xl" aria-hidden>🪪</div>
+          <p className="mt-1 text-[14px] font-bold text-[var(--color-text)]">
+            경로우대 교통카드
+          </p>
+          <p className="mt-0.5 text-[12px] leading-snug text-[var(--color-muted)]">
+            발급 안내·체크리스트
+          </p>
         </Link>
       </section>
 
