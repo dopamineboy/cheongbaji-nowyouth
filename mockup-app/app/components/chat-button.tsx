@@ -4,9 +4,11 @@
 //          + 위치 4코너 선택 (localStorage 영구) + 잠시 숨기기 (sessionStorage)
 //          + 4대 기능 통합 컨텍스트 + 액션 카드 파싱 ([[/path|label]])
 //          + 현재 페이지 경로 전송 (사용자가 보고 있는 화면 인식)
+//          + 페이지별 동적 빠른 질문 칩 (usePathname 기반)
 // STT/TTS는 브라우저 내장 Web Speech API 사용 (추가 비용 0, 한국어 지원)
 // iOS Safari는 SpeechRecognition 미지원 — 마이크 버튼 자동 숨김
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 
 // 챗봇 응답 텍스트를 파싱해서 [[/path|label]] 액션을 추출하고 본문은 따로 분리
@@ -61,11 +63,141 @@ const CORNER_LABEL: Record<Corner, { ko: string; arrow: string }> = {
   br: { ko: "오른쪽 아래", arrow: "↘" },
 };
 
-const QUICK_PROMPTS: { icon: string; text: string }[] = [
-  { icon: "📋", text: "내가 받을 수 있는 복지 혜택 알려줘" },
-  { icon: "💼", text: "우리 동네 일자리 추천해줘" },
-  { icon: "🎓", text: "무료로 들을 수 있는 교육 알려줘" },
-  { icon: "🎯", text: "활동 포인트는 어떻게 모아?" },
+// Prompt: text(클릭 칩 라벨) + href(이동 경로) 항상 페어
+// — 사용자가 메뉴 못 찾을 때 도우미가 빠른 이동 단축키 역할
+type Prompt = { icon: string; text: string; href: string };
+
+// 현재 페이지에 맞춰 가장 도움 될 다른 영역 4곳을 빠른 이동 칩으로 노출
+function getPromptsByPath(path: string | null): Prompt[] {
+  if (!path) return DEFAULT_PROMPTS;
+
+  // 복지 상세 (/welfare/[id])
+  if (path.startsWith("/welfare/")) {
+    return [
+      { icon: "📋", text: "다른 복지 혜택 보러가기", href: "/welfare" },
+      { icon: "💼", text: "관련 일자리 매칭 보기", href: "/jobs" },
+      { icon: "🎓", text: "무료 연계 교육 보기", href: "/training" },
+      { icon: "🏠", text: "홈으로", href: "/" },
+    ];
+  }
+  // 복지 목록 (/welfare)
+  if (path === "/welfare") {
+    return [
+      { icon: "💼", text: "일자리 매칭 보러가기", href: "/jobs" },
+      { icon: "🎓", text: "무료 연계 교육 보러가기", href: "/training" },
+      { icon: "🌳", text: "0원 나들이 추천 보기", href: "/activity/outings" },
+      { icon: "💬", text: "우리 동 커뮤니티", href: "/community" },
+    ];
+  }
+
+  // 일자리 상세 (/jobs/[id])
+  if (path.startsWith("/jobs/")) {
+    return [
+      { icon: "💼", text: "다른 추천 일자리 보기", href: "/jobs" },
+      { icon: "🎓", text: "이 일에 도움되는 무료 교육", href: "/training" },
+      { icon: "📋", text: "복지 알리미 보기", href: "/welfare" },
+      { icon: "🏠", text: "홈으로", href: "/" },
+    ];
+  }
+  // 일자리 목록 (/jobs)
+  if (path === "/jobs") {
+    return [
+      { icon: "🎓", text: "무료 연계 교육 보러가기", href: "/training" },
+      { icon: "📋", text: "복지 알리미 보러가기", href: "/welfare" },
+      { icon: "🌳", text: "0원 나들이 추천 보기", href: "/activity/outings" },
+      { icon: "💬", text: "우리 동 커뮤니티", href: "/community" },
+    ];
+  }
+
+  // 무료 연계 교육 (/training)
+  if (path === "/training") {
+    return [
+      { icon: "💼", text: "일자리 매칭 보러가기", href: "/jobs" },
+      { icon: "📋", text: "복지 알리미 보러가기", href: "/welfare" },
+      { icon: "🎯", text: "활동 리워드 보기", href: "/activity" },
+      { icon: "💬", text: "우리 동 커뮤니티", href: "/community" },
+    ];
+  }
+
+  // 0원 나들이 코스 상세
+  if (path.startsWith("/activity/outings/")) {
+    return [
+      { icon: "🌳", text: "다른 코스 보러가기", href: "/activity/outings" },
+      { icon: "🪪", text: "교통카드 발급 안내", href: "/activity/transport-card" },
+      { icon: "🎬", text: "문화누리카드 추천 활동", href: "/activity/culture" },
+      { icon: "🏠", text: "홈으로", href: "/" },
+    ];
+  }
+  // 0원 나들이 목록
+  if (path === "/activity/outings") {
+    return [
+      { icon: "🪪", text: "교통카드 발급 안내", href: "/activity/transport-card" },
+      { icon: "🎬", text: "문화누리카드 추천 활동", href: "/activity/culture" },
+      { icon: "🎯", text: "활동 리워드 보기", href: "/activity" },
+      { icon: "🏠", text: "홈으로", href: "/" },
+    ];
+  }
+  // 문화누리카드
+  if (path === "/activity/culture") {
+    return [
+      { icon: "🌳", text: "0원 나들이 추천 보기", href: "/activity/outings" },
+      { icon: "🪪", text: "교통카드 발급 안내", href: "/activity/transport-card" },
+      { icon: "📋", text: "문화누리카드 신청 방법", href: "/welfare/culture-voucher" },
+      { icon: "🎯", text: "활동 리워드 보기", href: "/activity" },
+    ];
+  }
+  // 교통카드 발급
+  if (path === "/activity/transport-card") {
+    return [
+      { icon: "🌳", text: "0원 나들이 추천 보기", href: "/activity/outings" },
+      { icon: "🎬", text: "문화누리카드 추천 활동", href: "/activity/culture" },
+      { icon: "🎯", text: "활동 리워드 보기", href: "/activity" },
+      { icon: "🏠", text: "홈으로", href: "/" },
+    ];
+  }
+  // 활동 메인 (/activity)
+  if (path === "/activity") {
+    return [
+      { icon: "🌳", text: "0원 나들이 추천 보기", href: "/activity/outings" },
+      { icon: "🎬", text: "문화누리카드 추천 활동", href: "/activity/culture" },
+      { icon: "🪪", text: "교통카드 발급 안내", href: "/activity/transport-card" },
+      { icon: "🎁", text: "포인트로 교환하기", href: "/rewards" },
+    ];
+  }
+
+  // 커뮤니티 글 작성
+  if (path === "/community/new") {
+    return [
+      { icon: "💬", text: "다른 요청글 보러가기", href: "/community" },
+      { icon: "📋", text: "복지 알리미 보기", href: "/welfare" },
+      { icon: "💼", text: "일자리 매칭 보기", href: "/jobs" },
+      { icon: "🏠", text: "홈으로", href: "/" },
+    ];
+  }
+  // 커뮤니티 (/community)
+  if (path === "/community") {
+    return [
+      { icon: "✍️", text: "도움 요청글 작성하기", href: "/community/new" },
+      { icon: "📋", text: "복지 알리미 보기", href: "/welfare" },
+      { icon: "💼", text: "일자리 매칭 보기", href: "/jobs" },
+      { icon: "🌳", text: "0원 나들이 추천 보기", href: "/activity/outings" },
+    ];
+  }
+
+  // welcome / onboarding — 인터뷰 미완료 사용자는 이동 칩 의미 약함, 기본 유지
+  if (path === "/welcome" || path.startsWith("/onboarding")) {
+    return DEFAULT_PROMPTS;
+  }
+
+  // 홈(/) 또는 그 외 — 4대 영역 + 0원 나들이로 이동
+  return DEFAULT_PROMPTS;
+}
+
+const DEFAULT_PROMPTS: Prompt[] = [
+  { icon: "📋", text: "복지 알리미 보러가기", href: "/welfare" },
+  { icon: "💼", text: "일자리 매칭 보러가기", href: "/jobs" },
+  { icon: "🎓", text: "무료 연계 교육 보러가기", href: "/training" },
+  { icon: "🌳", text: "0원 나들이 추천 보기", href: "/activity/outings" },
 ];
 
 async function resetOnboarding() {
@@ -76,6 +208,8 @@ async function resetOnboarding() {
 }
 
 export default function ChatButton() {
+  const pathname = usePathname();
+  const prompts = getPromptsByPath(pathname);
   const [open, setOpen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [corner, setCorner] = useState<Corner>("br");
@@ -589,17 +723,17 @@ export default function ChatButton() {
               );
             })}
 
-            {/* 빠른 질문 — 첫 진입 시만 */}
+            {/* 빠른 이동 칩 — 첫 진입 시만 (현재 페이지에 따라 다른 4곳으로) */}
             {showQuickPrompts && (
               <div className="mt-2 flex flex-col gap-2">
                 <p className="px-1 text-[12px] font-medium text-[var(--color-muted)]">
-                  이런 게 궁금하시면 눌러보세요
+                  바로 가볼 만한 곳
                 </p>
-                {QUICK_PROMPTS.map((p, i) => (
-                  <button
+                {prompts.map((p, i) => (
+                  <Link
                     key={i}
-                    type="button"
-                    onClick={() => send(p.text)}
+                    href={p.href}
+                    onClick={handleClose}
                     className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-left text-[14px] text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)]"
                   >
                     <span className="text-xl" aria-hidden>
@@ -609,8 +743,11 @@ export default function ChatButton() {
                     <span className="text-[var(--color-muted)]" aria-hidden>
                       →
                     </span>
-                  </button>
+                  </Link>
                 ))}
+                <p className="mt-1 px-1 text-[11px] leading-relaxed text-[var(--color-muted)]">
+                  💬 자세한 답변이 필요하시면 아래에 직접 물어보시거나 마이크 버튼을 눌러주세요.
+                </p>
               </div>
             )}
           </div>
