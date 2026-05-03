@@ -61,7 +61,7 @@ function QuickGrid() {
   const items = [
     { label: "복지 알리미", icon: "📋", href: "/welfare", cls: "hero-blue" },
     { label: "일자리", icon: "💼", href: "/jobs", cls: "hero-gold" },
-    { label: "포인트·활동", icon: "🎯", href: "/activity", cls: "hero-coral" },
+    { label: "활동", icon: "🎯", href: "/activity", cls: "hero-warm" },
     { label: "커뮤니티", icon: "💬", href: "/community", cls: "hero-emerald" },
   ];
   return (

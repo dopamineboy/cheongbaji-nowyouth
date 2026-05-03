@@ -110,8 +110,8 @@ export default async function ActivityPage() {
         </h1>
       </header>
 
-      {/* 포인트 카드 */}
-      <section className="hero-blue mx-5 mb-4 rounded-2xl p-5">
+      {/* 포인트 카드 — 활동 섹션 정체성 (부드러운 오렌지) */}
+      <section className="hero-warm mx-5 mb-4 rounded-2xl p-5">
         <div className="flex items-baseline justify-between">
           <p className="text-[15px] font-medium text-white/80">내 포인트</p>
           <Link
