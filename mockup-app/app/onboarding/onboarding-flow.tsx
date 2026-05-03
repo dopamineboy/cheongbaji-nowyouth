@@ -209,11 +209,30 @@ export default function OnboardingFlow() {
             />
           </div>
 
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--bg-soft-blue)] p-4">
-            <p className="text-[13px] leading-relaxed text-[var(--color-muted)]">
-              <span className="font-bold text-[var(--color-text)]">개인정보 안내</span>
-              <br />
-              입력하시는 정보는 혜택·일자리 매칭에만 사용되며, 안전하게 보관돼요. 동의하시면 시작 버튼을 눌러주세요.
+          <div className="rounded-2xl border-2 border-[var(--color-primary)]/20 bg-[var(--bg-soft-blue)] p-5">
+            <p className="mb-3 text-[15px] font-bold text-[var(--color-text)]">
+              🔒 개인정보 보호 약속
+            </p>
+            <ul className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--color-text)]">
+              <li className="flex gap-2">
+                <span className="text-[var(--color-success)]">✓</span>
+                <span>입력 정보는 혜택·일자리 추천에만 사용합니다</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-success)]">✓</span>
+                <span>주민등록번호·계좌번호·카드번호는 받지 않습니다</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-success)]">✓</span>
+                <span>언제든지 삭제를 요청하실 수 있습니다</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-success)]">✓</span>
+                <span>금융·투자·종교 권유는 일절 하지 않습니다</span>
+              </li>
+            </ul>
+            <p className="mt-3 text-[11px] text-[var(--color-muted)]">
+              개인정보보호법 준수 · 최소 수집 · 암호화 저장 · 감사 추적
             </p>
           </div>
 

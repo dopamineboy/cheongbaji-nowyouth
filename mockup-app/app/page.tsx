@@ -37,22 +37,89 @@ function GreetingHeader({ name, dong }: { name: string; dong: string }) {
   );
 }
 
-function PointSummary({ balance }: { balance: number }) {
+function MatchingHero({
+  name,
+  totalCount,
+  welfareCount,
+  welfareMonthlyKrw,
+  jobCount,
+  jobTopWage,
+  poomasiCount,
+  balance,
+}: {
+  name: string;
+  totalCount: number;
+  welfareCount: number;
+  welfareMonthlyKrw: number;
+  jobCount: number;
+  jobTopWage: number;
+  poomasiCount: number;
+  balance: number;
+}) {
   return (
-    <section className="hero-blue mx-5 mb-4 rounded-2xl p-5">
-      <p className="text-[15px] font-medium text-white/80">내 포인트</p>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className="text-[40px] font-extrabold leading-tight">
-          {balance.toLocaleString()}
+    <section className="hero-blue mx-5 mb-4 rounded-2xl p-5 text-white">
+      <p className="text-[13px] font-medium text-white/85">
+        🤖 AI 매칭 결과 · 입력하신 조건 기준
+      </p>
+      <h2 className="mt-1 text-[22px] font-extrabold leading-tight">
+        {name}님이 확인해볼
+        <br />
+        혜택{" "}
+        <span className="text-[28px] text-[var(--color-accent-soft)]">
+          {totalCount}건
         </span>
-        <span className="text-[18px] font-medium">P</span>
+      </h2>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Link
+          href="/welfare"
+          className="rounded-xl bg-white/15 px-3 py-3 transition hover:bg-white/25"
+        >
+          <p className="text-[12px] font-medium text-white/80">📋 복지</p>
+          <p className="mt-0.5 text-[18px] font-extrabold">{welfareCount}건</p>
+          {welfareMonthlyKrw > 0 && (
+            <p className="text-[11px] leading-tight text-white/75">
+              최대 월 {(welfareMonthlyKrw / 10000).toFixed(0)}만원 가능성
+            </p>
+          )}
+        </Link>
+        <Link
+          href="/jobs"
+          className="rounded-xl bg-white/15 px-3 py-3 transition hover:bg-white/25"
+        >
+          <p className="text-[12px] font-medium text-white/80">💼 일자리</p>
+          <p className="mt-0.5 text-[18px] font-extrabold">{jobCount}건</p>
+          {jobTopWage > 0 && (
+            <p className="text-[11px] leading-tight text-white/75">
+              시급 최대 {jobTopWage.toLocaleString()}원
+            </p>
+          )}
+        </Link>
         <Link
           href="/activity"
-          className="ml-auto rounded-full bg-white/20 px-4 py-2 text-[14px] font-semibold"
+          className="rounded-xl bg-white/15 px-3 py-3 transition hover:bg-white/25"
         >
-          자세히
+          <p className="text-[12px] font-medium text-white/80">🎯 활동</p>
+          <p className="mt-0.5 text-[18px] font-extrabold">
+            {balance.toLocaleString()}P
+          </p>
+          <p className="text-[11px] leading-tight text-white/75">
+            적립 포인트
+          </p>
+        </Link>
+        <Link
+          href="/community"
+          className="rounded-xl bg-white/15 px-3 py-3 transition hover:bg-white/25"
+        >
+          <p className="text-[12px] font-medium text-white/80">💬 커뮤니티</p>
+          <p className="mt-0.5 text-[18px] font-extrabold">{poomasiCount}건</p>
+          <p className="text-[11px] leading-tight text-white/75">우리 동 요청</p>
         </Link>
       </div>
+
+      <p className="mt-3 text-[10.5px] leading-relaxed text-white/65">
+        * 룰 기반 매칭 + AI Ranker · 정부24·복지로 공식 자료 기반 추정
+      </p>
     </section>
   );
 }
@@ -172,10 +239,35 @@ export default async function Home() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const topPoomasi = myPoomasi[0];
 
+  // 복지 카드의 신청처·서류 표시용 (AC 요구: "신청처 · 필요 정보" 명시)
+  const topWelfareApply = topWelfare
+    ? topWelfare.benefit.apply.online?.name ??
+      topWelfare.benefit.apply.offline?.[0] ??
+      "주소지 행정복지센터"
+    : "";
+  const topWelfareDocs =
+    topWelfare?.benefit.documents?.slice(0, 2).join(" · ") ?? "";
+  const topWelfareAmount =
+    topWelfare?.benefit.benefit.amount_krw_max?.single ??
+    topWelfare?.benefit.benefit.amount_krw_max?.couple ??
+    0;
+
+  const totalCount = eligibleWelfare.length + jobs.length + myPoomasi.length;
+  const jobTopWage = topJob?.wageKrwPerHour ?? 0;
+
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <GreetingHeader name={user.name} dong={user.dongName} />
-      <PointSummary balance={balance} />
+      <MatchingHero
+        name={user.name}
+        totalCount={totalCount}
+        welfareCount={eligibleWelfare.length}
+        welfareMonthlyKrw={totalWelfareKrw}
+        jobCount={jobs.length}
+        jobTopWage={jobTopWage}
+        poomasiCount={myPoomasi.length}
+        balance={balance}
+      />
       <QuickGrid />
 
       {/* 통합 피드 — 4대 서비스 믹스 */}
@@ -183,25 +275,87 @@ export default async function Home() {
         <h2 className="text-[19px] font-bold text-[var(--color-text)]">오늘의 추천</h2>
 
         {topWelfare && (
-          <FeedCard
-            badge="📋 복지"
-            badgeColor="bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-            title={topWelfare.benefit.name}
-            body={topWelfare.benefit.summary.split("\n").slice(0, 2).join(" ")}
-            cta={`받으실 수 있는 혜택 ${eligibleWelfare.length}건 · 월 약 ${(totalWelfareKrw / 10000).toFixed(0)}만원`}
-            href="/welfare"
-          />
+          <Link href="/welfare">
+            <article className="card-soft card-link rounded-2xl bg-white p-5">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-[13px] font-semibold text-[var(--color-primary)]">
+                  📋 복지
+                </span>
+                {topWelfare.status === "eligible" && (
+                  <span className="rounded-full bg-[var(--color-success)]/10 px-3 py-1 text-[12px] font-bold text-[var(--color-success)]">
+                    ✓ 가능성 높음
+                  </span>
+                )}
+                {topWelfare.status === "likely_eligible" && (
+                  <span className="rounded-full bg-[var(--color-accent)]/15 px-3 py-1 text-[12px] font-bold text-[#8A5E00]">
+                    가능성 있음
+                  </span>
+                )}
+              </div>
+              <h3 className="text-[18px] font-bold leading-tight text-[var(--color-text)]">
+                {topWelfare.benefit.name}
+              </h3>
+              {topWelfareAmount > 0 && (
+                <p className="mt-1 text-[15px] font-bold text-[var(--color-primary)]">
+                  예상 월 최대 {topWelfareAmount.toLocaleString()}원
+                </p>
+              )}
+              {topWelfareDocs && (
+                <p className="mt-2 text-[13px] leading-snug text-[var(--color-muted)]">
+                  <span className="font-semibold text-[var(--color-text)]">필요 정보:</span>{" "}
+                  {topWelfareDocs}
+                </p>
+              )}
+              <p className="mt-1 text-[13px] leading-snug text-[var(--color-muted)]">
+                <span className="font-semibold text-[var(--color-text)]">신청처:</span>{" "}
+                {topWelfareApply}
+              </p>
+              <p className="mt-3 text-[14px] font-semibold text-[var(--color-primary)]">
+                받으실 수 있는 혜택 {eligibleWelfare.length}건 모두 보기 →
+              </p>
+            </article>
+          </Link>
         )}
 
         {topJob && (
-          <FeedCard
-            badge={`💼 일자리 · ${topJob.activityType}`}
-            badgeColor="bg-[var(--color-accent)]/15 text-[#8A5E00]"
-            title={topJob.title}
-            body={`${topJob.org} · ${topJob.matchReason}`}
-            cta={`적합도 ${topJob.score}점 · 시급 ${topJob.wageKrwPerHour.toLocaleString()}원`}
-            href="/jobs"
-          />
+          <Link href="/jobs">
+            <article className="card-soft card-link rounded-2xl bg-white p-5">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="rounded-full bg-[var(--color-accent)]/15 px-3 py-1 text-[13px] font-semibold text-[#8A5E00]">
+                  💼 일자리 · {topJob.activityType}
+                </span>
+                <span className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-[12px] font-bold text-[var(--color-primary)]">
+                  적합도 {topJob.score}점
+                </span>
+              </div>
+              <h3 className="text-[18px] font-bold leading-tight text-[var(--color-text)]">
+                {topJob.title}
+              </h3>
+              <p className="mt-1 text-[13px] text-[var(--color-muted)]">{topJob.org}</p>
+              <p className="mt-2 text-[14px] leading-snug text-[var(--color-text)]">
+                ✨ {topJob.matchReason}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-[13px]">
+                <div className="rounded-lg bg-[var(--bg-page)] px-3 py-2">
+                  <p className="text-[11px] text-[var(--color-muted)]">시급</p>
+                  <p className="font-bold text-[var(--color-primary)]">
+                    {topJob.wageKrwPerHour.toLocaleString()}원
+                  </p>
+                </div>
+                <div className="rounded-lg bg-[var(--bg-page)] px-3 py-2">
+                  <p className="text-[11px] text-[var(--color-muted)]">거리</p>
+                  <p className="font-bold text-[var(--color-text)]">
+                    {topJob.distanceKm < 1
+                      ? `${(topJob.distanceKm * 1000).toFixed(0)}m`
+                      : `${topJob.distanceKm.toFixed(1)}km`}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-[14px] font-semibold text-[var(--color-primary)]">
+                추천 일자리 {jobs.length}건 모두 보기 →
+              </p>
+            </article>
+          </Link>
         )}
 
         <FeedCard

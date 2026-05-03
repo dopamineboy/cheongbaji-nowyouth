@@ -52,28 +52,35 @@ export default async function WelcomePage() {
         </p>
       </header>
 
-      {/* Hero — 강력한 한 줄 */}
+      {/* Hero — 후킹 + 안전 톤 (과장 리스크 회피) */}
       <section className="hero-blue mb-5 rounded-3xl px-6 py-7 text-center">
-        <p className="text-[15px] font-medium text-white/85">
-          어르신 한 분당 평균
+        <p className="text-[15px] font-medium leading-snug text-white/90">
+          조건에 따라 받을 수 있는
+          <br />
+          복지·일자리 혜택을
         </p>
-        <p className="mt-1 text-[36px] font-extrabold leading-tight">
-          월 약 130만원
+        <p className="mt-2 text-[28px] font-extrabold leading-tight">
+          1분 만에 확인
         </p>
-        <p className="mt-1 text-[16px] font-semibold text-white/90">
-          받을 수 있는 혜택을 놓치지 마세요
+        <p className="mt-3 inline-block rounded-full bg-white/15 px-4 py-1.5 text-[13px] font-semibold">
+          최대 월 130만원 상당의 지원 가능성 점검
         </p>
-        <p className="mt-3 text-[12px] text-white/70">
-          * 주거급여·생계급여·기초연금·바우처 등 종합 추정
+        <p className="mt-3 text-[11px] leading-relaxed text-white/70">
+          * 주거급여·생계급여·기초연금·바우처 등 종합 추정 범위
+          <br />
+          실제 수급 금액은 소득·재산·가구 형태에 따라 달라집니다
         </p>
       </section>
 
-      {/* 신뢰 stats */}
+      {/* 신뢰 stats — MVP 범위 명시 (작아 보이지 않게 확장 계획 표시) */}
       <section className="mb-5 grid grid-cols-3 gap-2 text-center">
-        <Stat number="25" unit="개" label="복지 제도" />
+        <Stat number="25" unit="개+" label="MVP 핵심 제도" />
         <Stat number="115만" unit="개" label="노인일자리" />
         <Stat number="100%" unit="" label="무료" />
       </section>
+      <p className="-mt-3 mb-5 text-center text-[11px] leading-relaxed text-[var(--color-muted)]">
+        향후 복지로·공공데이터 기반 360종+ 자동 매칭 확장
+      </p>
 
       {/* 4대 가치 */}
       <section className="mb-5 flex flex-col gap-3">
