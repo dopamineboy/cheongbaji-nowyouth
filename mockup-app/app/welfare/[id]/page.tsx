@@ -1,8 +1,10 @@
 // 복지 상세 페이지 — 도우다 prototype 기반으로 청바지 톤에 맞게 단순화
+// AC 피드백 반영 §3-5: 서류 체크리스트 + 신청 단계 가이드 + 안전 게이트 추가
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadBenefitById } from "../../lib/welfare/content";
 import { getCurrentUser } from "../../lib/current-user";
+import ApplyFlow from "./apply-flow";
 
 const DOC_GUIDE: Record<string, { how: string; url?: string; urlLabel?: string }> = {
   신분증: { how: "주민등록증 또는 운전면허증을 준비하세요. 이미 가지고 계실 거예요." },
@@ -284,89 +286,15 @@ export default async function WelfareDetailPage({
         </section>
       )}
 
-      {/* 준비하실 서류 */}
-      {b.documents?.length > 0 && (
-        <section className="mx-5 mb-5">
-          <h2 className="mb-3 flex items-center gap-2 text-[18px] font-bold text-[var(--color-text)]">
-            <span className="inline-block h-5 w-2 rounded-full bg-[var(--color-primary)]" />
-            준비하실 서류
-          </h2>
-          <div className="flex flex-col gap-3">
-            {b.documents.map((doc, i) => {
-              const guide = DOC_GUIDE[doc];
-              return (
-                <div
-                  key={i}
-                  className="rounded-2xl border border-[var(--color-border)] bg-white p-4"
-                >
-                  <p className="mb-1 text-[15px] font-bold text-[var(--color-text)]">
-                    {doc}
-                  </p>
-                  {guide ? (
-                    <>
-                      <p
-                        className="text-[13px] leading-relaxed text-[var(--color-muted)]"
-                        style={{ wordBreak: "keep-all" }}
-                      >
-                        {guide.how}
-                      </p>
-                      {guide.url && (
-                        <a
-                          href={guide.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-block rounded-lg bg-[var(--color-primary)]/10 px-3 py-1.5 text-[13px] font-bold text-[var(--color-primary)]"
-                        >
-                          {guide.urlLabel ?? "발급 바로가기"} →
-                        </a>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-[13px] text-[var(--color-muted)]">
-                      주민센터 방문 시 안내받으실 수 있어요.
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* 신청 방법 */}
-      <section className="mx-5 mb-8">
-        <h2 className="mb-3 flex items-center gap-2 text-[18px] font-bold text-[var(--color-text)]">
-          <span className="inline-block h-5 w-2 rounded-full bg-[var(--color-primary)]" />
-          신청 방법
-        </h2>
-        <div className="flex flex-col gap-3">
-          {b.apply?.online && (
-            <a
-              href={b.apply.online.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-2xl bg-[var(--color-primary)] py-4 text-center text-[17px] font-bold text-white"
-            >
-              {b.apply.online.name}에서 온라인 신청 → (+100P)
-            </a>
-          )}
-          {b.apply?.offline && b.apply.offline.length > 0 && (
-            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
-              <p className="mb-2 text-[13px] font-bold text-[var(--color-muted)]">
-                직접 방문 신청
-              </p>
-              <ul className="space-y-2 text-[15px]">
-                {b.apply.offline.map((place, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="shrink-0 text-[var(--color-primary)]">*</span>
-                    {place}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </section>
+      {/* AC 피드백 §3-5 통합 — 서류 체크리스트 + 신청 단계 가이드 + 안전 게이트 */}
+      <ApplyFlow
+        benefitId={b.id}
+        benefitName={b.name}
+        documents={b.documents ?? []}
+        docGuides={DOC_GUIDE}
+        applyOnline={b.apply?.online}
+        applyOffline={b.apply?.offline}
+      />
 
       {/* 안내 */}
       <p className="mx-5 mb-6 text-[12px] leading-relaxed text-[var(--color-muted)]">
