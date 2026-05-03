@@ -217,6 +217,44 @@ export default async function ActivityPage() {
         );
       })()}
 
+      {/* 🌳 오늘의 0원 나들이 — AC 추천 핵심 진입점 */}
+      <section className="mx-5 mb-6">
+        <Link
+          href="/activity/outings"
+          className="card-link card-soft block overflow-hidden rounded-2xl bg-white"
+        >
+          <div className="hero-warm p-5 text-white">
+            <p className="text-[13px] font-medium text-white/85">
+              🚇 지하철 무료 + 무료 입장
+            </p>
+            <h2 className="mt-1 text-[22px] font-extrabold leading-tight">
+              오늘의 0원 나들이
+            </h2>
+            <p
+              className="mt-2 text-[14px] leading-relaxed text-white/90"
+              style={{ wordBreak: "keep-all" }}
+            >
+              교통카드만 있으면 0원으로 다녀올 수 있는 코스를 추천해드려요.
+              방문 인증하면 포인트도 받으실 수 있어요.
+            </p>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="rounded-full bg-white/25 px-3 py-1 text-[12px] font-bold">
+                💸 0원
+              </span>
+              <span className="rounded-full bg-white/25 px-3 py-1 text-[12px] font-bold">
+                +최대 1,000P
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between bg-white px-5 py-3">
+            <span className="text-[14px] font-semibold text-[var(--color-warm-strong)]">
+              추천 코스 보러가기
+            </span>
+            <span className="text-[18px] text-[var(--color-warm-strong)]">→</span>
+          </div>
+        </Link>
+      </section>
+
       {/* 주간 차트 */}
       <section className="mx-5 mb-6">
         <WeeklyChart ledger={all} />
