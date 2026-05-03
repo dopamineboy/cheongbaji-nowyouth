@@ -1,13 +1,21 @@
 "use client";
 
-// AI 챗봇 — OpenAI 스트리밍 응답
-// 키 없으면 서버에서 [데모 모드] 안내 텍스트 반환
-import { useState, useRef, useEffect } from "react";
+// AI 챗봇 — OpenAI 스트리밍 + 음성 입력(STT) + 음성 출력(TTS) + 빠른 질문 칩
+// STT/TTS는 브라우저 내장 Web Speech API 사용 (추가 비용 0, 한국어 지원)
+// iOS Safari는 SpeechRecognition 미지원 — 마이크 버튼 자동 숨김
+import { useState, useRef, useEffect, useCallback } from "react";
 
 interface Msg {
   role: "user" | "assistant";
   content: string;
 }
+
+const QUICK_PROMPTS: { icon: string; text: string }[] = [
+  { icon: "📋", text: "내가 받을 수 있는 복지 혜택 알려줘" },
+  { icon: "💼", text: "우리 동네 일자리 추천해줘" },
+  { icon: "🎓", text: "무료로 들을 수 있는 교육 알려줘" },
+  { icon: "🎯", text: "활동 포인트는 어떻게 모아?" },
+];
 
 async function resetOnboarding() {
   if (!confirm("인터뷰를 다시 진행하시겠어요? 현재 입력 정보는 초기화돼요."))
@@ -22,23 +30,110 @@ export default function ChatButton() {
     {
       role: "assistant",
       content:
-        "안녕하세요, 청바지 도우미예요. 복지·일자리·커뮤니티·포인트에 대해 무엇이든 물어보세요.",
+        "안녕하세요, 청바지 도우미예요. 복지·일자리·커뮤니티·활동에 대해 무엇이든 물어보세요. 마이크 버튼을 누르면 말로도 물어보실 수 있어요.",
     },
   ]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [voiceOut, setVoiceOut] = useState(false); // 응답 자동 읽기
+  const [recording, setRecording] = useState(false);
+  const [sttSupported, setSttSupported] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
+  // SpeechRecognition 초기화 (브라우저 내장)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      setSttSupported(false);
+      return;
+    }
+    setSttSupported(true);
+    const r = new SR();
+    r.lang = "ko-KR";
+    r.interimResults = true;
+    r.continuous = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    r.onresult = (e: any) => {
+      let final = "";
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += t;
+        else interim += t;
+      }
+      setInput(final || interim);
+    };
+    r.onend = () => setRecording(false);
+    r.onerror = () => setRecording(false);
+    recognitionRef.current = r;
+  }, []);
+
+  // 메시지 자동 스크롤
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [msgs]);
 
-  const send = async () => {
-    const q = input.trim();
+  // 컴포넌트 언마운트/닫기 시 음성 정리
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  // TTS — 응답 텍스트 읽기
+  const speak = useCallback(
+    (text: string) => {
+      if (
+        !voiceOut ||
+        !text ||
+        typeof window === "undefined" ||
+        !("speechSynthesis" in window)
+      )
+        return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR";
+      u.rate = 0.95;
+      u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    },
+    [voiceOut],
+  );
+
+  // 마이크 토글
+  const toggleMic = () => {
+    if (!recognitionRef.current) return;
+    if (recording) {
+      recognitionRef.current.stop();
+      setRecording(false);
+    } else {
+      try {
+        setInput("");
+        recognitionRef.current.start();
+        setRecording(true);
+      } catch {
+        // 이미 실행 중이거나 시작 실패 — 무시
+      }
+    }
+  };
+
+  const send = async (rawQ?: string) => {
+    const q = (rawQ ?? input).trim();
     if (!q || streaming) return;
     setInput("");
+    if (recording) {
+      recognitionRef.current?.stop();
+      setRecording(false);
+    }
+
     const newMsgs: Msg[] = [
       ...msgs,
       { role: "user", content: q },
@@ -83,6 +178,8 @@ export default function ChatButton() {
           return updated;
         });
       }
+      // 응답 완료 시 음성 출력
+      speak(acc);
     } catch (e) {
       setMsgs((prev) => {
         const updated = [...prev];
@@ -97,15 +194,33 @@ export default function ChatButton() {
     }
   };
 
+  // 닫을 때 음성 정리
+  const handleClose = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (recording) {
+      recognitionRef.current?.stop();
+      setRecording(false);
+    }
+    setOpen(false);
+  };
+
+  // 첫 인사뿐일 때만 빠른 질문 칩 노출
+  const showQuickPrompts = msgs.length === 1 && !streaming;
+
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-2xl text-white shadow-lg sm:right-[calc(50%-220px)]"
+        className="fixed bottom-24 right-4 z-40 flex h-14 items-center gap-2 rounded-full bg-[var(--color-primary)] pl-4 pr-5 text-white shadow-lg sm:right-[calc(50%-220px)]"
         aria-label="AI 도우미 열기"
       >
-        💬
+        <span className="text-[22px]" aria-hidden>
+          💬
+        </span>
+        <span className="text-[15px] font-bold">도우미</span>
       </button>
     );
   }
@@ -120,14 +235,34 @@ export default function ChatButton() {
               궁금한 거 물어보세요
             </h3>
           </div>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="닫기"
-            className="rounded-full p-2 text-[20px] text-[var(--color-muted)] hover:bg-[var(--bg-page)]"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (voiceOut && typeof window !== "undefined") {
+                  window.speechSynthesis?.cancel();
+                }
+                setVoiceOut(!voiceOut);
+              }}
+              aria-label={voiceOut ? "음성 읽기 끄기" : "음성 읽기 켜기"}
+              title={voiceOut ? "음성 읽기 끄기" : "음성 읽기 켜기"}
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-[18px] ${
+                voiceOut
+                  ? "bg-[var(--color-primary)] text-white"
+                  : "text-[var(--color-muted)] hover:bg-[var(--bg-page)]"
+              }`}
+            >
+              {voiceOut ? "🔊" : "🔇"}
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="닫기"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[20px] text-[var(--color-muted)] hover:bg-[var(--bg-page)]"
+            >
+              ✕
+            </button>
+          </div>
         </header>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
@@ -150,6 +285,31 @@ export default function ChatButton() {
                 )}
               </div>
             ))}
+
+            {/* 빠른 질문 — 첫 진입 시만 */}
+            {showQuickPrompts && (
+              <div className="mt-2 flex flex-col gap-2">
+                <p className="px-1 text-[12px] font-medium text-[var(--color-muted)]">
+                  이런 게 궁금하시면 눌러보세요
+                </p>
+                {QUICK_PROMPTS.map((p, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => send(p.text)}
+                    className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-left text-[14px] text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)]"
+                  >
+                    <span className="text-xl" aria-hidden>
+                      {p.icon}
+                    </span>
+                    <span className="flex-1 leading-snug">{p.text}</span>
+                    <span className="text-[var(--color-muted)]" aria-hidden>
+                      →
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -161,14 +321,40 @@ export default function ChatButton() {
             }}
             className="flex gap-2"
           >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="예: 에너지바우처 어떻게 신청해요?"
-              disabled={streaming}
-              className="flex-1 rounded-xl border-2 border-[var(--color-border)] bg-white px-4 py-3 text-[15px] disabled:opacity-50"
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={
+                  recording
+                    ? "🎤 듣고 있어요…"
+                    : "예: 에너지바우처 어떻게 신청해요?"
+                }
+                disabled={streaming}
+                className={`w-full rounded-xl border-2 bg-white px-4 py-3 text-[15px] disabled:opacity-50 ${
+                  recording
+                    ? "border-[var(--color-urgent)]"
+                    : "border-[var(--color-border)]"
+                } ${sttSupported ? "pr-12" : ""}`}
+              />
+              {sttSupported && (
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  disabled={streaming}
+                  aria-label={recording ? "음성 입력 중단" : "음성으로 말하기"}
+                  title={recording ? "음성 입력 중단" : "음성으로 말하기"}
+                  className={`absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[18px] transition disabled:opacity-40 ${
+                    recording
+                      ? "animate-pulse bg-[var(--color-urgent)] text-white"
+                      : "bg-[var(--bg-page)] text-[var(--color-text)] hover:bg-[var(--color-primary)] hover:text-white"
+                  }`}
+                >
+                  🎤
+                </button>
+              )}
+            </div>
             <button
               type="submit"
               disabled={!input.trim() || streaming}
