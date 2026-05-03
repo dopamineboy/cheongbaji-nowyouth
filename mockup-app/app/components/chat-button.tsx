@@ -23,10 +23,27 @@ function parseMessage(text: string): {
   return { body, actions };
 }
 
+interface AgentStage {
+  // 에이전트 흐름 단계 — 사용자에게 진행 상황 시각화
+  // running: 진행 중 / done: 완료 / error: 실패
+  label: string;
+  state: "running" | "done" | "error";
+  summary?: string; // 완료 시 결과 요약 (예: "일자리 5건 찾았어요")
+  icon: string;
+}
+
 interface Msg {
   role: "user" | "assistant";
   content: string;
+  stages?: AgentStage[];
 }
+
+const STAGE_ICON: Record<string, string> = {
+  thinking: "🔍",
+  tool_call: "📋",
+  tool_result: "✓",
+  answering: "✍️",
+};
 
 type Corner = "br" | "bl" | "tr" | "tl";
 
@@ -201,13 +218,31 @@ export default function ChatButton() {
     const newMsgs: Msg[] = [
       ...msgs,
       { role: "user", content: q },
-      { role: "assistant", content: "" },
+      { role: "assistant", content: "", stages: [] },
     ];
     setMsgs(newMsgs);
     setStreaming(true);
 
+    // 현재 응답 메시지에 단계 추가 (running) — 완료 시 done으로 전환
+    const updateLast = (mut: (m: Msg) => Msg) =>
+      setMsgs((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = mut(updated[updated.length - 1]);
+        return updated;
+      });
+
+    const addStage = (stage: AgentStage) =>
+      updateLast((m) => ({ ...m, stages: [...(m.stages ?? []), stage] }));
+
+    const completeAllStagesAndPrev = () =>
+      updateLast((m) => ({
+        ...m,
+        stages: (m.stages ?? []).map((s) =>
+          s.state === "running" ? { ...s, state: "done" as const } : s,
+        ),
+      }));
+
     try {
-      // 현재 페이지 경로를 함께 보내서 챗봇이 사용자가 어느 화면에 있는지 인식 가능
       const currentPath =
         typeof window !== "undefined" ? window.location.pathname : "/";
       const res = await fetch("/api/chat", {
@@ -221,42 +256,96 @@ export default function ChatButton() {
 
       if (!res.ok || !res.body) {
         const errText = await res.text();
-        setMsgs((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            role: "assistant",
-            content: `오류: ${errText.slice(0, 200)}`,
-          };
-          return updated;
-        });
+        updateLast(() => ({
+          role: "assistant",
+          content: `오류: ${errText.slice(0, 200)}`,
+        }));
         setStreaming(false);
         return;
       }
 
+      // SSE 파서 — `event: <name>\ndata: <json>\n\n` 형식
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let acc = "";
+      let buffer = "";
+      let accAnswer = "";
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        setMsgs((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: acc };
-          return updated;
-        });
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop() ?? "";
+
+        for (const chunk of chunks) {
+          if (!chunk.trim()) continue;
+          let eventName = "message";
+          const dataLines: string[] = [];
+          for (const line of chunk.split("\n")) {
+            if (line.startsWith("event: ")) eventName = line.slice(7).trim();
+            else if (line.startsWith("data: ")) dataLines.push(line.slice(6));
+          }
+          if (dataLines.length === 0) continue;
+          let data: Record<string, unknown>;
+          try {
+            data = JSON.parse(dataLines.join("\n"));
+          } catch {
+            continue;
+          }
+
+          if (eventName === "status") {
+            const stage = data.stage as string;
+            const label = (data.label as string) ?? stage;
+            if (stage === "tool_result") {
+              // 같은 도구의 tool_call을 done으로 전환 + summary 첨부
+              const toolName = data.name as string;
+              const summary = data.summary as string | undefined;
+              updateLast((m) => ({
+                ...m,
+                stages: (m.stages ?? []).map((s) =>
+                  s.state === "running" && s.label.includes(label)
+                    ? { ...s, state: "done", summary }
+                    : s,
+                ),
+              }));
+            } else {
+              // thinking / tool_call / answering — 새 단계 추가
+              completeAllStagesAndPrev();
+              addStage({
+                label,
+                state: "running",
+                icon: STAGE_ICON[stage] ?? "•",
+              });
+            }
+          } else if (eventName === "answer_delta") {
+            const delta = (data.delta as string) ?? "";
+            accAnswer += delta;
+            updateLast((m) => ({ ...m, content: accAnswer }));
+          } else if (eventName === "answer") {
+            // answer_delta 못 받았을 때 폴백 (또는 최종 보정)
+            const content = (data.content as string) ?? "";
+            if (content && !accAnswer) {
+              accAnswer = content;
+              updateLast((m) => ({ ...m, content }));
+            }
+          } else if (eventName === "done") {
+            completeAllStagesAndPrev();
+          } else if (eventName === "error") {
+            const message = (data.message as string) ?? "오류";
+            updateLast((m) => ({
+              ...m,
+              content: m.content || `오류: ${message}`,
+            }));
+          }
+        }
       }
       // 응답 완료 시 음성 출력 — 본문만 읽고 액션 카드 마크업은 제외
-      speak(parseMessage(acc).body);
+      if (accAnswer) speak(parseMessage(accAnswer).body);
     } catch (e) {
-      setMsgs((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: "assistant",
-          content: `네트워크 오류가 발생했어요: ${e}`,
-        };
-        return updated;
-      });
+      updateLast(() => ({
+        role: "assistant",
+        content: `네트워크 오류가 발생했어요: ${e}`,
+      }));
     } finally {
       setStreaming(false);
     }
@@ -404,8 +493,63 @@ export default function ChatButton() {
             {msgs.map((m, i) => {
               const isAssistant = m.role === "assistant";
               const parsed = isAssistant && m.content ? parseMessage(m.content) : null;
+              const stages = m.stages ?? [];
+              const hasStages = isAssistant && stages.length > 0;
+              const isWorking = hasStages && stages.some((s) => s.state === "running");
               return (
                 <div key={i} className="flex flex-col gap-2">
+                  {/* 에이전트 작업 단계 (사용자에게 진행 상황 시각화) */}
+                  {hasStages && (
+                    <div
+                      className={`max-w-[90%] rounded-xl border ${
+                        isWorking
+                          ? "border-[var(--color-primary)]/30 bg-[var(--bg-soft-blue)]"
+                          : "border-[var(--color-border)] bg-[var(--bg-page)]"
+                      } p-3`}
+                    >
+                      <p
+                        className={`mb-1.5 text-[11px] font-bold ${
+                          isWorking ? "text-[var(--color-primary)]" : "text-[var(--color-muted)]"
+                        }`}
+                      >
+                        🤖 에이전트 {isWorking ? "작업 중" : "완료"}
+                      </p>
+                      <ul className="flex flex-col gap-1">
+                        {stages.map((s, si) => (
+                          <li
+                            key={si}
+                            className="flex items-center gap-2 text-[12px] leading-snug"
+                          >
+                            <span
+                              className={`flex h-4 w-4 shrink-0 items-center justify-center text-[11px] ${
+                                s.state === "running"
+                                  ? "animate-pulse text-[var(--color-primary)]"
+                                  : "text-[var(--color-success)]"
+                              }`}
+                              aria-hidden
+                            >
+                              {s.state === "running" ? "●" : "✓"}
+                            </span>
+                            <span
+                              className={
+                                s.state === "running"
+                                  ? "font-semibold text-[var(--color-text)]"
+                                  : "text-[var(--color-muted)]"
+                              }
+                            >
+                              {s.icon} {s.label}
+                              {s.summary && (
+                                <span className="ml-1 text-[var(--color-success)]">
+                                  · {s.summary}
+                                </span>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div
                     className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${
                       m.role === "user"
@@ -415,13 +559,13 @@ export default function ChatButton() {
                   >
                     {m.content ? (
                       parsed ? parsed.body : m.content
-                    ) : (
+                    ) : !hasStages ? (
                       <span className="inline-flex gap-1">
                         <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)]" />
                         <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)] [animation-delay:0.2s]" />
                         <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)] [animation-delay:0.4s]" />
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   {/* 액션 카드 — 챗봇이 응답에 [[/path|label]] 마크업 포함 시 클릭 가능 카드로 변환 */}
                   {parsed && parsed.actions.length > 0 && (
