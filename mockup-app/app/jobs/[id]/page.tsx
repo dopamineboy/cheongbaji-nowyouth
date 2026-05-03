@@ -89,6 +89,22 @@ export default async function JobDetailPage({
 
       <section className="mx-5 mb-5 rounded-2xl border border-[var(--color-border)] bg-white p-5">
         <h2 className="mb-3 text-[18px] font-bold text-[var(--color-text)]">근무 조건</h2>
+
+        {/* 월 예상 활동비 — 시급 × 주 시간 × 4주 (시각 강조) */}
+        {job.hoursPerWeek > 0 && job.wageKrwPerHour > 0 && (
+          <div className="mb-4 rounded-xl bg-[var(--bg-soft-blue)] p-4">
+            <p className="text-[12px] font-medium text-[var(--color-muted)]">
+              예상 월 활동비
+            </p>
+            <p className="mt-0.5 text-[24px] font-extrabold text-[var(--color-primary)]">
+              약 {Math.round((job.wageKrwPerHour * job.hoursPerWeek * 4) / 10000)}만원
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--color-muted)]">
+              시급 {job.wageKrwPerHour.toLocaleString()}원 × 주 {job.hoursPerWeek}시간 × 4주 기준
+            </p>
+          </div>
+        )}
+
         <ul className="space-y-2 text-[15px] leading-relaxed">
           <li>
             <span className="font-bold">시급: </span>
@@ -126,9 +142,14 @@ export default async function JobDetailPage({
           <li>
             <span className="font-bold">마감: </span>
             {expiresDate.toLocaleDateString("ko-KR")}
-            {daysLeft <= 14 && (
+            {daysLeft <= 14 && daysLeft > 0 && (
               <span className="ml-2 rounded-full bg-[var(--color-urgent)]/10 px-2 py-0.5 text-[12px] font-bold text-[var(--color-urgent)]">
                 D-{daysLeft}
+              </span>
+            )}
+            {daysLeft <= 0 && (
+              <span className="ml-2 rounded-full bg-[var(--color-muted)]/15 px-2 py-0.5 text-[12px] font-bold text-[var(--color-muted)]">
+                마감
               </span>
             )}
           </li>
@@ -143,7 +164,7 @@ export default async function JobDetailPage({
           <ul className="space-y-2">
             {job.requirements.map((r, i) => (
               <li key={i} className="flex gap-2 text-[15px] leading-relaxed">
-                <span className="shrink-0 text-[var(--color-primary)]">*</span>
+                <span className="shrink-0 text-[var(--color-success)] font-bold">✓</span>
                 <span>{r}</span>
               </li>
             ))}
@@ -151,18 +172,85 @@ export default async function JobDetailPage({
         </section>
       )}
 
+      {/* 준비 서류 — 노인일자리 공통 신청 서류 (한국노인인력개발원 기준) */}
       <section className="mx-5 mb-5 rounded-2xl border border-[var(--color-border)] bg-white p-5">
         <h2 className="mb-3 text-[18px] font-bold text-[var(--color-text)]">
-          담당 기관
+          준비 서류
         </h2>
+        <p className="mb-3 text-[13px] text-[var(--color-muted)]">
+          신청 시 아래 서류를 준비하시면 빠르게 진행돼요.
+        </p>
+        <ul className="space-y-2">
+          {[
+            { icon: "🪪", label: "신분증", note: "주민등록증 또는 운전면허증 사본" },
+            { icon: "📄", label: "주민등록등본", note: "최근 3개월 이내 발급분" },
+            { icon: "💳", label: "본인 명의 통장 사본", note: "활동비 입금용" },
+            { icon: "✍️", label: "노인일자리 신청서", note: "기관 양식 · 현장 작성 가능" },
+          ].map((d, i) => (
+            <li key={i} className="flex items-start gap-3 rounded-xl bg-[var(--bg-page)] p-3">
+              <span className="text-xl" aria-hidden>
+                {d.icon}
+              </span>
+              <div>
+                <p className="text-[15px] font-bold text-[var(--color-text)]">{d.label}</p>
+                <p className="text-[12px] text-[var(--color-muted)]">{d.note}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 rounded-lg bg-[var(--bg-soft-yellow)] p-3 text-[12px] leading-relaxed text-[var(--color-text)]">
+          💡 시·군·구 행정복지센터 또는 가까운 시니어클럽에서 도와드려요.
+          서류 발급도 함께 진행 가능합니다.
+        </p>
+      </section>
+
+      {/* 신청 방법 — 단계 안내 (온라인 / 방문) */}
+      <section className="mx-5 mb-5 rounded-2xl border border-[var(--color-border)] bg-white p-5">
+        <h2 className="mb-3 text-[18px] font-bold text-[var(--color-text)]">
+          신청 방법
+        </h2>
+        <ol className="space-y-3">
+          {[
+            { n: 1, label: "지원 신청", desc: "아래 버튼으로 워크넷·노인일자리 사이트에서 신청하거나, 담당 기관에 전화 후 방문" },
+            { n: 2, label: "서류 제출", desc: "위 4가지 서류 제출 (현장 작성 가능)" },
+            { n: 3, label: "면접·상담", desc: "기관 담당자와 30분 내외 상담 (보호자 동행 가능)" },
+            { n: 4, label: "활동 시작", desc: "배정 후 1~2주 내 활동 시작 · 활동비 월말 입금" },
+          ].map((s) => (
+            <li key={s.n} className="flex gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-[14px] font-extrabold text-white">
+                {s.n}
+              </span>
+              <div className="flex-1">
+                <p className="text-[15px] font-bold text-[var(--color-text)]">{s.label}</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-[var(--color-muted)]">
+                  {s.desc}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mx-5 mb-5 rounded-2xl border border-[var(--color-border)] bg-white p-5">
+        <h2 className="mb-3 text-[18px] font-bold text-[var(--color-text)]">
+          담당 기관 · 문의
+        </h2>
+        <p className="mb-2 text-[15px]">
+          <span className="font-bold">기관: </span>
+          <span className="text-[var(--color-text)]">{job.org}</span>
+        </p>
         <p className="text-[15px]">
           <span className="font-bold">전화: </span>
           <a
             href={`tel:${job.contactPhone}`}
-            className="text-[var(--color-primary)]"
+            className="text-[var(--color-primary)] underline"
           >
             {job.contactPhone || "기관 안내 참조"}
           </a>
+        </p>
+        <p className="mt-3 rounded-lg bg-[var(--bg-soft-blue)] p-3 text-[12px] leading-relaxed text-[var(--color-text)]">
+          📞 신청이 어려우시면 <span className="font-bold">노인일자리 통합콜센터 1544-3388</span>으로
+          전화하시면 가까운 기관을 안내받으실 수 있어요.
         </p>
       </section>
 
