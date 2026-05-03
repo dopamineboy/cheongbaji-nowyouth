@@ -140,6 +140,83 @@ export default async function ActivityPage() {
         </div>
       </section>
 
+      {/* 이번 주 적립 가능 — 미션별 한도 가시화 (AC 데모용) */}
+      {(() => {
+        // 일일 미션 한도 (lib/store의 적립 룰 기준 추정)
+        const MISSIONS = [
+          { icon: "🧩", label: "인지 게임", daily: 20, days: 7 },
+          { icon: "💡", label: "학습 퀴즈", daily: 20, days: 7 },
+          { icon: "✍️", label: "한글 미션", daily: 15, days: 7 },
+          { icon: "🚶", label: "걷기 (5천보)", daily: 30, days: 7 },
+          { icon: "📍", label: "동네 스탬프", daily: 10, days: 5 },
+        ];
+        const weeklyTotal = MISSIONS.reduce((s, m) => s + m.daily * m.days, 0);
+        // 이번 주 이미 적립한 포인트 (월요일 00:00부터)
+        const monday = new Date();
+        monday.setHours(0, 0, 0, 0);
+        const dow = (monday.getDay() + 6) % 7;
+        monday.setDate(monday.getDate() - dow);
+        const earnedThisWeek = all
+          .filter((e) => e.amount > 0 && new Date(e.createdAt) >= monday)
+          .reduce((s, e) => s + e.amount, 0);
+        const remaining = Math.max(0, weeklyTotal - earnedThisWeek);
+        const earnedPct = Math.min(
+          100,
+          Math.round((earnedThisWeek / weeklyTotal) * 100),
+        );
+        return (
+          <section className="mx-5 mb-6 rounded-2xl border-2 border-[var(--color-warm)]/30 bg-white p-5">
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-[16px] font-bold text-[var(--color-text)]">
+                🎯 이번 주 적립 가능
+              </h2>
+              <span className="text-[12px] text-[var(--color-muted)]">
+                월~일 기준
+              </span>
+            </div>
+            <div className="mb-3 flex items-baseline gap-2">
+              <span className="text-[28px] font-extrabold text-[var(--color-warm)]">
+                +{remaining}P
+              </span>
+              <span className="text-[13px] text-[var(--color-muted)]">
+                (전체 {weeklyTotal}P 중 {earnedThisWeek}P 적립됨)
+              </span>
+            </div>
+            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+              <div
+                className="h-full bg-[var(--color-warm)] transition-all"
+                style={{ width: `${earnedPct}%` }}
+              />
+            </div>
+            <ul className="space-y-1.5">
+              {MISSIONS.map((m) => (
+                <li
+                  key={m.label}
+                  className="flex items-center justify-between text-[13px]"
+                >
+                  <span className="flex items-center gap-2 text-[var(--color-text)]">
+                    <span aria-hidden>{m.icon}</span>
+                    <span>{m.label}</span>
+                    <span className="text-[var(--color-muted)]">
+                      · 일 +{m.daily}P × {m.days}일
+                    </span>
+                  </span>
+                  <span className="font-bold text-[var(--color-warm)]">
+                    +{m.daily * m.days}P
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 rounded-lg bg-[var(--bg-soft-orange)] p-3 text-[12px] leading-relaxed text-[var(--color-text)]">
+              💡 1,000P 모이면 문화상품권 등으로 교환 가능해요.
+              {remaining > 0 && remaining < 1000 - balance % 1000 && (
+                <> 이번 주만 다 채우셔도 다음 교환에 가까워집니다.</>
+              )}
+            </p>
+          </section>
+        );
+      })()}
+
       {/* 주간 차트 */}
       <section className="mx-5 mb-6">
         <WeeklyChart ledger={all} />

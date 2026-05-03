@@ -221,6 +221,17 @@ export default async function WelfarePage() {
       </header>
 
       <section className="hero-blue mx-5 mb-5 rounded-2xl p-5">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white">
+            🤖 AI Ranker
+          </span>
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white">
+            ⚙ 룰 기반 매칭
+          </span>
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white">
+            🏛 복지로·공공데이터
+          </span>
+        </div>
         <p className="text-[15px] font-medium text-white/80">
           {user?.region} {user?.district} · 전체 {benefits.length}개 제도 검토
         </p>
