@@ -6,7 +6,7 @@ import type { PoomasiCategory } from "../../lib/types";
 
 const CATEGORIES: { value: PoomasiCategory; ko: string; icon: string; example: string }[] = [
   { value: "life_help", ko: "생활 도움", icon: "🏥", example: "병원 동행, 은행 업무" },
-  { value: "house_chore", ko: "가사 품앗이", icon: "🍲", example: "김장, 청소, 이사" },
+  { value: "house_chore", ko: "가사 커뮤니티", icon: "🍲", example: "김장, 청소, 이사" },
   { value: "digital", ko: "디지털 도움", icon: "📱", example: "스마트폰, 카카오톡" },
   { value: "talk", ko: "대화 상대", icon: "🚶", example: "산책, 차 한 잔" },
   { value: "skill_share", ko: "재능 나눔", icon: "🎨", example: "한글, 영어, 요리" },

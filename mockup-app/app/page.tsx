@@ -62,7 +62,7 @@ function QuickGrid() {
     { label: "복지 알리미", icon: "📋", href: "/welfare", cls: "hero-blue" },
     { label: "일자리", icon: "💼", href: "/jobs", cls: "hero-gold" },
     { label: "포인트·활동", icon: "🎯", href: "/activity", cls: "hero-coral" },
-    { label: "품앗이", icon: "💬", href: "/community", cls: "hero-emerald" },
+    { label: "커뮤니티", icon: "💬", href: "/community", cls: "hero-emerald" },
   ];
   return (
     <section className="mx-5 mb-5 grid grid-cols-2 gap-3">
@@ -116,8 +116,8 @@ function TabBar() {
     { label: "홈", icon: "🏠", href: "/", active: true },
     { label: "복지", icon: "📋", href: "/welfare" },
     { label: "일자리", icon: "💼", href: "/jobs" },
-    { label: "포인트", icon: "🎯", href: "/activity" },
-    { label: "품앗이", icon: "💬", href: "/community" },
+    { label: "활동", icon: "🎯", href: "/activity" },
+    { label: "커뮤니티", icon: "💬", href: "/community" },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 border-t border-[var(--color-border)] bg-white">
@@ -215,7 +215,7 @@ export default async function Home() {
 
         {topPoomasi && (
           <FeedCard
-            badge="💬 우리 동 품앗이"
+            badge="💬 우리 동 커뮤니티"
             badgeColor="bg-[var(--color-success)]/10 text-[var(--color-success)]"
             title={topPoomasi.title}
             body={topPoomasi.body}

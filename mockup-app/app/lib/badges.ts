@@ -72,7 +72,7 @@ export function computeBadges(ledger: LedgerEntry[]): Badge[] {
       id: "good-neighbor",
       name: "이웃 사촌",
       icon: "🤝",
-      description: "품앗이 1회 참여",
+      description: "커뮤니티 1회 참여",
       earned: poomasi >= 1,
       progress: { current: poomasi, target: 1 },
     },

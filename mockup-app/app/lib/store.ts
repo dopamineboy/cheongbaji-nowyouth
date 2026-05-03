@@ -106,7 +106,7 @@ export function appendLedger(entry: Omit<LedgerEntry, "id" | "immutable" | "crea
   return full;
 }
 
-// ── 품앗이 ──
+// ── 커뮤니티 ──
 export function addPoomasiPost(
   post: Omit<PoomasiPost, "id" | "createdAt" | "status" | "helperId" | "reportCount">,
 ): PoomasiPost {

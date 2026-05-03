@@ -1,4 +1,4 @@
-// ④ 품앗이 커뮤니티 — 우리 동 게시판
+// ④ 커뮤니티 커뮤니티 — 우리 동 게시판
 import Link from "next/link";
 import type { PoomasiCategory, PoomasiPost } from "../lib/types";
 import { getStore } from "../lib/store";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const CAT_LABEL: Record<PoomasiCategory, { ko: string; icon: string }> = {
   life_help: { ko: "생활 도움", icon: "🏥" },
-  house_chore: { ko: "가사 품앗이", icon: "🍲" },
+  house_chore: { ko: "가사 커뮤니티", icon: "🍲" },
   digital: { ko: "디지털 도움", icon: "📱" },
   talk: { ko: "대화 상대", icon: "🚶" },
   skill_share: { ko: "재능 나눔", icon: "🎨" },
@@ -76,8 +76,8 @@ function TabBar() {
     { label: "홈", icon: "🏠", href: "/" },
     { label: "복지", icon: "📋", href: "/welfare" },
     { label: "일자리", icon: "💼", href: "/jobs" },
-    { label: "포인트", icon: "🎯", href: "/activity" },
-    { label: "품앗이", icon: "💬", href: "/community", active: true },
+    { label: "활동", icon: "🎯", href: "/activity" },
+    { label: "커뮤니티", icon: "💬", href: "/community", active: true },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 border-t border-[var(--color-border)] bg-white">
@@ -127,7 +127,7 @@ export default async function CommunityPage() {
           {user?.dongName} 이웃과
         </p>
         <h1 className="mt-1 text-[24px] font-extrabold text-[var(--color-text)]">
-          서로 <span className="text-[var(--color-primary)]">품앗이</span>
+          서로 <span className="text-[var(--color-primary)]">커뮤니티</span>
         </h1>
       </header>
 

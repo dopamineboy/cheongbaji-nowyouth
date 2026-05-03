@@ -4,8 +4,6 @@ import { notFound } from "next/navigation";
 import { getStore } from "../../lib/store";
 import { getCurrentUser } from "../../lib/current-user";
 import { haversineKm, scoreJob } from "../../lib/jobs/match";
-import { matchTrainingsForJob } from "../../lib/training/match";
-import { supportLabel } from "../../lib/training/courses";
 import ApplyButton from "./apply-button";
 
 const TIME_LABEL: Record<string, string> = {
@@ -45,8 +43,6 @@ export default async function JobDetailPage({
   const daysLeft = Math.ceil(
     (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
   );
-  const relatedTrainings = matchTrainingsForJob(job, 3);
-
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
@@ -170,61 +166,13 @@ export default async function JobDetailPage({
         </p>
       </section>
 
-      {relatedTrainings.length > 0 && (
-        <section className="mx-5 mb-5 rounded-2xl bg-[var(--bg-soft-blue)] border border-[var(--color-primary)]/20 p-5">
-          <h2 className="mb-3 text-[18px] font-bold text-[var(--color-text)]">
-            🎓 이 일자리에 도움되는 정부 지원 교육
-          </h2>
-          <p className="mb-4 text-[13px] text-[var(--color-muted)]">
-            아래 과정은 모두 <span className="font-bold text-[var(--color-primary)]">정부 지원</span>으로 본인부담 없거나 매우 적게 수강하실 수 있어요.
-          </p>
-          <div className="flex flex-col gap-3">
-            {relatedTrainings.map((c) => (
-              <article
-                key={c.id}
-                className="rounded-xl bg-white p-4 border border-[var(--color-border)]"
-              >
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="rounded-full bg-[var(--color-success)]/10 px-2 py-0.5 text-[11px] font-bold text-[var(--color-success)]">
-                    {c.feeKrw === 0 ? "본인부담 0원" : `${c.feeKrw.toLocaleString()}원`}
-                  </span>
-                  <span className="text-[11px] text-[var(--color-muted)]">{c.duration}</span>
-                </div>
-                <h3 className="text-[15px] font-bold text-[var(--color-text)]">{c.name}</h3>
-                <p className="mt-1 text-[12px] text-[var(--color-muted)]">{c.agency}</p>
-                <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-text)]">{c.description}</p>
-                <div className="mt-3 rounded-lg bg-[var(--bg-soft-yellow)] p-2">
-                  <p className="text-[11px] font-semibold text-[#8A5E00]">
-                    💰 정부 지원: {c.supports.map(supportLabel).join(" / ")}
-                  </p>
-                </div>
-                <a
-                  href={c.applyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-block text-[13px] font-bold text-[var(--color-primary)]"
-                >
-                  과정 신청 →
-                </a>
-              </article>
-            ))}
-          </div>
-          <Link
-            href="/training"
-            className="mt-3 block text-center text-[13px] font-bold text-[var(--color-primary)]"
-          >
-            모든 정부 지원 교육 보기 →
-          </Link>
-        </section>
-      )}
-
       <section className="mx-5 mb-8 flex flex-col gap-3">
         <ApplyButton jobId={job.id} applyUrl={job.applyUrl} />
         <Link
           href={`/community/new?category=life_help&prefill=${encodeURIComponent(`${job.title} 신청 같이 가실 분`)}`}
           className="block rounded-2xl border-2 border-[var(--color-border)] bg-white py-4 text-center text-[16px] font-semibold text-[var(--color-primary)]"
         >
-          품앗이로 동행 요청하기
+          커뮤니티로 동행 요청하기
         </Link>
       </section>
 

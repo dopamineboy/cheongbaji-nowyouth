@@ -1,4 +1,4 @@
-// POST /api/poomasi/posts — 새 품앗이 글 작성
+// POST /api/poomasi/posts — 새 커뮤니티 글 작성
 // body: { category, title, body, preferredTime }
 import { NextRequest } from "next/server";
 import { addPoomasiPost, getDemoUserId, getUser } from "../../../lib/store";

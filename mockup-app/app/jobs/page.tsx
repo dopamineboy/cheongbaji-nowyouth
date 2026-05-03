@@ -89,8 +89,8 @@ function TabBar() {
     { label: "홈", icon: "🏠", href: "/" },
     { label: "복지", icon: "📋", href: "/welfare" },
     { label: "일자리", icon: "💼", href: "/jobs", active: true },
-    { label: "포인트", icon: "🎯", href: "/activity" },
-    { label: "품앗이", icon: "💬", href: "/community" },
+    { label: "활동", icon: "🎯", href: "/activity" },
+    { label: "커뮤니티", icon: "💬", href: "/community" },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 border-t border-[var(--color-border)] bg-white">
@@ -139,6 +139,23 @@ export default async function JobsPage() {
         </div>
       </header>
 
+      {/* 섹션 토글: 일자리 매칭 ↔ 무료 연계 교육 */}
+      <nav className="mx-5 mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-[var(--color-border)] bg-white p-1">
+        <Link
+          href="/jobs"
+          aria-current="page"
+          className="rounded-xl bg-[var(--color-primary)] px-3 py-3 text-center text-[15px] font-bold text-white"
+        >
+          💼 일자리 매칭
+        </Link>
+        <Link
+          href="/training"
+          className="rounded-xl px-3 py-3 text-center text-[15px] font-bold text-[var(--color-muted)]"
+        >
+          🎓 무료 연계 교육
+        </Link>
+      </nav>
+
       <section className="hero-blue mx-5 mb-5 rounded-2xl p-5">
         <p className="text-[15px] font-medium text-white/80">
           {user?.dongName} 기준 추천
@@ -183,7 +200,7 @@ export default async function JobsPage() {
             <p className="mt-2 text-[13px] text-[var(--color-muted)]">
               매일 자동 갱신되며, 새 공고는 즉시 알려드립니다.
               <br />
-              품앗이 게시판에서 이웃과 연결될 수도 있어요.
+              커뮤니티 게시판에서 이웃과 연결될 수도 있어요.
             </p>
           </div>
         )}
@@ -193,7 +210,7 @@ export default async function JobsPage() {
         <p className="text-[15px] leading-relaxed text-[var(--color-muted)]">
           <span className="font-semibold text-[var(--color-text)]">신청에 도움이 필요하신가요?</span>
           <br />
-          품앗이 게시판에서 동행을 요청할 수 있어요. 첫 신청 완료 시 200P 적립.
+          커뮤니티 게시판에서 동행을 요청할 수 있어요. 첫 신청 완료 시 200P 적립.
         </p>
       </section>
 

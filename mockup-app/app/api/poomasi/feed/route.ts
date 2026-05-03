@@ -1,4 +1,4 @@
-// GET /api/poomasi/feed?dong=xxx — 우리 동 품앗이 피드
+// GET /api/poomasi/feed?dong=xxx — 우리 동 커뮤니티 피드
 import { NextRequest } from "next/server";
 import { getDemoUserId, getStore, getUser } from "../../../lib/store";
 

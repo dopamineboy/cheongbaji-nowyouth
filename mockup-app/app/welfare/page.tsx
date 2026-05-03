@@ -145,8 +145,8 @@ function TabBar() {
     { label: "홈", icon: "🏠", href: "/" },
     { label: "복지", icon: "📋", href: "/welfare", active: true },
     { label: "일자리", icon: "💼", href: "/jobs" },
-    { label: "포인트", icon: "🎯", href: "/activity" },
-    { label: "품앗이", icon: "💬", href: "/community" },
+    { label: "활동", icon: "🎯", href: "/activity" },
+    { label: "커뮤니티", icon: "💬", href: "/community" },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 border-t border-[var(--color-border)] bg-white">
@@ -329,7 +329,7 @@ export default async function WelfarePage() {
         <p className="text-[15px] leading-relaxed text-[var(--color-muted)]">
           <span className="font-semibold text-[var(--color-text)]">도움이 필요하신가요?</span>
           <br />
-          신청 절차는 가까운 행정복지센터에서 도와드립니다. 어려우면 품앗이 게시판에 동행 요청을 남겨보세요.
+          신청 절차는 가까운 행정복지센터에서 도와드립니다. 어려우면 커뮤니티 게시판에 동행 요청을 남겨보세요.
         </p>
       </section>
 

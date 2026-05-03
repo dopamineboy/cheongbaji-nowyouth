@@ -1,4 +1,4 @@
-// 품앗이 글쓰기 페이지
+// 커뮤니티 글쓰기 페이지
 import Link from "next/link";
 import { Suspense } from "react";
 import { getCurrentUser } from "../../lib/current-user";
@@ -16,7 +16,7 @@ export default async function NewPoomasiPage() {
           href="/community"
           className="mb-4 inline-block text-[15px] font-bold text-[var(--color-primary)]"
         >
-          ← 품앗이로
+          ← 커뮤니티로
         </Link>
         <h1 className="text-[24px] font-extrabold leading-tight text-[var(--color-text)]">
           이웃에게 도움 요청하기

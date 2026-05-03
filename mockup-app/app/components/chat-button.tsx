@@ -22,7 +22,7 @@ export default function ChatButton() {
     {
       role: "assistant",
       content:
-        "안녕하세요, 청바지 도우미예요. 복지·일자리·품앗이·포인트에 대해 무엇이든 물어보세요.",
+        "안녕하세요, 청바지 도우미예요. 복지·일자리·커뮤니티·포인트에 대해 무엇이든 물어보세요.",
     },
   ]);
   const [input, setInput] = useState("");

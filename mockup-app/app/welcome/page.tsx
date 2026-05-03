@@ -91,7 +91,7 @@ export default async function WelcomePage() {
         />
         <ValueRow
           icon="💬"
-          title="우리 동 품앗이"
+          title="우리 동 커뮤니티"
           desc="이웃과 서로 도움 주고받는 안전한 커뮤니티"
           tone="hero-emerald"
         />

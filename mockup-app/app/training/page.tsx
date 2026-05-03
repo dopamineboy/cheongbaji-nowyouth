@@ -21,6 +21,37 @@ const CATEGORY_LABEL: Record<TrainingCategory, { ko: string; icon: string }> = {
   응대: { ko: "응대·서비스", icon: "💬" },
 };
 
+function TabBar() {
+  const tabs = [
+    { label: "홈", icon: "🏠", href: "/" },
+    { label: "복지", icon: "📋", href: "/welfare" },
+    { label: "일자리", icon: "💼", href: "/jobs", active: true },
+    { label: "활동", icon: "🎯", href: "/activity" },
+    { label: "커뮤니티", icon: "💬", href: "/community" },
+  ];
+  return (
+    <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 border-t border-[var(--color-border)] bg-white">
+      <ul className="grid grid-cols-5">
+        {tabs.map((t) => (
+          <li key={t.label}>
+            <Link
+              href={t.href}
+              className={`flex flex-col items-center gap-1 py-3 text-[13px] font-medium ${
+                t.active ? "text-[var(--color-primary)]" : "text-[var(--color-muted)]"
+              }`}
+            >
+              <span className="text-2xl" aria-hidden>
+                {t.icon}
+              </span>
+              {t.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 export default async function TrainingPage() {
   const user = await getCurrentUser();
   const recommended = recommendedTrainings(
@@ -38,19 +69,33 @@ export default async function TrainingPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
-        <Link
-          href="/jobs"
-          className="mb-4 inline-block text-[15px] font-bold text-[var(--color-primary)]"
-        >
-          ← 일자리로
-        </Link>
-        <h1 className="text-[24px] font-extrabold leading-tight text-[var(--color-text)]">
-          정부 지원 교육
+        <p className="text-[15px] font-medium text-[var(--color-muted)]">
+          청바지 · 청춘은 바로 지금
+        </p>
+        <h1 className="mt-1 text-[24px] font-extrabold leading-tight text-[var(--color-text)]">
+          무료 <span className="text-[var(--color-primary)]">연계 교육</span>
         </h1>
         <p className="mt-1 text-[14px] text-[var(--color-muted)]">
           국민내일배움카드·평생교육바우처·디지털배움터 등 본인부담 0원 또는 소액 과정
         </p>
       </header>
+
+      {/* 섹션 토글: 일자리 매칭 ↔ 무료 연계 교육 */}
+      <nav className="mx-5 mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-[var(--color-border)] bg-white p-1">
+        <Link
+          href="/jobs"
+          className="rounded-xl px-3 py-3 text-center text-[15px] font-bold text-[var(--color-muted)]"
+        >
+          💼 일자리 매칭
+        </Link>
+        <Link
+          href="/training"
+          aria-current="page"
+          className="rounded-xl bg-[var(--color-primary)] px-3 py-3 text-center text-[15px] font-bold text-white"
+        >
+          🎓 무료 연계 교육
+        </Link>
+      </nav>
 
       {/* 사용자 추천 */}
       <section className="mx-5 mb-6 rounded-2xl border-2 border-[var(--color-primary)]/30 bg-[var(--bg-soft-blue)] p-5">
@@ -148,6 +193,8 @@ export default async function TrainingPage() {
           신청 어려우시면 가까운 고용복지플러스센터(국번없이 ☎ 1350)에 연락하세요.
         </p>
       </section>
+
+      <TabBar />
     </main>
   );
 }
