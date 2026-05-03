@@ -1,6 +1,7 @@
 "use client";
 
 // AI 챗봇 — OpenAI 스트리밍 + 음성 입력(STT) + 음성 출력(TTS) + 빠른 질문 칩
+//          + 위치 4코너 선택 (localStorage 영구) + 잠시 숨기기 (sessionStorage)
 // STT/TTS는 브라우저 내장 Web Speech API 사용 (추가 비용 0, 한국어 지원)
 // iOS Safari는 SpeechRecognition 미지원 — 마이크 버튼 자동 숨김
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -9,6 +10,22 @@ interface Msg {
   role: "user" | "assistant";
   content: string;
 }
+
+type Corner = "br" | "bl" | "tr" | "tl";
+
+const CORNER_CLASS: Record<Corner, string> = {
+  br: "bottom-24 right-4 sm:right-[calc(50%-220px)]",
+  bl: "bottom-24 left-4 sm:left-[calc(50%-220px)]",
+  tr: "top-6 right-4 sm:right-[calc(50%-220px)]",
+  tl: "top-6 left-4 sm:left-[calc(50%-220px)]",
+};
+
+const CORNER_LABEL: Record<Corner, { ko: string; arrow: string }> = {
+  tl: { ko: "왼쪽 위", arrow: "↖" },
+  tr: { ko: "오른쪽 위", arrow: "↗" },
+  bl: { ko: "왼쪽 아래", arrow: "↙" },
+  br: { ko: "오른쪽 아래", arrow: "↘" },
+};
 
 const QUICK_PROMPTS: { icon: string; text: string }[] = [
   { icon: "📋", text: "내가 받을 수 있는 복지 혜택 알려줘" },
@@ -26,6 +43,9 @@ async function resetOnboarding() {
 
 export default function ChatButton() {
   const [open, setOpen] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [corner, setCorner] = useState<Corner>("br");
+  const [hidden, setHidden] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "assistant",
@@ -41,6 +61,33 @@ export default function ChatButton() {
   const scrollRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
+
+  // 위치/숨김 상태 복원 (localStorage = 영구 / sessionStorage = 새로고침까지)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedCorner = localStorage.getItem("cb_chat_corner") as Corner | null;
+    if (savedCorner && CORNER_CLASS[savedCorner]) setCorner(savedCorner);
+    if (sessionStorage.getItem("cb_chat_hidden") === "1") setHidden(true);
+  }, []);
+
+  const setCornerSaved = (c: Corner) => {
+    setCorner(c);
+    if (typeof window !== "undefined") localStorage.setItem("cb_chat_corner", c);
+  };
+
+  const hideTemporary = () => {
+    setHidden(true);
+    setShowOptions(false);
+    setOpen(false);
+    if (typeof window !== "undefined")
+      sessionStorage.setItem("cb_chat_hidden", "1");
+  };
+
+  const showAgain = () => {
+    setHidden(false);
+    if (typeof window !== "undefined")
+      sessionStorage.removeItem("cb_chat_hidden");
+  };
 
   // SpeechRecognition 초기화 (브라우저 내장)
   useEffect(() => {
@@ -203,18 +250,34 @@ export default function ChatButton() {
       recognitionRef.current?.stop();
       setRecording(false);
     }
+    setShowOptions(false);
     setOpen(false);
   };
 
   // 첫 인사뿐일 때만 빠른 질문 칩 노출
   const showQuickPrompts = msgs.length === 1 && !streaming;
 
+  // 잠시 숨김 상태 — 작은 핀만 노출 (현재 코너 기준)
+  if (hidden) {
+    return (
+      <button
+        type="button"
+        onClick={showAgain}
+        className={`fixed ${CORNER_CLASS[corner]} z-40 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary)]/50 text-[14px] text-white shadow opacity-70 transition hover:opacity-100`}
+        aria-label="AI 도우미 다시 보기"
+        title="도우미 다시 보기 (눌러주세요)"
+      >
+        💬
+      </button>
+    );
+  }
+
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 right-4 z-40 flex h-14 items-center gap-2 rounded-full bg-[var(--color-primary)] pl-4 pr-5 text-white shadow-lg sm:right-[calc(50%-220px)]"
+        className={`fixed ${CORNER_CLASS[corner]} z-40 flex h-14 items-center gap-2 rounded-full bg-[var(--color-primary)] pl-4 pr-5 text-white shadow-lg`}
         aria-label="AI 도우미 열기"
       >
         <span className="text-[22px]" aria-hidden>
@@ -256,6 +319,19 @@ export default function ChatButton() {
             </button>
             <button
               type="button"
+              onClick={() => setShowOptions(!showOptions)}
+              aria-label={showOptions ? "옵션 닫기" : "위치·숨기기 옵션"}
+              title="위치·숨기기 옵션"
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-[18px] ${
+                showOptions
+                  ? "bg-[var(--color-primary)] text-white"
+                  : "text-[var(--color-muted)] hover:bg-[var(--bg-page)]"
+              }`}
+            >
+              ⚙
+            </button>
+            <button
+              type="button"
               onClick={handleClose}
               aria-label="닫기"
               className="flex h-10 w-10 items-center justify-center rounded-full text-[20px] text-[var(--color-muted)] hover:bg-[var(--bg-page)]"
@@ -264,6 +340,43 @@ export default function ChatButton() {
             </button>
           </div>
         </header>
+
+        {/* 옵션 패널 — 위치 변경 + 잠시 숨기기 */}
+        {showOptions && (
+          <div className="border-b border-[var(--color-border)] bg-[var(--bg-page)] p-4">
+            <p className="mb-2 text-[13px] font-bold text-[var(--color-text)]">
+              📍 도우미 버튼 위치
+            </p>
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              {(["tl", "tr", "bl", "br"] as Corner[]).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCornerSaved(c)}
+                  className={`rounded-xl py-3 text-[14px] font-bold transition ${
+                    corner === c
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "border-2 border-[var(--color-border)] bg-white text-[var(--color-text)] hover:border-[var(--color-primary)]"
+                  }`}
+                >
+                  {CORNER_LABEL[c].arrow} {CORNER_LABEL[c].ko}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={hideTemporary}
+              className="block w-full rounded-xl border-2 border-[var(--color-border)] bg-white py-3 text-[14px] font-bold text-[var(--color-text)]"
+            >
+              👁 잠시 숨기기
+            </button>
+            <p className="mt-2 text-center text-[11px] leading-snug text-[var(--color-muted)]">
+              완전히 끄지는 않아요. 작은 점이 남아 있어 다시 누르시면 보입니다.
+              <br />
+              새로고침하셔도 다시 나타납니다.
+            </p>
+          </div>
+        )}
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
           <div className="flex flex-col gap-3">

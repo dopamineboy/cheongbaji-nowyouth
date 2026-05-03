@@ -209,7 +209,7 @@ function evaluateBenefit(
   if (e.citizenship) {
     const c = profile.citizenship ?? "KR";
     if (c !== e.citizenship) fail(`이 사업은 ${e.citizenship} 국적 어르신을 위한 제도예요.`);
-    else pass("국적 조건을 충족하세요.");
+    else pass("국적 조건 대상자입니다.");
   }
 
   // 나이
@@ -219,14 +219,14 @@ function evaluateBenefit(
       fail(`만 ${e.age_min}세 이상부터 신청하실 수 있어요.`);
     else if (e.age_max !== undefined && profile.age > e.age_max)
       fail(`만 ${e.age_max}세까지 신청하실 수 있어요.`);
-    else if (e.age_min !== undefined) pass(`만 ${e.age_min}세 이상 조건을 충족하세요.`);
+    else if (e.age_min !== undefined) pass(`만 ${e.age_min}세 이상 조건 대상자입니다.`);
   }
 
   // 장애
   if (e.requires_disability) {
     if (profile.hasDisability === undefined) need("장애 등록 여부");
     else if (!profile.hasDisability) fail("이 사업은 등록 장애인 어르신을 위한 제도예요.");
-    else pass("장애 등록 조건을 충족하세요.");
+    else pass("장애 등록 조건 대상자입니다.");
   }
 
   // 거주지
@@ -234,20 +234,20 @@ function evaluateBenefit(
     if (!profile.region) need("거주하시는 시·도");
     else if (!e.regions.includes(profile.region))
       fail(`이 사업은 ${e.regions.join(", ")} 거주 어르신만 신청할 수 있어요.`);
-    else pass(`${profile.region} 거주 조건을 충족하세요.`);
+    else pass(`${profile.region} 거주 조건 대상자입니다.`);
   }
   if (e.districts && e.districts.length > 0) {
     if (!profile.district) need("거주하시는 시·군·구");
     else if (!e.districts.includes(profile.district))
       fail(`이 사업은 ${e.districts.join(", ")} 거주 분만 신청할 수 있어요.`);
-    else pass(`${profile.district} 거주 조건을 충족하세요.`);
+    else pass(`${profile.district} 거주 조건 대상자입니다.`);
   }
 
   // 소득인정액
   if (e.income_recognition_max || e.median_income_pct) {
     const ws = profile.welfareStatus;
     if (ws === "basic_livelihood") {
-      pass("기초생활수급자이시므로 소득 기준을 충족하세요.");
+      pass("기초생활수급자이시므로 소득 기준 대상자입니다.");
       relevanceScore += 3;
     } else if (ws === "near_poverty") {
       pass("차상위계층이시므로 소득 기준을 충족할 가능성이 높아요.");

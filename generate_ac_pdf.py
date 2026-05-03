@@ -10,7 +10,7 @@ import markdown
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-BASE = Path(r"C:\Users\User\Desktop\모두의창업-도우다")
+BASE = Path(r"C:\Users\User\Desktop\cheongbaji-nowyouth")
 MD_PATH = BASE / "청바지_AC투자_기획서.md"
 HTML_PATH_FINAL = BASE / "청바지_AC투자_기획서.html"
 PDF_PATH_FINAL = BASE / "청바지_AC투자_기획서.pdf"
