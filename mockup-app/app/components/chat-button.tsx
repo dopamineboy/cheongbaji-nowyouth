@@ -2,9 +2,26 @@
 
 // AI 챗봇 — OpenAI 스트리밍 + 음성 입력(STT) + 음성 출력(TTS) + 빠른 질문 칩
 //          + 위치 4코너 선택 (localStorage 영구) + 잠시 숨기기 (sessionStorage)
+//          + 4대 기능 통합 컨텍스트 + 액션 카드 파싱 ([[/path|label]])
+//          + 현재 페이지 경로 전송 (사용자가 보고 있는 화면 인식)
 // STT/TTS는 브라우저 내장 Web Speech API 사용 (추가 비용 0, 한국어 지원)
 // iOS Safari는 SpeechRecognition 미지원 — 마이크 버튼 자동 숨김
+import Link from "next/link";
 import { useState, useRef, useEffect, useCallback } from "react";
+
+// 챗봇 응답 텍스트를 파싱해서 [[/path|label]] 액션을 추출하고 본문은 따로 분리
+function parseMessage(text: string): {
+  body: string;
+  actions: { href: string; label: string }[];
+} {
+  const re = /\[\[(\/[^|\]]+)\|([^\]]+)\]\]/g;
+  const actions: { href: string; label: string }[] = [];
+  const body = text.replace(re, (_m, href: string, label: string) => {
+    actions.push({ href: href.trim(), label: label.trim() });
+    return ""; // 본문에서 제거
+  }).trim();
+  return { body, actions };
+}
 
 interface Msg {
   role: "user" | "assistant";
@@ -190,11 +207,15 @@ export default function ChatButton() {
     setStreaming(true);
 
     try {
+      // 현재 페이지 경로를 함께 보내서 챗봇이 사용자가 어느 화면에 있는지 인식 가능
+      const currentPath =
+        typeof window !== "undefined" ? window.location.pathname : "/";
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: newMsgs.slice(0, -1).filter((m) => m.content),
+          currentPath,
         }),
       });
 
@@ -225,8 +246,8 @@ export default function ChatButton() {
           return updated;
         });
       }
-      // 응답 완료 시 음성 출력
-      speak(acc);
+      // 응답 완료 시 음성 출력 — 본문만 읽고 액션 카드 마크업은 제외
+      speak(parseMessage(acc).body);
     } catch (e) {
       setMsgs((prev) => {
         const updated = [...prev];
@@ -380,24 +401,49 @@ export default function ChatButton() {
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
           <div className="flex flex-col gap-3">
-            {msgs.map((m, i) => (
-              <div
-                key={i}
-                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${
-                  m.role === "user"
-                    ? "ml-auto bg-[var(--color-primary)] text-white"
-                    : "bg-[var(--bg-page)] text-[var(--color-text)]"
-                }`}
-              >
-                {m.content || (
-                  <span className="inline-flex gap-1">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)]" />
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)] [animation-delay:0.2s]" />
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)] [animation-delay:0.4s]" />
-                  </span>
-                )}
-              </div>
-            ))}
+            {msgs.map((m, i) => {
+              const isAssistant = m.role === "assistant";
+              const parsed = isAssistant && m.content ? parseMessage(m.content) : null;
+              return (
+                <div key={i} className="flex flex-col gap-2">
+                  <div
+                    className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${
+                      m.role === "user"
+                        ? "ml-auto bg-[var(--color-primary)] text-white"
+                        : "bg-[var(--bg-page)] text-[var(--color-text)]"
+                    }`}
+                  >
+                    {m.content ? (
+                      parsed ? parsed.body : m.content
+                    ) : (
+                      <span className="inline-flex gap-1">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)]" />
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)] [animation-delay:0.2s]" />
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-muted)] [animation-delay:0.4s]" />
+                      </span>
+                    )}
+                  </div>
+                  {/* 액션 카드 — 챗봇이 응답에 [[/path|label]] 마크업 포함 시 클릭 가능 카드로 변환 */}
+                  {parsed && parsed.actions.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                      {parsed.actions.map((a, ai) => (
+                        <Link
+                          key={ai}
+                          href={a.href}
+                          onClick={handleClose}
+                          className="flex items-center gap-2 rounded-xl border-2 border-[var(--color-primary)]/30 bg-white px-4 py-3 text-[14px] font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white"
+                        >
+                          <span className="flex-1 text-left leading-snug">
+                            {a.label}
+                          </span>
+                          <span aria-hidden>→</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {/* 빠른 질문 — 첫 진입 시만 */}
             {showQuickPrompts && (
