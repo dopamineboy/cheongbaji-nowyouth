@@ -512,18 +512,44 @@ export default function ChatButton() {
     setOpen(false);
   };
 
-  // 빠른 탐색 — 이전 화면 / 첫 화면
-  const goBack = () => {
-    handleClose();
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
+  // 챗봇 내부 대화 — 이전 메시지 / 처음부터
+  // "이전 메시지": 마지막 user-assistant 페어 제거 (한 단계 뒤로)
+  // "처음부터": 첫 인사만 남기고 모두 초기화 (새 대화)
+  const INITIAL_GREETING: Msg = {
+    role: "assistant",
+    content:
+      "안녕하세요, 청바지 도우미예요. 복지·일자리·커뮤니티·활동, 옆에서 같이 봐드릴게요. 무엇이든 편하게 물어보시면 돼요. 마이크 버튼을 누르시면 말로도 가능해요.",
+    stages: [],
   };
-  const goHome = () => {
-    handleClose();
-    router.push("/");
+
+  const goBackInChat = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setMsgs((prev) => {
+      if (prev.length <= 1) return prev;
+      const next = [...prev];
+      // 마지막 user-assistant 페어 제거 (assistant가 마지막이면 둘 다 제거)
+      while (next.length > 1) {
+        const popped = next.pop();
+        if (popped?.role === "user") break;
+      }
+      return next.length === 0 ? [INITIAL_GREETING] : next;
+    });
+  };
+
+  const resetChat = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (recording) {
+      recognitionRef.current?.stop();
+      setRecording(false);
+    }
+    setMsgs([INITIAL_GREETING]);
+    setInput("");
+    setNavHint(null);
+    setShowOptions(false);
   };
 
   // 첫 인사뿐일 때만 빠른 질문 칩 노출
@@ -793,21 +819,23 @@ export default function ChatButton() {
           </div>
         </div>
 
-        {/* 빠른 탐색 — 이전 화면 / 첫 화면 (항상 보임, 시니어가 길 잃었을 때 안전망) */}
+        {/* 챗봇 대화 컨트롤 — 이전 메시지 / 처음부터 (모달 내부 상태만 조작, 페이지 이동 X) */}
         <div className="flex gap-2 border-t border-[var(--color-border)] bg-[var(--bg-page)] px-3 py-2">
           <button
             type="button"
-            onClick={goBack}
-            className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-[14px] font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)]"
+            onClick={goBackInChat}
+            disabled={msgs.length <= 1 || streaming}
+            className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-[14px] font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)] disabled:opacity-40 disabled:hover:bg-white"
           >
-            ← 이전 화면
+            ← 이전 메시지
           </button>
           <button
             type="button"
-            onClick={goHome}
-            className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-[14px] font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)]"
+            onClick={resetChat}
+            disabled={msgs.length <= 1 && !streaming}
+            className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-[14px] font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:bg-[var(--bg-soft-blue)] disabled:opacity-40 disabled:hover:bg-white"
           >
-            🏠 첫 화면
+            🔄 처음부터
           </button>
         </div>
 
