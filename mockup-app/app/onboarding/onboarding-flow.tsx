@@ -2,9 +2,38 @@
 
 // 시니어 일자리 매칭 보고서 §5.1 — 4단계 온보딩
 // 각 단계 30초 이내 · 큰 버튼 · 진행 표시
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+// 인터뷰 완료 화면 — 1.5초 후 자동 홈 이동 + 즉시 가기 버튼
+function DoneScreen({ onGo }: { onGo: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onGo, 1500);
+    return () => clearTimeout(t);
+  }, [onGo]);
+  return (
+    <div className="mx-auto max-w-[420px] py-10 text-center">
+      <div className="mb-6 text-6xl">🎉</div>
+      <h2 className="mb-3 text-[24px] font-extrabold text-[var(--color-text)]">
+        준비가 끝났어요!
+      </h2>
+      <p className="mb-2 text-[16px] leading-relaxed text-[var(--color-muted)]">
+        입력해주신 정보를 바탕으로 맞춤 혜택과 일자리를 찾아드릴게요.
+      </p>
+      <p className="mb-6 text-[14px] font-bold text-[var(--color-primary)]">
+        잠시 후 자동으로 이동합니다...
+      </p>
+      <button
+        type="button"
+        onClick={onGo}
+        className="btn-primary inline-block rounded-2xl px-8 py-4 text-[17px] font-bold"
+      >
+        내 맞춤 혜택 보러가기 →
+      </button>
+    </div>
+  );
+}
 
 type Step = 0 | 1 | 2 | 3 | 4 | "saving" | "done";
 
@@ -125,6 +154,9 @@ export default function OnboardingFlow() {
     return yrs;
   })();
 
+  // done 화면 자동 이동을 useEffect로 — 컴포넌트 트리에서 분리해 메인 함수와 충돌 회피
+  // (실제 컴포넌트는 아래 DoneScreen 별도 정의)
+
   if (step === "saving") {
     return (
       <div className="mx-auto max-w-[420px] py-12 text-center">
@@ -137,24 +169,7 @@ export default function OnboardingFlow() {
   }
 
   if (step === "done") {
-    return (
-      <div className="mx-auto max-w-[420px] py-10 text-center">
-        <div className="mb-6 text-6xl">🎉</div>
-        <h2 className="mb-3 text-[24px] font-extrabold text-[var(--color-text)]">
-          준비가 끝났어요!
-        </h2>
-        <p className="mb-8 text-[16px] leading-relaxed text-[var(--color-muted)]">
-          입력해주신 정보를 바탕으로 맞춤 혜택과 일자리를 찾아드릴게요.
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="btn-primary inline-block rounded-2xl px-8 py-4 text-[17px] font-bold"
-        >
-          내 맞춤 혜택 보러가기 →
-        </button>
-      </div>
-    );
+    return <DoneScreen onGo={() => router.push("/")} />;
   }
 
   return (
