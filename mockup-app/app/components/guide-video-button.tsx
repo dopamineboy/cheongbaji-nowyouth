@@ -1,22 +1,19 @@
 "use client";
 
 // 섹션별 안내영상 모달 — "안내영상 보기" 버튼 클릭 시 모달로 mp4 재생
-// 호스팅: GitHub Releases (videos-v1 태그) — Vercel CDN의 stale 404 캐시 우회 +
-// Vercel deployment 크기 제약에서 자유로움. public repo의 release asset은 anonymous 접근 가능.
+// 호스팅: /api/video/{name} 프록시 → GitHub Releases (videos-v1).
+// 프록시가 Content-Type을 video/mp4로 재매핑해서 iOS Safari 호환 확보.
+// (GitHub Releases는 mp4를 application/octet-stream으로 내려보내 iOS가 거부함)
 // 시니어 사용자 친화: 큰 버튼·큰 닫기·자동재생 안 함(사용자 의도 명확할 때만 재생)
 
 import { useEffect, useRef, useState } from "react";
 
 interface GuideVideoButtonProps {
-  /** GitHub Release videos-v1의 asset 이름 — "jobs" | "activity" | "community" */
+  /** /api/video/{src} 라우트의 name — "jobs" | "activity" | "community" */
   src: "jobs" | "activity" | "community";
   /** 섹션 이름 (예: "일자리") — 버튼·헤더 표시용 */
   label: string;
 }
-
-// GitHub Releases 호스팅된 영상 URL
-const VIDEO_BASE =
-  "https://github.com/dopamineboy/cheongbaji-nowyouth/releases/download/videos-v1";
 
 export default function GuideVideoButton({ src, label }: GuideVideoButtonProps) {
   const [open, setOpen] = useState(false);
@@ -86,12 +83,12 @@ export default function GuideVideoButton({ src, label }: GuideVideoButtonProps) 
             </div>
             <video
               ref={videoRef}
-              src={`${VIDEO_BASE}/${src}.mp4`}
               controls
               playsInline
               preload="metadata"
               className="block h-auto w-full bg-black"
             >
+              <source src={`/api/video/${src}`} type="video/mp4" />
               브라우저가 영상을 지원하지 않습니다. 최신 Chrome·Safari를 사용해주세요.
             </video>
             <div className="px-5 py-3">
