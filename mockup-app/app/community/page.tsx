@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { PoomasiCategory, PoomasiPost } from "../lib/types";
 import { getStore } from "../lib/store";
 import { getCurrentUser } from "../lib/current-user";
+import GuideVideoButton from "../components/guide-video-button";
 
 export const dynamic = "force-dynamic";
 
@@ -131,12 +132,17 @@ export default async function CommunityPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
-        <p className="text-[15px] font-medium text-[var(--color-muted)]">
-          {user?.dongName} 이웃과
-        </p>
-        <h1 className="mt-1 text-[24px] font-extrabold text-[var(--color-text)]">
-          서로 <span className="text-[var(--color-primary)]">커뮤니티</span>
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[15px] font-medium text-[var(--color-muted)]">
+              {user?.dongName} 이웃과
+            </p>
+            <h1 className="mt-1 text-[24px] font-extrabold text-[var(--color-text)]">
+              서로 <span className="text-[var(--color-primary)]">커뮤니티</span>
+            </h1>
+          </div>
+          <GuideVideoButton src="community" label="커뮤니티" />
+        </div>
       </header>
 
       <section className="hero-emerald mx-5 mb-5 rounded-2xl p-5">
