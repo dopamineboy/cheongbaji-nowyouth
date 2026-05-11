@@ -164,16 +164,25 @@ export async function runIngestion(
 
 /**
  * /jobs · 홈 등에서 호출 — 게으른 첫 동기화.
- * 키가 있고 한 번도 동기화 안 됐으면 즉시 실행.
+ * 키가 있고 한 번도 동기화 안 됐으면 백그라운드로 시작.
+ *
+ * IMPORTANT: 호출자는 await해도 즉시 반환됨 (fire-and-forget).
+ * Vercel 서버리스 콜드 스타트 시 KORDI 외부 API fetch가 홈 응답을 지연시키는
+ * 문제를 막기 위해 동기 await 제거. 첫 사용자는 시드 데이터로 즉시 렌더,
+ * 백그라운드 ingestion 완료 후 다음 요청부터 실데이터 반영.
  */
 export async function ensureJobsLoaded(): Promise<void> {
-  const store = getStore();
-  // sample 시드 그대로면 (기본 길이 36) + 키 있으면 첫 ingestion
   const lastSyncedAny = Array.from(
     (globalThis.__cheongbajiJobsLastSync ?? new Map()).values(),
   ).some((v) => v > 0);
   if (!lastSyncedAny && process.env.KORDI_API_KEY) {
-    await runIngestion({ only: ["kordi"] });
+    // 옵티미스틱: 동시 요청 race를 막기 위해 즉시 lastSync 마킹.
+    // 실패 시 unmark해서 다음 요청이 재시도 가능하게 함.
+    lastSyncMap().set("kordi", Date.now());
+    void runIngestion({ only: ["kordi"] }).catch((err) => {
+      console.error("[ensureJobsLoaded] background KORDI ingestion failed:", err);
+      lastSyncMap().delete("kordi");
+    });
   }
 }
 
