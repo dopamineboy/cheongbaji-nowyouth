@@ -1,6 +1,7 @@
-@import "tailwindcss";
 /* Pretendard — 한국어 가독성 우선 시니어 친화 폰트 (브랜드 가이드: 또박또박함) */
+/* @import url(...) must come before @import "tailwindcss" because Tailwind v4 inlines its CSS, which would push this rule below other rules and break CSS spec */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+@import "tailwindcss";
 
 :root {
   /* 화사 팔레트 — 시니어 친화 + 청춘(청바지) 톤
