@@ -1,28 +1,20 @@
 // GET /api/keepalive
-// Vercel Lambda 인스턴스를 워밍 상태로 유지하기 위한 경량 ping 엔드포인트.
-// UptimeRobot 같은 외부 cron이 5분마다 호출 → 인스턴스가 idle로 죽지 않게 함.
-// 모바일에서 콜드 스타트로 인한 홈(/) 타임아웃 방지.
+// Vercel Edge 함수 워밍용 경량 ping 엔드포인트.
+// UptimeRobot 같은 외부 cron이 5분마다 호출 → CDN 전역에 항상 살아있는 응답 유지.
+// 모바일 콜드 스타트로 인한 홈(/) 타임아웃 방지.
 //
-// 응답은 가볍게 (수십 바이트), 캐시 금지로 매번 실제 함수 실행되도록.
-// ensureJobsLoaded()를 호출해서 새 인스턴스가 깨어났을 때 KORDI ingestion도
-// 백그라운드로 트리거 (fire-and-forget이라 응답을 지연시키지 않음).
+// Edge runtime — 모든 region에 자동 배포되고 콜드 스타트가 수십 ms.
+// Node 의존(ensureJobsLoaded) 제거로 빌드 단순화 + 배포 안정성 확보.
+// (실제 데이터 ingestion은 홈 페이지 첫 요청 시 fire-and-forget으로 트리거됨)
 
-import { NextResponse } from "next/server";
-import { ensureJobsLoaded } from "../../lib/jobs/ingestion/pipeline";
-
-export const runtime = "nodejs";
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  // 인스턴스 첫 깨움이면 KORDI ingestion 백그라운드로 시작
-  // (ensureJobsLoaded는 await 없이 즉시 반환되도록 수정되어 있음)
-  void ensureJobsLoaded();
-
-  return NextResponse.json(
+  return Response.json(
     {
       ok: true,
       ts: Date.now(),
-      uptime: Math.floor(process.uptime()),
     },
     {
       headers: {
