@@ -8,6 +8,7 @@ import HangulMission from "./hangul-mission";
 import QuizMission from "./quiz-mission";
 import WeeklyChart from "./weekly-chart";
 import type { LedgerEntry, LedgerType } from "../lib/types";
+import GuideVideoButton from "../components/guide-video-button";
 
 const TYPE_LABEL: Record<LedgerType, { ko: string; icon: string }> = {
   GAME: { ko: "인지 게임", icon: "🧩" },
@@ -102,12 +103,17 @@ export default async function ActivityPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
-        <p className="text-[15px] font-medium text-[var(--color-muted)]">
-          청바지 · 청춘은 바로 지금
-        </p>
-        <h1 className="mt-1 text-[24px] font-extrabold text-[var(--color-text)]">
-          오늘도 <span className="text-[var(--color-primary)]">청춘</span>이세요
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[15px] font-medium text-[var(--color-muted)]">
+              청바지 · 청춘은 바로 지금
+            </p>
+            <h1 className="mt-1 text-[24px] font-extrabold text-[var(--color-text)]">
+              오늘도 <span className="text-[var(--color-primary)]">청춘</span>이세요
+            </h1>
+          </div>
+          <GuideVideoButton src="activity" label="활동" />
+        </div>
       </header>
 
       {/* 포인트 카드 — 활동 섹션 정체성 (부드러운 오렌지) */}

@@ -7,6 +7,7 @@ import { matchJobsWithDetails } from "../lib/jobs/match";
 import { ensureJobsLoaded } from "../lib/jobs/ingestion/pipeline";
 import { getStore } from "../lib/store";
 import { getCurrentUser } from "../lib/current-user";
+import GuideVideoButton from "../components/guide-video-button";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,7 @@ export default async function JobsPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[15px] font-medium text-[var(--color-muted)]">
               청바지 · 청춘은 바로 지금
@@ -136,6 +137,7 @@ export default async function JobsPage() {
               나에게 맞는 <span className="text-[var(--color-primary)]">일자리</span>
             </h1>
           </div>
+          <GuideVideoButton src="jobs" label="일자리" />
         </div>
       </header>
 
