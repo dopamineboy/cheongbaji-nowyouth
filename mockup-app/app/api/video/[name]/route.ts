@@ -36,13 +36,17 @@ export async function GET(
   const upstream = await fetch(url, {
     headers: upstreamHeaders,
     redirect: "follow",
+    // GitHub Releases JWT 토큰은 30분 만료 — 매번 fresh fetch 필요
+    cache: "no-store",
   });
 
   // 응답 헤더 재구성 — video/mp4 강제 + range 메타데이터 보존
   const headers = new Headers();
   headers.set("Content-Type", "video/mp4");
   headers.set("Accept-Ranges", "bytes");
-  headers.set("Cache-Control", "public, max-age=86400, immutable");
+  // CDN 캐시 금지 — GitHub Releases 30분 토큰 만료 시 truncated 응답이 캐시되는 문제 방지
+  headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  headers.set("CDN-Cache-Control", "no-store");
 
   const len = upstream.headers.get("content-length");
   if (len) headers.set("Content-Length", len);
