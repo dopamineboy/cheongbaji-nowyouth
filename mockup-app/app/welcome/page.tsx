@@ -1,7 +1,7 @@
 // 첫 진입 — 설득력 있는 랜딩 + 인터뷰 시작 게이트
-import Link from "next/link";
 import { isOnboarded } from "../lib/auth";
 import { redirect } from "next/navigation";
+import ConsentCta from "./consent-cta";
 
 export const dynamic = "force-dynamic";
 
@@ -131,20 +131,8 @@ export default async function WelcomePage() {
         </ul>
       </section>
 
-      {/* CTA */}
-      <div className="mt-auto flex flex-col gap-3">
-        <Link
-          href="/onboarding"
-          className="btn-primary block rounded-2xl py-5 text-center text-[19px] font-bold"
-        >
-          1분 인터뷰 시작하기 →
-        </Link>
-        <p className="text-center text-[12px] text-[var(--color-muted)]">
-          만 65세 이상 어르신 · 가족·보호자 대리 신청 가능
-          <br />
-          입력 정보는 혜택 매칭에만 사용되며 안전하게 보관됩니다
-        </p>
-      </div>
+      {/* CTA — 약관 동의 + 시작하기 (client component) */}
+      <ConsentCta />
     </main>
   );
 }
