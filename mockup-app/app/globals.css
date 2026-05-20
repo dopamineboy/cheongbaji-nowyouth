@@ -3,6 +3,17 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 @import "tailwindcss";
 
+/* 데코레이션 이모지 long-press 차단 — 안드로이드(특히 삼성 갤럭시)의 Circle to
+   Search / Bixby Vision 기능이 이모지를 이미지로 인식해 "검색 결과를 보려면
+   탭하세요" 같은 system overlay를 띄우는 문제 방지. aria-hidden="true" span은
+   데코레이션 이모지(🎯 📋 등)에만 사용되므로 안전하게 차단 가능. */
+[aria-hidden="true"] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
 :root {
   /* 화사 팔레트 — 시니어 친화 + 청춘(청바지) 톤
      브랜드 가이드: 따뜻한 블루 메인 / 화이트·아이보리 서브 / 부드러운 오렌지 포인트 */
