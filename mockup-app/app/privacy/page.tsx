@@ -200,21 +200,9 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="8. 개인정보 보호 책임자">
-        <ul className="space-y-1">
-          <li>
-            <strong>책임자</strong>: 주상윤 (운영팀 대표)
-          </li>
-          <li>
-            <strong>소속</strong>: 청바지(NowYouth) — 모두의 창업 공모전 출품팀
-          </li>
-          <li>
-            <strong>연락</strong>: 공모전 사무국 또는 서비스 내{" "}
-            <Link href="/community" className="underline text-[var(--color-primary)]">
-              커뮤니티
-            </Link>{" "}
-            게시판
-          </li>
-        </ul>
+        <p>
+          <strong>책임자</strong>: 주상윤 (운영팀 대표)
+        </p>
       </Section>
 
       <Section title="9. 방침의 변경">
