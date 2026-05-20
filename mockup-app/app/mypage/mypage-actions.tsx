@@ -1,7 +1,6 @@
 "use client";
 
-// 마이페이지 액션 버튼들 — 부분 수정 + 전체 다시 입력
-import Link from "next/link";
+// 마이페이지 액션 버튼들 — 전체 다시 입력 (부분 수정은 각 row 클릭)
 import { useState } from "react";
 
 export default function MypageActions() {
@@ -25,12 +24,6 @@ export default function MypageActions() {
 
   return (
     <div className="flex flex-col gap-2">
-      <Link
-        href="/mypage/edit"
-        className="rounded-2xl bg-[var(--color-primary)] py-4 text-center text-[17px] font-bold text-white"
-      >
-        ✏️ 정보 수정하기
-      </Link>
       <button
         type="button"
         onClick={restartInterview}
@@ -40,8 +33,8 @@ export default function MypageActions() {
         🔄 인터뷰 처음부터 다시
       </button>
       <p className="px-1 text-[12px] leading-relaxed text-[var(--color-muted)]">
-        "정보 수정하기"에서는 출생·거주지·가구·소득·자격 정보를 한 화면에서
-        원하는 항목만 골라 바꾸실 수 있어요.
+        위 각 항목을 누르면 그 항목만 수정하실 수 있어요. 일자리 선호처럼
+        한 번에 새로 입력하시는 게 좋은 항목은 위 버튼을 사용해 주세요.
       </p>
     </div>
   );
