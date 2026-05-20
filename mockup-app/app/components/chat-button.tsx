@@ -569,8 +569,8 @@ export default function ChatButton() {
   // 첫 인사뿐일 때만 빠른 질문 칩 노출
   const showQuickPrompts = msgs.length === 1 && !streaming;
 
-  // 환영 화면(/welcome)에서는 도우미 버튼 숨김 — 첫 진입 흐름 방해 방지
-  if (pathname === "/welcome") return null;
+  // 환영(/welcome)·인터뷰(/onboarding) 화면에서는 도우미 버튼 숨김 — 첫 진입 흐름 방해 방지
+  if (pathname === "/welcome" || pathname === "/onboarding") return null;
 
   // 잠시 숨김 상태 — 작은 핀만 노출 (현재 코너 기준)
   if (hidden) {
