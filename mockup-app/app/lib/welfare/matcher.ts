@@ -65,6 +65,8 @@ export interface ShowCondition {
   has_delinquency?: boolean;
   has_disability?: boolean;
   is_renter?: boolean;
+  /** 단독(혼자 사는) 가구만 노출 — 독거노인 대상 혜택용 */
+  single_household?: boolean;
 }
 
 export interface BenefitAmount {
@@ -219,6 +221,12 @@ function shouldShow(profile: WelfareUserProfile, benefit: Benefit): boolean {
   if (sc.is_renter) {
     const renterTypes: HousingType[] = ["jeonse", "monthly_rent", "public_rental"];
     if (!profile.housingType || !renterTypes.includes(profile.housingType)) return false;
+  }
+  if (sc.single_household) {
+    // 단독 가구 — household === "single" 또는 householdSize === 1
+    const isSingle =
+      profile.household === "single" || profile.householdSize === 1;
+    if (!isSingle) return false;
   }
   return true;
 }

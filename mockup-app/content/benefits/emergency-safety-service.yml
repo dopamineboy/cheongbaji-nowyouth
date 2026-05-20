@@ -15,8 +15,10 @@ summary: |
 eligibility:
   age_min: 65
   citizenship: KR
-  household_type:
-    - alone
+
+show_condition:
+  # 독거노인 대상 — 단독 가구(혼자 사는 어르신)만 결과에 노출
+  single_household: true
 
 benefit:
   type: service
@@ -36,9 +38,6 @@ apply:
 
 sources:
   - https://www.1661-2129.or.kr
-
-## show_condition: 독거노인 대상이지만, 혼자 사는 분께 자동 노출되도록
-## matcher에서 household 기반 필터 추가 전까지는 조건 없이 노출
 
 last_verified: 2024-01-01
 
