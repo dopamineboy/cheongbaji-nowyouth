@@ -202,8 +202,11 @@ export default async function WelfarePage() {
   const availableMonthly =
     availableAmounts.monthlyCashKrw + availableAmounts.monthlyDiscountKrw;
 
-  // 한시·시즌성 지원금 (현재 신청 가능한 것만, 만료된 것은 자동 숨김)
-  const temporaryList = pickTemporaryActive(matched);
+  // 한시·시즌성 지원금 (현재 신청 가능한 것만, 만료·시작 전 항목 자동 숨김)
+  // matchBenefits()는 한시 항목을 일반 결과에서 제외하므로 여기서 별도 매칭.
+  const temporaryList = user
+    ? pickTemporaryActive(toWelfareProfile(user), benefits)
+    : [];
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
