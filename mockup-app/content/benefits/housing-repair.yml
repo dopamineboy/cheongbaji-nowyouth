@@ -18,6 +18,10 @@ eligibility:
   median_income_pct: 46
   requires_homeowner: true
 
+show_condition:
+  # 자가 소유자만 결과에 노출 (전·월세는 결과에서 제외 — 잘못된 추천 방지)
+  is_homeowner: true
+
 benefit:
   type: one_time_cash
   amount_krw_max:

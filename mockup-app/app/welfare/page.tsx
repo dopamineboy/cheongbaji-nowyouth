@@ -16,25 +16,25 @@ const STATUS_META: Record<
   { label: string; color: string; stripe: string; nextAction: string }
 > = {
   eligible: {
-    label: "바로 신청 가능",
+    label: "✓ 확인된 자격",
     color: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
     stripe: "bg-[var(--color-success)]",
-    nextAction: "신청 페이지에서 즉시 신청하실 수 있어요.",
+    nextAction: "입력하신 정보 기준으로 자격을 확인했어요. 신청 페이지에서 마지막으로 검토 후 진행하세요.",
   },
   likely_eligible: {
-    label: "주민센터 확인 후 신청",
+    label: "○ 가능성 있음·확인 필요",
     color: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
     stripe: "bg-[var(--color-primary)]",
-    nextAction: "입력 정보로는 자격이 있어 보이나, 정확한 소득인정액·재산환산 검토가 필요해요. 주민센터 문의 권장.",
+    nextAction: "입력 정보로는 자격이 있어 보이지만, 정확한 소득인정액·재산환산 검토가 필요해요. 주민센터에 한 번 더 확인하시면 안전합니다.",
   },
   needs_more_info: {
-    label: "추가 정보 필요",
+    label: "📋 서류·정보 보완 필요",
     color: "bg-[var(--color-accent)]/15 text-[#8A5E00]",
     stripe: "bg-[var(--color-accent)]",
-    nextAction: "아래 누락된 정보를 알려주시면 정확히 매칭해드릴게요.",
+    nextAction: "아직 확인 못 한 자격 조건이 있어요. 아래 누락 정보를 알려주시면 정확히 매칭해 드릴게요.",
   },
   ineligible: {
-    label: "조건 미부합",
+    label: "✕ 조건 미부합",
     color: "bg-[var(--color-muted)]/15 text-[var(--color-muted)]",
     stripe: "bg-[var(--color-muted)]",
     nextAction: "현재 입력 정보 기준으로는 받기 어려워요.",
@@ -99,6 +99,11 @@ function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean 
                 title="저희가 확인할 수 있는 자격 조건 중 충족한 개수예요. 최종 자격은 신청 시 정확히 확인됩니다."
               >
                 확인된 조건 {m.metConditions}/{m.totalConditions}
+                {m.missing.length > 0 && (
+                  <span className="ml-1 text-[var(--color-accent)]">
+                    · {m.missing.length}개 보완 필요
+                  </span>
+                )}
               </span>
             )}
           </div>
