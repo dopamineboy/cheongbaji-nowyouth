@@ -28,15 +28,16 @@ documents:
 
 apply:
   online:
-    name: 한국노인인력개발원
-    url: https://www.kordi.or.kr/content/intro/user_guide.do
+    name: 노인일자리여기 (한국노인인력개발원 운영)
+    url: https://www.seniorro.or.kr/
   offline:
     - 가까운 시니어클럽
     - 대한노인회 지회
     - 주소지 관할 행정복지센터(주민센터)
 
 sources:
-  - https://www.kordi.or.kr/content/intro/user_guide.do
+  - https://www.seniorro.or.kr/
+  - https://www.kordi.or.kr/main.do
 
 universal: true
 
