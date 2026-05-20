@@ -15,6 +15,7 @@ const COOKIE_TTL = 60 * 60 * 24 * 30; // 30일
 
 interface OnboardingPayload {
   birthYear?: number;
+  birthMonth?: number | null;
   region?: string;
   district?: string;
   household?: "single" | "couple" | "with_family";
@@ -97,9 +98,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // 출생월 검증 (1~12 또는 null)
+  const birthMonth =
+    typeof body.birthMonth === "number" && body.birthMonth >= 1 && body.birthMonth <= 12
+      ? body.birthMonth
+      : null;
+
   const updated: UserProfile = {
     ...existing,
     birthYear: body.birthYear,
+    birthMonth,
     name: body.name?.trim() || existing.name,
     region: body.region,
     district: body.district ?? existing.district,
@@ -156,6 +164,7 @@ export async function POST(req: NextRequest) {
   await saveProfileToCookie({
     name: updated.name,
     birthYear: updated.birthYear,
+    birthMonth: updated.birthMonth,
     region: updated.region,
     district: updated.district,
     dongCode: updated.dongCode,

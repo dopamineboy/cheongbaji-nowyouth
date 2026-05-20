@@ -40,6 +40,7 @@ type Step = 0 | 1 | 2 | 3 | 4 | "saving" | "done";
 interface OnboardingState {
   name: string;
   birthYear: number | null;
+  birthMonth: number | null;
   region: string | null;
   district: string | null;
   household: "single" | "couple" | "with_family" | null;
@@ -90,6 +91,7 @@ export default function OnboardingFlow() {
   const [s, setS] = useState<OnboardingState>({
     name: "",
     birthYear: null,
+    birthMonth: null,
     region: null,
     district: null,
     household: null,
@@ -121,6 +123,7 @@ export default function OnboardingFlow() {
         body: JSON.stringify({
           name: s.name,
           birthYear: s.birthYear,
+          birthMonth: s.birthMonth,
           region: s.region,
           district: s.district,
           household: s.household ?? "single",
@@ -148,11 +151,14 @@ export default function OnboardingFlow() {
     }
   };
 
+  // 출생 연도 — 1년 단위 정확 입력 (만 나이 정밀 계산에 필수)
+  // 현재 시점 기준 55세~95세 범위 (1934~1969). 어르신·예비 시니어 모두 커버.
   const yearOptions = (() => {
     const yrs = [];
-    for (let y = 1965; y >= 1935; y -= 5) yrs.push(y);
+    for (let y = 1969; y >= 1934; y--) yrs.push(y);
     return yrs;
   })();
+  const monthOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   // done 화면 자동 이동을 useEffect로 — 컴포넌트 트리에서 분리해 메인 함수와 충돌 회피
   // (실제 컴포넌트는 아래 DoneScreen 별도 정의)
@@ -267,21 +273,46 @@ export default function OnboardingFlow() {
           <h2 className="text-[22px] font-extrabold text-[var(--color-text)]">
             출생 연도를 알려주세요
           </h2>
-          <div className="grid grid-cols-3 gap-2">
+          <p className="-mt-3 text-[13px] text-[var(--color-muted)]">
+            정확한 만 나이로 혜택을 추천드리기 위해 필요해요.
+          </p>
+          <div className="grid max-h-[280px] grid-cols-6 gap-1.5 overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-white p-2">
             {yearOptions.map((y) => (
               <button
                 key={y}
                 type="button"
                 onClick={() => setS({ ...s, birthYear: y })}
-                className={`rounded-2xl py-4 text-[18px] font-bold ${
+                className={`rounded-xl py-3 text-[15px] font-bold ${
                   s.birthYear === y
                     ? "bg-[var(--color-primary)] text-white"
                     : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
                 }`}
               >
-                {y}년대
+                {y}
               </button>
             ))}
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-[18px] font-extrabold text-[var(--color-text)]">
+              태어난 달 <span className="text-[13px] font-normal text-[var(--color-muted)]">(만 나이 정확 계산용)</span>
+            </h2>
+            <div className="grid grid-cols-4 gap-1.5">
+              {monthOptions.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setS({ ...s, birthMonth: m })}
+                  className={`rounded-xl py-3 text-[16px] font-bold ${
+                    s.birthMonth === m
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                  }`}
+                >
+                  {m}월
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="mt-2 rounded-2xl border-2 border-[var(--color-primary)]/30 bg-[var(--bg-soft-blue)] p-4">
@@ -434,6 +465,7 @@ export default function OnboardingFlow() {
             onClick={() => goNext(2)}
             disabled={
               !s.birthYear ||
+              !s.birthMonth ||
               !s.region ||
               !s.district ||
               !s.district.trim() ||

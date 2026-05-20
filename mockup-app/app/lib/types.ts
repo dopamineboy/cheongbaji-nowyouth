@@ -11,6 +11,7 @@ export interface UserProfile {
   id: string;
   name: string;
   birthYear: number; // 예: 1956
+  birthMonth?: number | null; // 1~12. 만 나이 정밀 계산용 (선택)
   dongCode: string; // 행정동 코드 10자리
   dongName: string; // 표시용 (예: "종로구 종로1·2·3·4가동")
   household: HouseholdType;
