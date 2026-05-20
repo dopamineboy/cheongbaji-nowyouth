@@ -148,15 +148,16 @@ function TabBar() {
     { label: "일자리", icon: "💼", href: "/jobs" },
     { label: "활동", icon: "🎯", href: "/activity" },
     { label: "커뮤니티", icon: "💬", href: "/community" },
+    { label: "설문", icon: "📝", href: "/survey" },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 z-30 border-t border-[var(--color-border)] bg-white">
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-6">
         {tabs.map((t) => (
           <li key={t.label}>
             <Link
               href={t.href}
-              className={`flex flex-col items-center gap-1 py-3 text-[13px] font-medium ${
+              className={`flex flex-col items-center gap-1 py-3 text-[12px] font-medium ${
                 t.active ? "text-[var(--color-primary)]" : "text-[var(--color-muted)]"
               }`}
             >

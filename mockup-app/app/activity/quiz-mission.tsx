@@ -3,6 +3,7 @@
 // 복지 학습 퀴즈 — "오늘의 혜택" 내용을 OX/3지선다로 학습.
 // 정답 시 +10P (LEARN). 매일 다른 문제 노출 (단순 인덱스 기반).
 import { useEffect, useMemo, useState } from "react";
+import { LEDGER_ICON } from "../components/ledger-icons";
 
 interface Question {
   q: string;
@@ -92,10 +93,17 @@ export default function QuizMission() {
   const isCorrect = picked !== null && picked === q.answer;
   const isWrong = picked !== null && picked !== q.answer;
 
+  const LearnIcon = LEDGER_ICON.LEARN;
+
   return (
     <article className="card-soft rounded-2xl bg-white p-5">
       <div className="mb-3 flex items-center gap-2">
-        <span className="text-2xl" aria-hidden>💡</span>
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+          aria-hidden="true"
+        >
+          <LearnIcon size={20} />
+        </span>
         <h3 className="text-[18px] font-bold text-[var(--color-text)]">
           복지 학습 퀴즈
         </h3>

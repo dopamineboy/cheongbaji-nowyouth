@@ -166,6 +166,24 @@ export interface PoomasiPost {
 }
 
 // ─────────────────────────────────────────────────────────
+// ⑤ 설문 (MVP 개선 의견 수집 — 공모전 데모용)
+// ─────────────────────────────────────────────────────────
+
+export type SurveySection = "welfare" | "jobs" | "activity" | "community" | "none";
+
+export interface SurveyResponse {
+  id: string;
+  userId: string | null; // 비로그인 응답도 허용
+  overallSatisfaction: number; // 1~5
+  mostUsefulSection: SurveySection;
+  weakestPoint: string; // 자유 서술
+  wouldRecommend: boolean | null;
+  freeFeedback: string; // 자유 서술
+  contactEmail?: string;
+  createdAt: string; // ISO
+}
+
+// ─────────────────────────────────────────────────────────
 // API 공통
 // ─────────────────────────────────────────────────────────
 
