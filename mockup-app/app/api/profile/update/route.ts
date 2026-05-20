@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { getDemoUserId, getStore } from "../../../lib/store";
 import {
+  applyOverride,
   getProfileOverride,
   saveProfileToCookie,
   type ProfileOverride,
@@ -39,10 +40,16 @@ export async function POST(req: NextRequest) {
   // 사용자 검증
   const userId = getDemoUserId();
   const store = getStore();
-  const existing = store.users.get(userId);
-  if (!existing) {
+  const baseUser = store.users.get(userId);
+  if (!baseUser) {
     return err("", "USER_NOT_FOUND", "사용자를 찾을 수 없어요.", 404);
   }
+
+  // Vercel cold start로 인메모리 store가 sampleUser로 리셋됐을 수 있으므로,
+  // cookie의 사용자 입력값을 먼저 머지해 "실제 사용자 상태"로 복원.
+  // 이렇게 안 하면 한 필드만 수정해도 다른 필드들이 sampleUser 기본값으로 돌아감.
+  const cookieOverride = await getProfileOverride();
+  const existing = applyOverride(baseUser, cookieOverride);
 
   // 입력 필드별 검증 — 보낸 것만 반영
   const updated: UserProfile = { ...existing };
@@ -165,7 +172,7 @@ export async function POST(req: NextRequest) {
   store.users.set(userId, updated);
 
   // 쿠키 영속화 — 기존 override에 덮어쓰기
-  const existingOverride = (await getProfileOverride()) ?? ({} as ProfileOverride);
+  const existingOverride = cookieOverride ?? ({} as ProfileOverride);
   await saveProfileToCookie({
     ...existingOverride,
     name: updated.name,
