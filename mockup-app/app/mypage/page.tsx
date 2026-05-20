@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../lib/current-user";
-import { isOnboarded } from "../lib/auth";
+import { getProfileOverride, isLegacyCookie, isOnboarded } from "../lib/auth";
 import { calculateAge } from "../lib/age";
 import MypageActions from "./mypage-actions";
 
@@ -46,6 +46,9 @@ export default async function MyPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/welcome");
 
+  const cookieOverride = await getProfileOverride();
+  const legacy = isLegacyCookie(cookieOverride);
+
   const age = calculateAge(user.birthYear, user.birthMonth);
   const birthMonthText = user.birthMonth ? `${user.birthMonth}월` : "월 미입력";
 
@@ -65,6 +68,20 @@ export default async function MyPage() {
           각 항목을 누르시면 그 항목만 수정하실 수 있어요.
         </p>
       </header>
+
+      {/* 옛 cookie 안내 — 인터뷰 이후 새로 추가된 항목들이 채워지지 않은 상태 */}
+      {legacy && (
+        <section className="rounded-2xl border-2 border-[var(--color-accent)] bg-[var(--color-accent)]/10 p-4">
+          <p className="text-[14px] font-bold text-[#8A5E00]">
+            ⚠ 이전 형식의 정보가 남아 있어요
+          </p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text)]">
+            인터뷰 항목이 늘어났는데, 일부 항목이 입력되지 않아 정확한 추천이
+            어렵습니다. 아래 &quot;인터뷰 처음부터 다시&quot; 버튼으로 빠르게
+            다시 입력해 주세요.
+          </p>
+        </section>
+      )}
 
       {/* 기본 정보 */}
       <section className="rounded-2xl bg-white p-5">
