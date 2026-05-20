@@ -95,6 +95,27 @@ export interface Benefit {
   universal?: boolean;
   show_condition?: ShowCondition;
   hidden_from_results?: boolean;
+  /** 한시·시즌성 지원금 표시 — "이달 지금 지원 가능" 별도 섹션 노출 */
+  is_temporary?: boolean;
+  /** ISO 8601 — 신청 마감일. 이 날짜가 지나면 자동으로 결과에서 제외됨 */
+  valid_until?: string;
+  /** ISO 8601 — 신청 시작일. 아직 시작 안 됐으면 별도 표시 가능 */
+  valid_from?: string;
+}
+
+/** 한시 지원금이 현재 시점에 신청 가능한지 (시작일 ≤ 오늘 ≤ 마감일) */
+export function isTemporaryActive(b: Benefit, now: Date = new Date()): boolean {
+  if (!b.is_temporary) return false;
+  if (b.valid_from && new Date(b.valid_from) > now) return false;
+  if (b.valid_until && new Date(b.valid_until) < now) return false;
+  return true;
+}
+
+/** 한시 지원금이 만료됐는지 (마감일 < 오늘) */
+export function isTemporaryExpired(b: Benefit, now: Date = new Date()): boolean {
+  if (!b.is_temporary) return false;
+  if (!b.valid_until) return false;
+  return new Date(b.valid_until) < now;
 }
 
 export type MatchStatus =
@@ -146,9 +167,28 @@ export function matchBenefits(
   profile: WelfareUserProfile,
   benefits: Benefit[],
 ): MatchedBenefit[] {
-  const visible = benefits.filter((b) => shouldShow(profile, b));
+  const visible = benefits.filter(
+    (b) => shouldShow(profile, b) && !isTemporaryExpired(b),
+  );
   const results = visible.map((b) => evaluateBenefit(profile, b));
   return sortByHelpfulness(results);
+}
+
+/**
+ * 한시·시즌성 지원금만 분리 추출 (현재 신청 가능한 것만).
+ * 일반 매칭 결과에는 이미 포함되어 있고, /welfare 의 "이달 지금 지원 가능"
+ * 별도 섹션에서 강조 노출하기 위한 헬퍼.
+ */
+export function pickTemporaryActive(
+  matches: MatchedBenefit[],
+  now: Date = new Date(),
+): MatchedBenefit[] {
+  return matches.filter(
+    (m) =>
+      isTemporaryActive(m.benefit, now) &&
+      m.status !== "ineligible" &&
+      !m.benefit.hidden_from_results,
+  );
 }
 
 function shouldShow(profile: WelfareUserProfile, benefit: Benefit): boolean {
