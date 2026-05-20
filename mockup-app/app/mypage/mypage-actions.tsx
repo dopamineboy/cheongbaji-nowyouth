@@ -1,13 +1,13 @@
 "use client";
 
-// 마이페이지 액션 버튼들 — 인터뷰 다시 하기
-// 인터뷰 데이터 부분 수정은 추후 단일 필드 편집 화면으로 확장 예정.
+// 마이페이지 액션 버튼들 — 부분 수정 + 전체 다시 입력
+import Link from "next/link";
 import { useState } from "react";
 
 export default function MypageActions() {
   const [busy, setBusy] = useState(false);
 
-  const editInterview = async () => {
+  const restartInterview = async () => {
     if (busy) return;
     const ok = confirm(
       "인터뷰를 처음부터 다시 진행하시겠어요?\n입력하신 정보가 새로 덮어쓰여요.",
@@ -25,17 +25,23 @@ export default function MypageActions() {
 
   return (
     <div className="flex flex-col gap-2">
+      <Link
+        href="/mypage/edit"
+        className="rounded-2xl bg-[var(--color-primary)] py-4 text-center text-[17px] font-bold text-white"
+      >
+        ✏️ 정보 수정하기
+      </Link>
       <button
         type="button"
-        onClick={editInterview}
+        onClick={restartInterview}
         disabled={busy}
-        className="rounded-2xl bg-[var(--color-primary)] py-4 text-[17px] font-bold text-white disabled:opacity-50"
+        className="rounded-2xl border-2 border-[var(--color-border)] bg-white py-3 text-[15px] font-bold text-[var(--color-text)] disabled:opacity-50"
       >
-        ✏️ 인터뷰 다시 하기
+        🔄 인터뷰 처음부터 다시
       </button>
       <p className="px-1 text-[12px] leading-relaxed text-[var(--color-muted)]">
-        나이·거주지·가구·소득·일자리 선호를 한 번에 다시 입력하실 수 있어요.
-        곧 항목별로 따로 수정하는 기능도 추가할 예정이에요.
+        "정보 수정하기"에서는 출생·거주지·가구·소득·자격 정보를 한 화면에서
+        원하는 항목만 골라 바꾸실 수 있어요.
       </p>
     </div>
   );
