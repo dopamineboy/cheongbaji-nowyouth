@@ -43,7 +43,12 @@ delinquency_tags:
   - utility
 
 show_condition:
-  has_delinquency: true
+  # 생계·의료급여 수급자 중 (65세+ OR 장애인 OR 영유아 가구)
+  # → 기초수급은 income_recognition_max로 검증되고, 추가로 아래 그룹 필요
+  any_of:
+    - age_65_plus
+    - has_disability
+    - has_young_child
 
 last_verified: 2024-01-01
 

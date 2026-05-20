@@ -32,6 +32,8 @@ export type WelfareStatus =
   | "none"
   | "unknown";
 
+export type DisabilityGrade = "none" | "mild" | "severe" | "unknown";
+
 export interface WelfareUserProfile {
   age?: number;
   household: Household;
@@ -39,6 +41,14 @@ export interface WelfareUserProfile {
   monthlyIncomeKrw?: number;
   welfareStatus?: WelfareStatus;
   hasDisability?: boolean;
+  /** 장애 등급 — 통신비/TV 면제 등 등급별 차등 혜택용 */
+  disabilityGrade?: DisabilityGrade;
+  /** 국가유공자 여부 — TV 수신료 면제 등 */
+  isVeteran?: boolean;
+  /** 가구원에 영유아 포함 — 에너지바우처 등 */
+  hasYoungChild?: boolean;
+  /** 근로 능력 — 자활사업 조건부 혜택용 (true=가능, false=불가, undefined=미입력) */
+  hasWorkAbility?: boolean;
   healthConcerns?: HealthConcern[];
   housingType?: HousingType;
   delinquencies?: DelinquencyType[];
@@ -54,8 +64,16 @@ export interface BenefitEligibility {
   income_recognition_max?: Partial<Record<Household, number>>;
   median_income_pct?: number;
   requires_disability?: boolean;
+  /** 장애 등급 요구 — "any" / "mild_or_severe" / "severe_only" 등으로 세분 */
+  requires_disability_grade?: "any" | "severe_only";
   requires_crisis?: boolean;
   requires_renter?: boolean;
+  /** 자가 소유자만 가능 (주거환경개선, 집수리 등) */
+  requires_homeowner?: boolean;
+  /** 국가유공자만 가능 (또는 OR 조건의 일부) */
+  requires_veteran?: boolean;
+  /** 영유아 가구원 필요 (또는 OR 조건) */
+  requires_young_child?: boolean;
   regions?: string[];
   districts?: string[];
 }
@@ -67,6 +85,21 @@ export interface ShowCondition {
   is_renter?: boolean;
   /** 단독(혼자 사는) 가구만 노출 — 독거노인 대상 혜택용 */
   single_household?: boolean;
+  /** 자가 소유자만 노출 (강한 필터, 노출 단계에서 제외) */
+  is_homeowner?: boolean;
+  /**
+   * "이 조건들 중 하나라도 충족하면 자격 대상" (OR 그룹).
+   * 통신비·TV 면제·에너지바우처처럼 "65세+ OR 장애인 OR 유공자"식 혜택에 사용.
+   * 비어 있거나 undefined면 무시.
+   */
+  any_of?: Array<
+    | "age_65_plus"
+    | "has_disability"
+    | "is_veteran"
+    | "has_young_child"
+    | "basic_livelihood"
+    | "near_poverty"
+  >;
 }
 
 export interface BenefitAmount {
@@ -223,10 +256,50 @@ function shouldShow(profile: WelfareUserProfile, benefit: Benefit): boolean {
     if (!profile.housingType || !renterTypes.includes(profile.housingType)) return false;
   }
   if (sc.single_household) {
-    // 단독 가구 — household === "single" 또는 householdSize === 1
     const isSingle =
       profile.household === "single" || profile.householdSize === 1;
     if (!isSingle) return false;
+  }
+  if (sc.is_homeowner) {
+    if (profile.housingType !== "owned") return false;
+  }
+  if (sc.any_of && sc.any_of.length > 0) {
+    // any_of: OR 그룹 — 하나라도 충족하면 통과. 모두 미충족이면 노출 제외.
+    // (단 한 가지라도 미입력 정보가 있다면 노출 유지 — 평가 단계에서 needs_more_info 처리)
+    let hasUnknown = false;
+    const hit = sc.any_of.some((cond) => {
+      switch (cond) {
+        case "age_65_plus":
+          if (profile.age === undefined) {
+            hasUnknown = true;
+            return false;
+          }
+          return profile.age >= 65;
+        case "has_disability":
+          if (profile.hasDisability === undefined) {
+            hasUnknown = true;
+            return false;
+          }
+          return profile.hasDisability === true;
+        case "is_veteran":
+          if (profile.isVeteran === undefined) {
+            hasUnknown = true;
+            return false;
+          }
+          return profile.isVeteran === true;
+        case "has_young_child":
+          if (profile.hasYoungChild === undefined) {
+            hasUnknown = true;
+            return false;
+          }
+          return profile.hasYoungChild === true;
+        case "basic_livelihood":
+          return profile.welfareStatus === "basic_livelihood";
+        case "near_poverty":
+          return profile.welfareStatus === "near_poverty";
+      }
+    });
+    if (!hit && !hasUnknown) return false;
   }
   return true;
 }
@@ -282,6 +355,72 @@ function evaluateBenefit(
     if (profile.hasDisability === undefined) need("장애 등록 여부");
     else if (!profile.hasDisability) fail("이 사업은 등록 장애인 어르신을 위한 제도예요.");
     else pass("장애 등록 조건 대상자입니다.");
+  }
+  if (e.requires_disability_grade) {
+    if (profile.disabilityGrade === undefined || profile.disabilityGrade === "unknown") {
+      need("장애 등급");
+    } else if (e.requires_disability_grade === "severe_only" && profile.disabilityGrade !== "severe") {
+      fail("이 사업은 중증 등록 장애인 어르신을 위한 제도예요.");
+    } else if (profile.disabilityGrade === "none") {
+      fail("이 사업은 등록 장애인 어르신을 위한 제도예요.");
+    } else {
+      pass(`${profile.disabilityGrade === "severe" ? "중증" : "경증"} 장애 등록 조건 대상자입니다.`);
+    }
+  }
+  if (e.requires_homeowner) {
+    if (!profile.housingType || profile.housingType === "unknown") {
+      need("주거 형태 (자가 여부)");
+    } else if (profile.housingType === "owned") {
+      pass("자가 소유 조건 대상자입니다.");
+    } else {
+      fail("이 사업은 자가 소유 어르신을 위한 제도예요. (전·월세는 신청 어려움)");
+    }
+  }
+  if (e.requires_veteran) {
+    if (profile.isVeteran === undefined) need("국가유공자 여부");
+    else if (!profile.isVeteran) fail("이 사업은 국가유공자 어르신을 위한 제도예요.");
+    else pass("국가유공자 조건 대상자입니다.");
+  }
+  if (e.requires_young_child) {
+    if (profile.hasYoungChild === undefined) need("가구원 중 영유아 여부");
+    else if (!profile.hasYoungChild) fail("이 사업은 영유아 가구원이 있어야 신청할 수 있어요.");
+    else pass("영유아 가구원 조건 대상자입니다.");
+  }
+
+  // any_of OR 그룹 — show_condition에 있으면 평가 단계에서도 부합률에 반영
+  const sc = benefit.show_condition;
+  if (sc?.any_of && sc.any_of.length > 0) {
+    let hasUnknown = false;
+    const evalCond = (cond: string): boolean => {
+      switch (cond) {
+        case "age_65_plus":
+          if (profile.age === undefined) { hasUnknown = true; return false; }
+          return profile.age >= 65;
+        case "has_disability":
+          if (profile.hasDisability === undefined) { hasUnknown = true; return false; }
+          return profile.hasDisability;
+        case "is_veteran":
+          if (profile.isVeteran === undefined) { hasUnknown = true; return false; }
+          return profile.isVeteran;
+        case "has_young_child":
+          if (profile.hasYoungChild === undefined) { hasUnknown = true; return false; }
+          return profile.hasYoungChild;
+        case "basic_livelihood":
+          return profile.welfareStatus === "basic_livelihood";
+        case "near_poverty":
+          return profile.welfareStatus === "near_poverty";
+        default:
+          return false;
+      }
+    };
+    const hit = sc.any_of.some(evalCond);
+    if (hit) {
+      pass("자격 조건(여러 그룹 중 하나) 대상자입니다.");
+    } else if (hasUnknown) {
+      need("자격 그룹 확인 (장애 등록·국가유공자·기초수급 등)");
+    } else {
+      fail("이 사업의 자격 그룹(기초수급·차상위·장애·유공자 등)에 해당하지 않으세요.");
+    }
   }
 
   // 거주지

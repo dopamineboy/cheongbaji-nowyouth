@@ -16,6 +16,7 @@ eligibility:
   age_min: 0
   citizenship: KR
   median_income_pct: 46
+  requires_homeowner: true
 
 benefit:
   type: one_time_cash
@@ -39,9 +40,6 @@ apply:
 
 sources:
   - https://www.myhome.go.kr
-
-## show_condition: 자가 소유자 대상이지만, 현재 matcher에 homeowner 조건 없음
-## 모든 사용자에게 노출하고 notes에서 자가 소유 조건 안내
 
 last_verified: 2024-01-01
 

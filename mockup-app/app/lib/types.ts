@@ -28,6 +28,14 @@ export interface UserProfile {
   district: string; // 시·군·구 (예: "종로구")
   welfareStatus: "basic_livelihood" | "near_poverty" | "none" | "unknown";
   hasDisability: boolean;
+  // 장애 등급 — 통신비·TV 면제 등 등급별 차등 혜택의 정밀 매칭용
+  disabilityGrade?: "none" | "mild" | "severe" | "unknown";
+  // 국가유공자 (보훈대상자) — TV 수신료 면제 등
+  isVeteran?: boolean;
+  // 가구원 중 영유아 포함 — 에너지바우처 등
+  hasYoungChild?: boolean;
+  // 근로 능력 — 자활사업 조건부 혜택 매칭용
+  hasWorkAbility?: boolean;
   healthConcerns: ("teeth" | "eyes" | "daily_life" | "none")[];
   housingType: "owned" | "jeonse" | "monthly_rent" | "public_rental" | "unknown";
   delinquencies: ("maintenance" | "health_insurance" | "utility" | "none")[];

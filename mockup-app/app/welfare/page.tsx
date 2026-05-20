@@ -93,9 +93,12 @@ function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean 
             >
               {receiving ? "수령 중" : meta.label}
             </span>
-            {!receiving && (
-              <span className="text-[12px] text-[var(--color-muted)]">
-                부합률 {m.matchPct}%
+            {!receiving && m.totalConditions > 0 && (
+              <span
+                className="text-[12px] text-[var(--color-muted)]"
+                title="저희가 확인할 수 있는 자격 조건 중 충족한 개수예요. 최종 자격은 신청 시 정확히 확인됩니다."
+              >
+                확인된 조건 {m.metConditions}/{m.totalConditions}
               </span>
             )}
           </div>
