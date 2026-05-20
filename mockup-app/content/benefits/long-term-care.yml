@@ -29,8 +29,8 @@ documents:
 
 apply:
   online:
-    name: 국민건강보험공단
-    url: https://www.longtermcare.or.kr
+    name: 노인장기요양보험 (국민건강보험공단)
+    url: https://www.longtermcare.or.kr/
   offline:
     - 가까운 국민건강보험공단 지사
     - 주소지 관할 행정복지센터(주민센터)

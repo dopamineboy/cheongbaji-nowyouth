@@ -29,14 +29,14 @@ documents:
 
 apply:
   online:
-    name: 국민건강보험공단
-    url: https://www.nhis.or.kr
+    name: 국민건강보험공단 — 보청기 급여 안내
+    url: https://www.nhis.or.kr/nhis/policy/wbhada11900m01.do
   offline:
     - 국민건강보험공단 지사
     - 이비인후과 (처방 → 구입 → 급여 신청)
 
 sources:
-  - https://www.nhis.or.kr
+  - https://www.nhis.or.kr/nhis/policy/wbhada11900m01.do
 
 show_condition:
   has_disability: true
