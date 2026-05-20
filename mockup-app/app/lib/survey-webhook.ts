@@ -6,6 +6,8 @@
 //
 // 미설정 시 no-op — 로컬·시연 환경에서 별도 설정 없이도 정상 작동.
 // 실패해도 응답자 폼 제출에는 영향 주지 않도록 try/catch + 짧은 타임아웃.
+// 응답은 Apps Script 측에서 doPost 본문 실행 후 302 redirect로 반환되므로
+// redirect: "manual" 로 받아 chain hang을 방지함 (PR #25).
 
 import type { SurveyResponse } from "./types";
 
