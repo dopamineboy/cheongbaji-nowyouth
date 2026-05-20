@@ -13,7 +13,7 @@ type ConsentKey = "terms" | "privacy" | "age";
 const ITEMS: { key: ConsentKey; label: string; href?: string }[] = [
   { key: "terms", label: "이용약관에 동의합니다", href: "/terms" },
   { key: "privacy", label: "개인정보 수집·이용에 동의합니다", href: "/privacy" },
-  { key: "age", label: "만 14세 이상이며 본인입니다" },
+  { key: "age", label: "성인 본인이거나 가족·보호자가 직접 입력합니다" },
 ];
 
 export default function ConsentCta() {

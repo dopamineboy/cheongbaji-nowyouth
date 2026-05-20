@@ -32,7 +32,19 @@ function GreetingHeader({ name, dong }: { name: string; dong: string }) {
         </h1>
         <p className="mt-1 text-[14px] text-[var(--color-muted)]">{dong}</p>
       </div>
-      <RestartButton />
+      <div className="flex flex-col items-end gap-2">
+        <Link
+          href="/mypage"
+          className="flex h-10 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-[13px] font-bold text-[var(--color-text)]"
+          aria-label="마이페이지"
+        >
+          <span className="text-[16px]" aria-hidden>
+            👤
+          </span>
+          마이페이지
+        </Link>
+        <RestartButton />
+      </div>
     </header>
   );
 }
