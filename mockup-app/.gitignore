@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# 설문 응답 데이터 (시연용·로컬 영속화 — 시연 답변은 공개 저장소에 올리지 않음)
+content/surveys/responses.jsonl
