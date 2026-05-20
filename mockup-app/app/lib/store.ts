@@ -6,13 +6,14 @@
 
 import { samplePoomasiPosts, sampleUser } from "./sample-data";
 import { realSampleJobs } from "./sample-jobs-real";
-import type { Job, LedgerEntry, PoomasiPost, UserProfile } from "./types";
+import type { Job, LedgerEntry, PoomasiPost, SurveyResponse, UserProfile } from "./types";
 
 interface Store {
   users: Map<string, UserProfile>;
   jobs: Job[];
   poomasi: PoomasiPost[];
   ledger: LedgerEntry[];
+  surveys: SurveyResponse[];
 }
 
 declare global {
@@ -27,6 +28,7 @@ function makeStore(): Store {
     users,
     jobs: [...realSampleJobs],
     poomasi: [...samplePoomasiPosts],
+    surveys: [],
     ledger: [
       // 시연용 초기 적립 내역
       {
@@ -104,6 +106,23 @@ export function appendLedger(entry: Omit<LedgerEntry, "id" | "immutable" | "crea
   };
   getStore().ledger.push(full);
   return full;
+}
+
+// ── 설문 (MVP 개선 의견) ──
+export function addSurveyResponse(
+  resp: Omit<SurveyResponse, "id" | "createdAt">,
+): SurveyResponse {
+  const full: SurveyResponse = {
+    ...resp,
+    id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: new Date().toISOString(),
+  };
+  getStore().surveys.unshift(full);
+  return full;
+}
+
+export function listSurveyResponses(limit = 50): SurveyResponse[] {
+  return getStore().surveys.slice(0, limit);
 }
 
 // ── 커뮤니티 ──

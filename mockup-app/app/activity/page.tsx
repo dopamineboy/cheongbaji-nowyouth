@@ -9,19 +9,20 @@ import QuizMission from "./quiz-mission";
 import WeeklyChart from "./weekly-chart";
 import type { LedgerEntry, LedgerType } from "../lib/types";
 import GuideVideoButton from "../components/guide-video-button";
+import { LEDGER_ICON, LedgerFallbackIcon } from "../components/ledger-icons";
 
-const TYPE_LABEL: Record<LedgerType, { ko: string; icon: string }> = {
-  GAME: { ko: "인지 게임", icon: "🧩" },
-  LEARN: { ko: "학습 퀴즈", icon: "💡" },
-  WALK: { ko: "걷기", icon: "🚶" },
-  STAMP: { ko: "스탬프", icon: "📍" },
-  CULTURE: { ko: "문화 활동", icon: "🎭" },
-  EVENT: { ko: "이벤트", icon: "🎪" },
-  WELFARE: { ko: "혜택 신청", icon: "📋" },
-  JOB: { ko: "일자리", icon: "💼" },
-  POOMASI: { ko: "커뮤니티", icon: "💬" },
-  REDEEM: { ko: "리워드 교환", icon: "🎁" },
-  ADMIN_ADJUST: { ko: "조정", icon: "⚙️" },
+const TYPE_LABEL: Record<LedgerType, string> = {
+  GAME: "인지 게임",
+  LEARN: "학습 퀴즈",
+  WALK: "걷기",
+  STAMP: "스탬프",
+  CULTURE: "문화 활동",
+  EVENT: "이벤트",
+  WELFARE: "혜택 신청",
+  JOB: "일자리",
+  POOMASI: "커뮤니티",
+  REDEEM: "리워드 교환",
+  ADMIN_ADJUST: "조정",
 };
 
 function timeAgo(iso: string): string {
@@ -36,13 +37,19 @@ function timeAgo(iso: string): string {
 }
 
 function LedgerRow({ e }: { e: LedgerEntry }) {
-  const label = TYPE_LABEL[e.type] ?? { ko: e.type, icon: "•" };
+  const ko = TYPE_LABEL[e.type] ?? e.type;
+  const Icon = LEDGER_ICON[e.type] ?? LedgerFallbackIcon;
   return (
     <li className="flex items-center justify-between rounded-xl bg-white px-4 py-3">
       <div className="flex items-center gap-3">
-        <span className="text-2xl" aria-hidden>{label.icon}</span>
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+          aria-hidden="true"
+        >
+          <Icon size={20} />
+        </span>
         <div>
-          <p className="text-[15px] font-semibold text-[var(--color-text)]">{label.ko}</p>
+          <p className="text-[15px] font-semibold text-[var(--color-text)]">{ko}</p>
           <p className="text-[13px] text-[var(--color-muted)]">{timeAgo(e.createdAt)}</p>
         </div>
       </div>
@@ -65,15 +72,16 @@ function TabBar() {
     { label: "일자리", icon: "💼", href: "/jobs" },
     { label: "활동", icon: "🎯", href: "/activity", active: true },
     { label: "커뮤니티", icon: "💬", href: "/community" },
+    { label: "설문", icon: "📝", href: "/survey" },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 z-30 border-t border-[var(--color-border)] bg-white">
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-6">
         {tabs.map((t) => (
           <li key={t.label}>
             <Link
               href={t.href}
-              className={`flex flex-col items-center gap-1 py-3 text-[13px] font-medium ${
+              className={`flex flex-col items-center gap-1 py-3 text-[12px] font-medium ${
                 t.active ? "text-[var(--color-primary)]" : "text-[var(--color-muted)]"
               }`}
             >
