@@ -4,6 +4,7 @@ import { getCurrentUser } from "../lib/current-user";
 import { loadAllBenefits } from "../lib/welfare/content";
 import {
   matchBenefits,
+  pickTemporaryActive,
   summarizeAmounts,
   type MatchedBenefit,
   type MatchStatus,
@@ -201,6 +202,9 @@ export default async function WelfarePage() {
   const availableMonthly =
     availableAmounts.monthlyCashKrw + availableAmounts.monthlyDiscountKrw;
 
+  // 한시·시즌성 지원금 (현재 신청 가능한 것만, 만료된 것은 자동 숨김)
+  const temporaryList = pickTemporaryActive(matched);
+
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
@@ -269,6 +273,72 @@ export default async function WelfarePage() {
           </p>
         )}
       </section>
+
+      {/* 🔥 이달 지금 지원 가능 — 한시·시즌성 지원금 */}
+      {temporaryList.length > 0 && (
+        <section className="mb-6 px-5">
+          <div className="rounded-2xl border-2 border-[var(--color-urgent)]/30 bg-[var(--color-urgent)]/5 p-5">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-[22px]" aria-hidden>🔥</span>
+              <h2 className="text-[18px] font-extrabold text-[var(--color-text)]">
+                이달 지금 지원 가능
+              </h2>
+              <span className="rounded-full bg-[var(--color-urgent)]/15 px-2 py-0.5 text-[11px] font-bold text-[var(--color-urgent)]">
+                한시·시즌
+              </span>
+            </div>
+            <p className="mb-3 text-[13px] leading-relaxed text-[var(--color-muted)]">
+              제한된 기간 동안만 받으실 수 있는 지원이에요. 마감 전에 챙기세요.
+            </p>
+            <ul className="flex flex-col gap-3">
+              {temporaryList.map((m) => {
+                const daysLeft = m.benefit.valid_until
+                  ? Math.max(
+                      0,
+                      Math.ceil(
+                        (new Date(m.benefit.valid_until).getTime() -
+                          Date.now()) /
+                          86_400_000,
+                      ),
+                    )
+                  : null;
+                return (
+                  <li key={m.benefit.id}>
+                    <Link href={`/welfare/${m.benefit.id}`}>
+                      <article className="card-soft card-link rounded-xl bg-white p-4">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[var(--color-urgent)]/10 px-2 py-0.5 text-[11px] font-bold text-[var(--color-urgent)]">
+                            한시 지원
+                          </span>
+                          {daysLeft !== null && (
+                            <span className="text-[11px] font-semibold text-[var(--color-muted)]">
+                              {daysLeft > 30
+                                ? `마감 ${Math.floor(daysLeft / 30)}개월+`
+                                : `마감 ${daysLeft}일 전`}
+                            </span>
+                          )}
+                          <span className="text-[11px] text-[var(--color-muted)]">
+                            · {m.benefit.agency.split(" · ")[0]}
+                          </span>
+                        </div>
+                        <h3 className="text-[15px] font-bold leading-tight text-[var(--color-text)]">
+                          {m.benefit.name}
+                        </h3>
+                        <p className="mt-1 text-[12px] leading-relaxed text-[var(--color-muted)]">
+                          {m.benefit.summary.trim().split("\n")[0]}
+                        </p>
+                        <p className="mt-2 text-[12px] font-bold text-[var(--color-primary)]">
+                          자세히 보기 →
+                        </p>
+                      </article>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+      )}
 
       {/* 🟢 지금 받고 계시는 혜택 */}
       {receivingList.length > 0 && (
