@@ -2,6 +2,7 @@
 // GET  /api/survey — 최근 응답 목록 (관리/시연용)
 import { NextRequest } from "next/server";
 import { addSurveyResponse, listSurveyResponses } from "../../lib/store";
+import { postSurveyToSheet } from "../../lib/survey-webhook";
 import type {
   SurveyAgeBand,
   SurveyDevice,
@@ -139,6 +140,9 @@ export async function POST(req: NextRequest) {
     freeFeedback,
     contactEmail: (body.contactEmail ?? "").trim() || undefined,
   });
+
+  // Google Sheets로 webhook 전송 (env 미설정 시 no-op, 실패해도 응답자 영향 없음)
+  await postSurveyToSheet(saved);
 
   return Response.json({ ok: true, data: { response: saved } });
 }
