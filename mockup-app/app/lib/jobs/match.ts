@@ -6,6 +6,7 @@
 // Stage 3: Top-5 Diversity — 단순 점수순이 아닌 의도된 믹스
 //   1~2위 최고점수 / 3위 경력활용 / 4위 임금높은 / 5위 새로운 유형 (탐색)
 
+import { calculateAge } from "../age";
 import type { Job, UserProfile } from "../types";
 
 export interface ScoredJob extends Job {
@@ -60,8 +61,8 @@ export function passHardFilter(
   // 마감 지난 공고 제거
   if (new Date(job.expiresAt).getTime() < now.getTime()) return false;
 
-  // 연령 제한
-  const age = now.getFullYear() - user.birthYear;
+  // 연령 제한 — 정밀 만 나이 계산 (생일 지났는지 반영)
+  const age = calculateAge(user.birthYear, user.birthMonth, now);
   if (age < job.ageMin) return false;
 
   // 신체 조건 — 사용자가 명시적으로 못 한다고 한 경우만 제외

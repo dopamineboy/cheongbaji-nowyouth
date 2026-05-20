@@ -18,6 +18,7 @@ export type ProfileOverride = Partial<
     UserProfile,
     | "name"
     | "birthYear"
+    | "birthMonth"
     | "region"
     | "district"
     | "dongCode"
