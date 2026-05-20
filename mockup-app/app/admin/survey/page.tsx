@@ -1,45 +1,28 @@
-// 어드민 — 설문 응답 통계 대시보드 + CSV 다운로드 (공모전 데모용)
-// PIN 게이트 동일 패턴 재사용
+// 어드민 — 앱 사용 설문 응답 통계 대시보드 + CSV 다운로드
+// 객관식 10문항 × ①·②·③ 분포 막대 + 서술 3문항 최근 응답
 import Link from "next/link";
 import { computeSurveyStats } from "../../lib/store";
-import type { SurveyAgeBand, SurveyPainPoint, SurveyUsagePeriod } from "../../lib/types";
+import { SURVEY_CHOICE_KEYS, type SurveyChoiceKey } from "../../lib/types";
 
 export const dynamic = "force-dynamic";
 
 const PUBLIC_ADMIN_PIN = process.env.ADMIN_PIN ?? "1234";
 
-const PAIN_LABEL: Record<SurveyPainPoint, string> = {
-  font_small: "글자 크기",
-  slow_loading: "속도·로딩",
-  button_layout: "버튼·메뉴 위치",
-  guide_unclear: "안내 부족",
-  accuracy: "정보 부정확",
-  voice_needed: "음성 기능",
-  other: "기타",
+const QUESTION_META: Record<
+  SurveyChoiceKey,
+  { num: number; label: string; options: [string, string, string] }
+> = {
+  q1_ease:          { num: 1,  label: "사용 쉬움",         options: ["매우 쉬움",   "보통",    "어려움"] },
+  q2_understanding: { num: 2,  label: "앱 정체 이해",      options: ["잘 이해됨",   "조금 헷갈림", "전혀 모름"] },
+  q3_findFeature:   { num: 3,  label: "기능 찾기",         options: ["매우 쉬움",   "보통",    "어려움"] },
+  q4_confusion:     { num: 4,  label: "어디 눌러야 헷갈림", options: ["전혀 없음",   "가끔",    "자주"] },
+  q5_readability:   { num: 5,  label: "글씨·화면",         options: ["매우 편함",   "보통",    "불편함"] },
+  q6_buttons:       { num: 6,  label: "버튼 누르기",       options: ["매우 쉬움",   "보통",    "어려움"] },
+  q7_mistakes:      { num: 7,  label: "실수 잘못 누름",     options: ["없음",        "가끔",    "자주"] },
+  q8_selfUse:       { num: 8,  label: "혼자 다시 사용",    options: ["충분히 가능", "조금 어려움", "거의 불가능"] },
+  q9_satisfaction:  { num: 9,  label: "전반 만족",         options: ["매우 만족",   "보통",    "불만족"] },
+  q10_continue:     { num: 10, label: "계속 사용 의향",    options: ["있음",        "고민됨",  "없음"] },
 };
-
-const AGE_LABEL: Record<SurveyAgeBand, string> = {
-  "60-64": "60~64",
-  "65-69": "65~69",
-  "70-74": "70~74",
-  "75-79": "75~79",
-  "80+": "80+",
-  prefer_not: "응답 안 함",
-};
-
-const USAGE_LABEL: Record<SurveyUsagePeriod, string> = {
-  first: "오늘 처음",
-  days: "며칠",
-  weeks: "1주~1달",
-  month_plus: "1달 이상",
-};
-
-const SCREEN_LABEL = {
-  welfare: "복지 알리미",
-  jobs: "일자리 매칭",
-  activity: "활동·미션",
-  community: "커뮤니티",
-} as const;
 
 function fmt(n: number | null, suffix = ""): string {
   if (n === null || Number.isNaN(n)) return "—";
@@ -86,6 +69,19 @@ export default async function SurveyAdminPage({
   const stats = computeSurveyStats();
   const exportHref = `/api/survey/export`;
 
+  // 긍정 비율(①을 선택한 비율)이 낮은 순으로 정렬 → 개선 우선순위
+  const sortedKeys = [...SURVEY_CHOICE_KEYS].sort((a, b) => {
+    const ra =
+      stats.choices[a].respondents > 0
+        ? stats.choices[a].counts[1] / stats.choices[a].respondents
+        : 1;
+    const rb =
+      stats.choices[b].respondents > 0
+        ? stats.choices[b].counts[1] / stats.choices[b].respondents
+        : 1;
+    return ra - rb;
+  });
+
   return (
     <main className="mx-auto flex min-h-screen max-w-[640px] flex-col gap-5 bg-[var(--bg-page)] px-5 pt-6 pb-12">
       <header>
@@ -96,10 +92,10 @@ export default async function SurveyAdminPage({
           ← 어드민
         </Link>
         <h1 className="mt-2 text-[24px] font-extrabold text-[var(--color-text)]">
-          설문 응답 대시보드
+          앱 사용 설문 대시보드
         </h1>
         <p className="mt-1 text-[14px] text-[var(--color-muted)]">
-          /survey 로 들어온 MVP 개선 의견 집계
+          /survey 로 들어온 사용성 평가 + 개선 의견
         </p>
       </header>
 
@@ -120,132 +116,80 @@ export default async function SurveyAdminPage({
           {/* KPI 카드 */}
           <section className="grid grid-cols-2 gap-3">
             <Kpi label="총 응답" value={`${stats.total}건`} accent />
-            <Kpi label="NPS 점수" value={fmt(stats.npsScore)} hint="−100 ~ +100" />
-            <Kpi label="평균 NPS" value={fmt(stats.npsAvg, "/10")} />
-            <Kpi label="평균 만족도" value={fmt(stats.satisfactionAvg, "/5")} />
-          </section>
-
-          {/* NPS 분류 */}
-          <section className="rounded-2xl bg-white p-5">
-            <h2 className="mb-3 text-[16px] font-bold text-[var(--color-text)]">
-              추천 의향 분포
-            </h2>
-            <NpsBar
-              promoters={stats.npsBreakdown.promoters}
-              passives={stats.npsBreakdown.passives}
-              detractors={stats.npsBreakdown.detractors}
-              total={stats.total}
+            <Kpi
+              label="긍정 응답 비율"
+              value={fmt(positiveRate(stats), "%")}
+              hint="① 평균 비율"
             />
           </section>
 
-          {/* 화면별 평균 */}
+          {/* 객관식 10문항 — 분포 막대 (개선 시급한 문항 위로) */}
           <section className="rounded-2xl bg-white p-5">
             <h2 className="mb-3 text-[16px] font-bold text-[var(--color-text)]">
-              화면별 만족도 (5점 만점)
+              객관식 응답 분포{" "}
+              <span className="text-[12px] font-normal text-[var(--color-muted)]">
+                · 부정 비율 높은 순
+              </span>
             </h2>
-            <div className="flex flex-col gap-3">
-              {(Object.keys(SCREEN_LABEL) as (keyof typeof SCREEN_LABEL)[]).map(
-                (k) => {
-                  const s = stats.screenScores[k];
-                  return (
-                    <ScreenBar
-                      key={k}
-                      label={SCREEN_LABEL[k]}
-                      avg={s.avg}
-                      respondents={s.respondents}
-                    />
-                  );
-                },
-              )}
+            <div className="flex flex-col gap-4">
+              {sortedKeys.map((k) => (
+                <ChoiceDistribution
+                  key={k}
+                  num={QUESTION_META[k].num}
+                  label={QUESTION_META[k].label}
+                  options={QUESTION_META[k].options}
+                  stats={stats.choices[k]}
+                />
+              ))}
             </div>
           </section>
 
-          {/* 페인포인트 */}
-          <section className="rounded-2xl bg-white p-5">
-            <h2 className="mb-3 text-[16px] font-bold text-[var(--color-text)]">
-              아쉬웠던 점 (다중 선택)
-            </h2>
-            <div className="flex flex-col gap-2">
-              {(Object.keys(PAIN_LABEL) as SurveyPainPoint[])
-                .map((k) => ({ key: k, count: stats.painPointCounts[k] }))
-                .sort((a, b) => b.count - a.count)
-                .map((row) => (
-                  <CountBar
-                    key={row.key}
-                    label={PAIN_LABEL[row.key]}
-                    count={row.count}
-                    total={stats.total}
-                  />
-                ))}
-            </div>
-          </section>
-
-          {/* 인구통계 */}
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-white p-5">
-              <h2 className="mb-3 text-[16px] font-bold text-[var(--color-text)]">
-                연령대
-              </h2>
-              <div className="flex flex-col gap-1.5">
-                {(Object.keys(AGE_LABEL) as SurveyAgeBand[]).map((k) => (
-                  <CountBar
-                    key={k}
-                    label={AGE_LABEL[k]}
-                    count={stats.ageBandCounts[k]}
-                    total={stats.total}
-                    small
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="rounded-2xl bg-white p-5">
-              <h2 className="mb-3 text-[16px] font-bold text-[var(--color-text)]">
-                사용 기간
-              </h2>
-              <div className="flex flex-col gap-1.5">
-                {(Object.keys(USAGE_LABEL) as SurveyUsagePeriod[]).map((k) => (
-                  <CountBar
-                    key={k}
-                    label={USAGE_LABEL[k]}
-                    count={stats.usagePeriodCounts[k]}
-                    total={stats.total}
-                    small
-                  />
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* 최근 자유 의견 */}
-          {stats.recentFeedback.length > 0 && (
+          {/* 기타 자유 입력 (객관식의 etc 모음) */}
+          {Object.values(stats.choices).some((c) => c.etcAnswers.length > 0) && (
             <section className="rounded-2xl bg-white p-5">
               <h2 className="mb-3 text-[16px] font-bold text-[var(--color-text)]">
-                최근 자유 의견
+                객관식 &quot;기타&quot; 의견
               </h2>
-              <ul className="flex flex-col gap-3">
-                {stats.recentFeedback.map((r) => (
-                  <li
-                    key={r.id}
-                    className="rounded-xl border border-[var(--color-border)] p-3"
-                  >
-                    {r.freeFeedback && (
-                      <p className="text-[14px] leading-relaxed text-[var(--color-text)]">
-                        {r.freeFeedback}
-                      </p>
-                    )}
-                    {r.painPointDetail && (
-                      <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-muted)]">
-                        ↳ {r.painPointDetail}
-                      </p>
-                    )}
-                    <p className="mt-1 text-[11px] text-[var(--color-muted)]">
-                      {new Date(r.createdAt).toLocaleString("ko-KR")}
+              <div className="flex flex-col gap-3">
+                {SURVEY_CHOICE_KEYS.filter(
+                  (k) => stats.choices[k].etcAnswers.length > 0,
+                ).map((k) => (
+                  <div key={k}>
+                    <p className="text-[14px] font-bold text-[var(--color-text)]">
+                      {QUESTION_META[k].num}. {QUESTION_META[k].label}
                     </p>
-                  </li>
+                    <ul className="mt-1 flex flex-col gap-1">
+                      {stats.choices[k].etcAnswers.slice(0, 5).map((t, i) => (
+                        <li
+                          key={i}
+                          className="text-[13px] leading-relaxed text-[var(--color-muted)]"
+                        >
+                          • {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </section>
           )}
+
+          {/* 서술 3문항 */}
+          <FreeTextSection
+            title="11. 가장 좋았던 점"
+            items={stats.liked}
+            emptyText="아직 응답이 없어요"
+          />
+          <FreeTextSection
+            title="12. 가장 불편했던 점"
+            items={stats.disliked}
+            emptyText="아직 응답이 없어요"
+          />
+          <FreeTextSection
+            title="13. 하나만 바꾼다면"
+            items={stats.oneChange}
+            emptyText="아직 응답이 없어요"
+          />
         </>
       )}
 
@@ -261,7 +205,20 @@ export default async function SurveyAdminPage({
   );
 }
 
-// ─── 보조 컴포넌트 ────────────────────────────────────────────
+// ─── 보조 함수·컴포넌트 ───────────────────────────────────────
+
+function positiveRate(stats: ReturnType<typeof computeSurveyStats>): number | null {
+  // 객관식 10문항 모두에 대해 ① 비율의 평균
+  const rates: number[] = [];
+  for (const k of SURVEY_CHOICE_KEYS) {
+    const c = stats.choices[k];
+    if (c.respondents === 0) continue;
+    rates.push(c.counts[1] / c.respondents);
+  }
+  if (rates.length === 0) return null;
+  const avg = rates.reduce((a, b) => a + b, 0) / rates.length;
+  return Math.round(avg * 100);
+}
 
 function Kpi({
   label,
@@ -303,112 +260,98 @@ function Kpi({
   );
 }
 
-function NpsBar({
-  promoters,
-  passives,
-  detractors,
-  total,
+function ChoiceDistribution({
+  num,
+  label,
+  options,
+  stats,
 }: {
-  promoters: number;
-  passives: number;
-  detractors: number;
-  total: number;
+  num: number;
+  label: string;
+  options: [string, string, string];
+  stats: ReturnType<typeof computeSurveyStats>["choices"][SurveyChoiceKey];
 }) {
+  const total = stats.respondents;
   const pct = (n: number) => (total === 0 ? 0 : Math.round((n / total) * 100));
+  const p1 = pct(stats.counts[1]);
+  const p2 = pct(stats.counts[2]);
+  const p3 = pct(stats.counts[3]);
+
   return (
     <div>
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <p className="text-[14px] font-bold text-[var(--color-text)]">
+          {num}. {label}
+        </p>
+        <p className="text-[12px] text-[var(--color-muted)]">
+          {total === 0 ? "응답 없음" : `${total}명`}
+        </p>
+      </div>
       <div className="flex h-7 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
         <div
-          className="flex items-center justify-center bg-[var(--color-primary)] text-[12px] font-bold text-white"
-          style={{ width: `${pct(promoters)}%` }}
-          title={`추천자: ${promoters}명`}
+          className="flex items-center justify-center bg-[var(--color-primary)] text-[11px] font-bold text-white"
+          style={{ width: `${p1}%` }}
+          title={`① ${options[0]}: ${stats.counts[1]}명`}
         >
-          {pct(promoters) > 12 ? `${pct(promoters)}%` : ""}
+          {p1 > 10 ? `${p1}%` : ""}
         </div>
         <div
-          className="flex items-center justify-center bg-[var(--color-accent)] text-[12px] font-bold text-[#5C4400]"
-          style={{ width: `${pct(passives)}%` }}
-          title={`중립: ${passives}명`}
+          className="flex items-center justify-center bg-[var(--color-accent)] text-[11px] font-bold text-[#5C4400]"
+          style={{ width: `${p2}%` }}
+          title={`② ${options[1]}: ${stats.counts[2]}명`}
         >
-          {pct(passives) > 12 ? `${pct(passives)}%` : ""}
+          {p2 > 10 ? `${p2}%` : ""}
         </div>
         <div
-          className="flex items-center justify-center bg-[var(--color-urgent)] text-[12px] font-bold text-white"
-          style={{ width: `${pct(detractors)}%` }}
-          title={`비추천: ${detractors}명`}
+          className="flex items-center justify-center bg-[var(--color-urgent)] text-[11px] font-bold text-white"
+          style={{ width: `${p3}%` }}
+          title={`③ ${options[2]}: ${stats.counts[3]}명`}
         >
-          {pct(detractors) > 12 ? `${pct(detractors)}%` : ""}
+          {p3 > 10 ? `${p3}%` : ""}
         </div>
       </div>
-      <div className="mt-2 flex flex-wrap justify-between gap-2 text-[12px] text-[var(--color-muted)]">
-        <span>🟢 추천자 (9~10) {promoters}명</span>
-        <span>🟡 중립 (7~8) {passives}명</span>
-        <span>🔴 비추천 (0~6) {detractors}명</span>
+      <div className="mt-1 flex flex-wrap justify-between gap-2 text-[11px] text-[var(--color-muted)]">
+        <span>① {options[0]} {stats.counts[1]}명</span>
+        <span>② {options[1]} {stats.counts[2]}명</span>
+        <span>③ {options[2]} {stats.counts[3]}명</span>
       </div>
     </div>
   );
 }
 
-function ScreenBar({
-  label,
-  avg,
-  respondents,
+function FreeTextSection({
+  title,
+  items,
+  emptyText,
 }: {
-  label: string;
-  avg: number | null;
-  respondents: number;
+  title: string;
+  items: { id: string; createdAt: string; text: string }[];
+  emptyText: string;
 }) {
-  const pct = avg === null ? 0 : (avg / 5) * 100;
   return (
-    <div>
-      <div className="flex items-baseline justify-between text-[14px]">
-        <span className="font-bold text-[var(--color-text)]">{label}</span>
-        <span className="text-[var(--color-muted)]">
-          {avg === null ? "응답 없음" : `${avg.toFixed(2)} · ${respondents}명`}
-        </span>
-      </div>
-      <div className="mt-1 h-3 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
-        <div
-          className="h-full bg-[var(--color-primary)]"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function CountBar({
-  label,
-  count,
-  total,
-  small,
-}: {
-  label: string;
-  count: number;
-  total: number;
-  small?: boolean;
-}) {
-  const pct = total === 0 ? 0 : (count / total) * 100;
-  return (
-    <div>
-      <div
-        className={`flex items-baseline justify-between ${
-          small ? "text-[13px]" : "text-[14px]"
-        }`}
-      >
-        <span className="font-semibold text-[var(--color-text)]">{label}</span>
-        <span className="text-[var(--color-muted)]">
-          {count}명 ({Math.round(pct)}%)
-        </span>
-      </div>
-      <div
-        className={`mt-1 ${small ? "h-2" : "h-2.5"} w-full overflow-hidden rounded-full bg-[var(--color-border)]`}
-      >
-        <div
-          className="h-full bg-[var(--color-primary)]"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
+    <section className="rounded-2xl bg-white p-5">
+      <h2 className="mb-3 text-[16px] font-bold text-[var(--color-text)]">
+        {title}
+      </h2>
+      {items.length === 0 ? (
+        <p className="text-[13px] text-[var(--color-muted)]">{emptyText}</p>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {items.map((r) => (
+            <li
+              key={r.id}
+              className="rounded-xl border border-[var(--color-border)] p-3"
+            >
+              <p className="text-[14px] leading-relaxed text-[var(--color-text)]">
+                {r.text}
+              </p>
+              <p className="mt-1 text-[11px] text-[var(--color-muted)]">
+                {new Date(r.createdAt).toLocaleString("ko-KR")}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

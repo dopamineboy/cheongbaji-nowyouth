@@ -27,11 +27,25 @@
 // 청바지 서버의 SURVEY_WEBHOOK_SECRET 환경변수와 정확히 일치시켜야 합니다.
 const SECRET = "여기에-비밀-문자열-입력";
 
+// 객관식 10문항 키 (각각 _choice ①·②·③ + _etc 자유 입력 두 컬럼으로 펼침)
+const CHOICE_KEYS = [
+  "q1_ease",
+  "q2_understanding",
+  "q3_findFeature",
+  "q4_confusion",
+  "q5_readability",
+  "q6_buttons",
+  "q7_mistakes",
+  "q8_selfUse",
+  "q9_satisfaction",
+  "q10_continue",
+];
+
 const COLUMNS = [
-  "id", "createdAt", "ageBand", "usagePeriod", "device",
-  "nps", "overallSatisfaction",
-  "scoreWelfare", "scoreJobs", "scoreActivity", "scoreCommunity",
-  "painPoints", "painPointDetail", "freeFeedback", "contactEmail",
+  "id", "createdAt",
+  ...CHOICE_KEYS.flatMap((k) => [k + "_choice", k + "_etc"]),
+  "q11_liked", "q12_disliked", "q13_oneChange",
+  "contactEmail",
 ];
 
 function doPost(e) {
@@ -51,24 +65,18 @@ function doPost(e) {
       sheet.getRange(1, 1, 1, COLUMNS.length).setFontWeight("bold");
     }
 
-    sheet.appendRow([
-      body.id,
-      body.createdAt,
-      body.ageBand,
-      body.usagePeriod,
-      body.device || "",
-      body.nps,
-      body.overallSatisfaction,
-      body.scoreWelfare,
-      body.scoreJobs,
-      body.scoreActivity,
-      body.scoreCommunity,
-      Array.isArray(body.painPoints) ? body.painPoints.join("|") : "",
-      body.painPointDetail || "",
-      body.freeFeedback || "",
-      body.contactEmail || "",
-    ]);
+    const row = [body.id, body.createdAt];
+    for (const k of CHOICE_KEYS) {
+      const a = body[k] || {};
+      row.push(a.choice || "");
+      row.push(a.etc || "");
+    }
+    row.push(body.q11_liked || "");
+    row.push(body.q12_disliked || "");
+    row.push(body.q13_oneChange || "");
+    row.push(body.contactEmail || "");
 
+    sheet.appendRow(row);
     return json({ ok: true });
   } catch (err) {
     return json({ ok: false, error: String(err) });
@@ -81,6 +89,8 @@ function json(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 ```
+
+> **이미 시트가 운영 중이라면**: 컬럼 구조가 바뀌었으니 기존 시트는 백업 후 새 시트에서 다시 시작하세요. 첫 응답이 들어올 때 새 헤더가 자동으로 만들어집니다.
 
 3. `SECRET` 값을 임의의 문자열로 바꾸세요 (예: `cb-survey-2026-xY9pQ`).
    같은 값을 곧 청바지 환경변수에도 등록할 거예요.

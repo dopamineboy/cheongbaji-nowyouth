@@ -21,8 +21,8 @@ export default function SurveyPage() {
           의견을 들려주세요
         </h1>
         <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-muted)]">
-          시간 2~3분, 12문항 4단계예요. 답해 주신 내용은 청바지 팀과 공모전
-          심사위원에게만 전달되고, 다음 업데이트에 반영합니다.
+          앱 사용 설문 — 시간 2~3분, 13문항 3단계예요. 답해 주신 내용은 청바지
+          팀과 공모전 심사위원에게만 전달되고, 다음 업데이트에 반영합니다.
         </p>
       </header>
 

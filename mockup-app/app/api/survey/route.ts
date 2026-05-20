@@ -1,42 +1,33 @@
-// POST /api/survey — MVP 개선 의견 수집 설문 응답 저장 (12문항 다단계)
+// POST /api/survey — 앱 사용 설문 (객관식 10 + 서술 3)
 // GET  /api/survey — 최근 응답 목록 (관리/시연용)
 import { NextRequest } from "next/server";
 import { addSurveyResponse, listSurveyResponses } from "../../lib/store";
 import { postSurveyToSheet } from "../../lib/survey-webhook";
-import type {
-  SurveyAgeBand,
-  SurveyDevice,
-  SurveyPainPoint,
-  SurveyUsagePeriod,
+import {
+  SURVEY_CHOICE_KEYS,
+  type SurveyChoice,
+  type SurveyChoiceKey,
+  type SurveyQuestionAnswer,
 } from "../../lib/types";
 
-const AGE_BANDS: SurveyAgeBand[] = [
-  "60-64",
-  "65-69",
-  "70-74",
-  "75-79",
-  "80+",
-  "prefer_not",
-];
-const USAGE_PERIODS: SurveyUsagePeriod[] = [
-  "first",
-  "days",
-  "weeks",
-  "month_plus",
-];
-const DEVICES: SurveyDevice[] = ["phone", "tablet", "pc"];
-const PAIN_POINTS: SurveyPainPoint[] = [
-  "font_small",
-  "slow_loading",
-  "button_layout",
-  "guide_unclear",
-  "accuracy",
-  "voice_needed",
-  "other",
-];
+const CHOICE_LABEL: Record<SurveyChoiceKey, string> = {
+  q1_ease: "사용 쉬움",
+  q2_understanding: "앱 이해",
+  q3_findFeature: "기능 찾기",
+  q4_confusion: "헷갈림",
+  q5_readability: "글씨·화면",
+  q6_buttons: "버튼",
+  q7_mistakes: "실수",
+  q8_selfUse: "혼자 다시",
+  q9_satisfaction: "전반 만족",
+  q10_continue: "계속 사용",
+};
 
-function isInt(v: unknown, min: number, max: number): v is number {
-  return typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
+const MAX_ETC_LEN = 300;
+const MAX_FREE_LEN = 500;
+
+function isChoice(v: unknown): v is SurveyChoice {
+  return v === 1 || v === 2 || v === 3;
 }
 
 function err(field: string, code: string, message: string, status = 400) {
@@ -46,102 +37,111 @@ function err(field: string, code: string, message: string, status = 400) {
   );
 }
 
+function parseAnswer(
+  raw: unknown,
+  key: SurveyChoiceKey,
+): SurveyQuestionAnswer | Response {
+  if (!raw || typeof raw !== "object") {
+    return err(
+      key,
+      "INVALID_ANSWER",
+      `${CHOICE_LABEL[key]} 문항을 골라 주세요.`,
+    );
+  }
+  const o = raw as { choice?: unknown; etc?: unknown };
+  if (!isChoice(o.choice)) {
+    return err(
+      key,
+      "INVALID_CHOICE",
+      `${CHOICE_LABEL[key]} 문항에서 ①·②·③ 중 하나를 골라 주세요.`,
+    );
+  }
+  let etc: string | undefined = undefined;
+  if (o.etc !== undefined && o.etc !== null) {
+    if (typeof o.etc !== "string") {
+      return err(
+        key,
+        "INVALID_ETC",
+        `${CHOICE_LABEL[key]} 기타 입력이 형식에 맞지 않아요.`,
+      );
+    }
+    const trimmed = o.etc.trim();
+    if (trimmed.length > MAX_ETC_LEN) {
+      return err(
+        key,
+        "ETC_TOO_LONG",
+        `${CHOICE_LABEL[key]} 기타 입력이 너무 길어요. (${MAX_ETC_LEN}자 이내)`,
+      );
+    }
+    if (trimmed.length > 0) etc = trimmed;
+  }
+  return { choice: o.choice, etc };
+}
+
 export async function POST(req: NextRequest) {
-  let body: {
-    userId?: string | null;
-    ageBand?: SurveyAgeBand;
-    usagePeriod?: SurveyUsagePeriod;
-    device?: SurveyDevice;
-    nps?: number;
-    overallSatisfaction?: number;
-    scoreWelfare?: number | null;
-    scoreJobs?: number | null;
-    scoreActivity?: number | null;
-    scoreCommunity?: number | null;
-    painPoints?: SurveyPainPoint[];
-    painPointDetail?: string;
-    freeFeedback?: string;
-    contactEmail?: string;
-  };
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return err("", "BAD_JSON", "요청 형식을 확인해주세요.");
   }
 
-  // Step 1 — 기본 정보 (Q3 device 선택)
-  if (!body.ageBand || !AGE_BANDS.includes(body.ageBand)) {
-    return err("ageBand", "INVALID_AGE", "연령대를 골라 주세요.");
-  }
-  if (!body.usagePeriod || !USAGE_PERIODS.includes(body.usagePeriod)) {
-    return err("usagePeriod", "INVALID_USAGE", "청바지 사용 기간을 골라 주세요.");
-  }
-  if (body.device !== undefined && !DEVICES.includes(body.device)) {
-    return err("device", "INVALID_DEVICE", "사용 기기 선택이 올바르지 않아요.");
+  // Q1~Q10 객관식 — 모두 필수
+  const answers: Partial<Record<SurveyChoiceKey, SurveyQuestionAnswer>> = {};
+  for (const k of SURVEY_CHOICE_KEYS) {
+    const parsed = parseAnswer(body[k], k);
+    if (parsed instanceof Response) return parsed;
+    answers[k] = parsed;
   }
 
-  // Step 2 — 전체 평가
-  if (!isInt(body.nps, 0, 10)) {
+  // Q11~Q13 서술 — 최소 1개 필요
+  const q11 = String((body.q11_liked ?? "")).trim();
+  const q12 = String((body.q12_disliked ?? "")).trim();
+  const q13 = String((body.q13_oneChange ?? "")).trim();
+
+  if (q11.length === 0 && q12.length === 0 && q13.length === 0) {
     return err(
-      "nps",
-      "INVALID_NPS",
-      "추천 점수를 0~10에서 골라 주세요.",
-    );
-  }
-  if (!isInt(body.overallSatisfaction, 1, 5)) {
-    return err(
-      "overallSatisfaction",
-      "INVALID_SATISFACTION",
-      "전체 만족도를 1~5점에서 골라 주세요.",
+      "q11_liked",
+      "EMPTY_FREE",
+      "좋았던 점·불편했던 점·바꾸고 싶은 점 중 한 가지는 적어 주세요.",
     );
   }
 
-  // Step 3 — 화면별 점수 (각각 1~5 정수 또는 null)
-  const screenKey = ["scoreWelfare", "scoreJobs", "scoreActivity", "scoreCommunity"] as const;
-  for (const k of screenKey) {
-    const v = body[k];
-    if (v !== null && v !== undefined && !isInt(v, 1, 5)) {
-      return err(k, "INVALID_SCORE", "화면 점수는 1~5점 또는 사용 안 했어요여야 해요.");
+  for (const [field, val] of [
+    ["q11_liked", q11],
+    ["q12_disliked", q12],
+    ["q13_oneChange", q13],
+  ] as const) {
+    if (val.length > MAX_FREE_LEN) {
+      return err(
+        field,
+        "FREE_TOO_LONG",
+        `자유 응답이 너무 길어요. (${MAX_FREE_LEN}자 이내)`,
+      );
     }
-  }
-
-  // Step 4 — 페인포인트 enum 검증
-  const painPoints = Array.isArray(body.painPoints) ? body.painPoints : [];
-  for (const p of painPoints) {
-    if (!PAIN_POINTS.includes(p)) {
-      return err("painPoints", "INVALID_PAIN_POINT", "선택한 항목이 올바르지 않아요.");
-    }
-  }
-
-  const painPointDetail = (body.painPointDetail ?? "").trim();
-  const freeFeedback = (body.freeFeedback ?? "").trim();
-  // 페인포인트 1개라도 골랐거나, 자유 의견을 적었거나 둘 중 하나는 필요
-  if (painPoints.length === 0 && freeFeedback.length === 0) {
-    return err(
-      "freeFeedback",
-      "EMPTY_FEEDBACK",
-      "아쉬웠던 점 한 가지를 고르시거나, 마지막 한마디를 적어 주세요.",
-    );
   }
 
   const saved = addSurveyResponse({
-    userId: body.userId ?? null,
-    ageBand: body.ageBand,
-    usagePeriod: body.usagePeriod,
-    device: body.device,
-    nps: body.nps,
-    overallSatisfaction: body.overallSatisfaction,
-    scoreWelfare: body.scoreWelfare ?? null,
-    scoreJobs: body.scoreJobs ?? null,
-    scoreActivity: body.scoreActivity ?? null,
-    scoreCommunity: body.scoreCommunity ?? null,
-    painPoints,
-    painPointDetail,
-    freeFeedback,
-    contactEmail: (body.contactEmail ?? "").trim() || undefined,
+    userId: (body.userId as string | null | undefined) ?? null,
+    q1_ease: answers.q1_ease!,
+    q2_understanding: answers.q2_understanding!,
+    q3_findFeature: answers.q3_findFeature!,
+    q4_confusion: answers.q4_confusion!,
+    q5_readability: answers.q5_readability!,
+    q6_buttons: answers.q6_buttons!,
+    q7_mistakes: answers.q7_mistakes!,
+    q8_selfUse: answers.q8_selfUse!,
+    q9_satisfaction: answers.q9_satisfaction!,
+    q10_continue: answers.q10_continue!,
+    q11_liked: q11,
+    q12_disliked: q12,
+    q13_oneChange: q13,
+    contactEmail:
+      typeof body.contactEmail === "string" && body.contactEmail.trim()
+        ? body.contactEmail.trim()
+        : undefined,
   });
 
-  // Google Sheets로 webhook 전송 (env 미설정 시 no-op, 실패해도 응답자 영향 없음)
   await postSurveyToSheet(saved);
 
   return Response.json({ ok: true, data: { response: saved } });
