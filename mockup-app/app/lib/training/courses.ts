@@ -64,7 +64,8 @@ export const TRAINING_COURSES: TrainingCourse[] = [
     targetTags: ["디지털", "응대", "교육", "행정"],
     description:
       "스마트폰 사용·은행 앱·키오스크·생성형 AI 활용까지. 60세 이상 무료, 강사 1:5 소그룹.",
-    applyUrl: "https://www.digitalbaeoom.kr",
+    // 디지털배움터 공식 한글 도메인의 punycode 표기 — 디지털배움터.kr
+    applyUrl: "https://www.xn--2z1bw8k1pjz5ccumkb.kr",
     contactPhone: "1800-0096",
   },
   {
@@ -154,7 +155,8 @@ export const TRAINING_COURSES: TrainingCourse[] = [
     targetTags: ["교육", "보육", "사회서비스형", "학습보조"],
     description:
       "초등 방과후 보조·돌봄전담사. 자녀·손주 키워본 경험자 환영. 학기당 모집.",
-    applyUrl: "https://www.afterschool.go.kr",
+    // 기존 afterschool.go.kr 도메인 미존재 → 워크넷에서 "방과후학교 보조강사" 검색
+    applyUrl: "https://www.work24.go.kr",
     contactPhone: "지역 교육청 문의",
   },
   {
@@ -274,7 +276,8 @@ export const TRAINING_COURSES: TrainingCourse[] = [
     targetTags: ["문화", "시장형"],
     description:
       "광고·패션쇼·드라마 단역 진출. 60대~80대 활발 활동 분야로 떠오름.",
-    applyUrl: "https://www.kosma.or.kr",
+    // 기존 kosma.or.kr 도메인 미존재 → 노인일자리여기에서 모집 공고 검색
+    applyUrl: "https://www.seniorro.or.kr/",
     contactPhone: "02-1234-5678",
   },
 ];
