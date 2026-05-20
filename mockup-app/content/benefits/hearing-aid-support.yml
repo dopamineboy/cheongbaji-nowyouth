@@ -14,6 +14,7 @@ summary: |
 
 eligibility:
   citizenship: KR
+  requires_disability: true
 
 benefit:
   type: one_time_cash
@@ -37,9 +38,6 @@ apply:
 
 sources:
   - https://www.nhis.or.kr/nhis/policy/wbhada11900m01.do
-
-show_condition:
-  has_disability: true
 
 last_verified: 2024-01-01
 

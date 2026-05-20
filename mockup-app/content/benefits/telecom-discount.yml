@@ -14,7 +14,13 @@ summary: |
 
 eligibility:
   citizenship: KR
-  median_income_pct: 50
+
+show_condition:
+  # 기초수급 OR 차상위 OR 등록 장애인 — 셋 중 하나여야 신청 가능
+  any_of:
+    - basic_livelihood
+    - near_poverty
+    - has_disability
 
 benefit:
   type: discount
