@@ -7,6 +7,7 @@ import {
 } from "../lib/training/courses";
 import { recommendedTrainings } from "../lib/training/match";
 import { getCurrentUser } from "../lib/current-user";
+import ApplyGuideModal from "./apply-guide-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -164,13 +165,15 @@ export default async function TrainingPage() {
                       💰 적용 가능: {c.supports.map(supportLabel).join(" / ")}
                     </p>
                   </div>
+                  {/* 신청 방법 자세히 보기 — 시니어 친화 단계별 안내 모달 */}
+                  <ApplyGuideModal course={c} />
                   <a
                     href={c.applyUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 block w-full rounded-xl bg-[var(--color-primary)] py-3 text-center text-[15px] font-bold text-white"
+                    className="mt-2 block w-full rounded-xl bg-[var(--color-primary)]/10 py-2.5 text-center text-[13px] font-bold text-[var(--color-primary)]"
                   >
-                    과정 신청 →
+                    바로 공식 사이트 열기 →
                   </a>
                   {c.contactPhone && (
                     <p className="mt-2 text-center text-[12px] text-[var(--color-muted)]">
