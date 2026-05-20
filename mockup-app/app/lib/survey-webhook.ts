@@ -9,7 +9,7 @@
 
 import type { SurveyResponse } from "./types";
 
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 25_000; // Apps Script cold start 대응
 
 export async function postSurveyToSheet(resp: SurveyResponse): Promise<void> {
   const baseUrl = process.env.SURVEY_WEBHOOK_URL;
@@ -21,16 +21,20 @@ export async function postSurveyToSheet(resp: SurveyResponse): Promise<void> {
     : baseUrl;
 
   try {
+    // Apps Script는 doPost 본문(시트 append)을 즉시 실행하고 응답으로 302를 반환.
+    // redirect: "manual" 로 302만 받고 종료 → redirect chain의 hang 방지.
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(resp),
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      // Apps Script는 doPost 호출 시 자동 리다이렉트 응답 가능 — follow
-      redirect: "follow",
+      redirect: "manual",
     });
-    if (!res.ok) {
+    // Apps Script는 정상 처리 시 302 redirect를 보냄. status 0(opaqueredirect) 또는 200대 모두 정상으로 간주.
+    if (res.status >= 400) {
       console.warn(`[survey-webhook] non-ok status ${res.status}`);
+    } else {
+      console.log(`[survey-webhook] sent ok (status ${res.status})`);
     }
   } catch (err) {
     console.warn("[survey-webhook] failed:", err);
