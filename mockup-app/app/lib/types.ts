@@ -166,56 +166,69 @@ export interface PoomasiPost {
 }
 
 // ─────────────────────────────────────────────────────────
-// ⑤ 설문 (MVP 개선 의견 수집 — 공모전 데모용)
+// ⑤ 설문 (앱 사용 설문 — 시니어 친화 사용성 평가 + 개선 의견)
 // ─────────────────────────────────────────────────────────
+// 객관식 10문항(Q1~Q10)은 모두 3택(① 긍정 / ② 보통 / ③ 부정).
+// 각 객관식에 자유 "기타" 입력 옵션. 서술 3문항(Q11~Q13)으로 마무리.
 
-export type SurveyAgeBand =
-  | "60-64"
-  | "65-69"
-  | "70-74"
-  | "75-79"
-  | "80+"
-  | "prefer_not";
+export type SurveyChoice = 1 | 2 | 3;
 
-export type SurveyUsagePeriod = "first" | "days" | "weeks" | "month_plus";
-
-export type SurveyDevice = "phone" | "tablet" | "pc";
-
-export type SurveyPainPoint =
-  | "font_small"
-  | "slow_loading"
-  | "button_layout"
-  | "guide_unclear"
-  | "accuracy"
-  | "voice_needed"
-  | "other";
+/** Q1~Q10 객관식 답변 + 선택적 기타 의견 */
+export interface SurveyQuestionAnswer {
+  choice: SurveyChoice;
+  etc?: string;
+}
 
 export interface SurveyResponse {
   id: string;
   userId: string | null; // 비로그인 응답도 허용
   createdAt: string; // ISO
 
-  // Step 1 — 기본 정보
-  ageBand: SurveyAgeBand;
-  usagePeriod: SurveyUsagePeriod;
-  device?: SurveyDevice;
+  // Q1~Q10 객관식 (① ② ③ + 기타)
+  q1_ease: SurveyQuestionAnswer;            // 사용 쉬움
+  q2_understanding: SurveyQuestionAnswer;   // 앱 정체성 이해
+  q3_findFeature: SurveyQuestionAnswer;     // 기능 찾기 쉬움
+  q4_confusion: SurveyQuestionAnswer;       // 어디 눌러야 헷갈림
+  q5_readability: SurveyQuestionAnswer;     // 글씨·화면 보기 편함
+  q6_buttons: SurveyQuestionAnswer;         // 버튼 누르기 쉬움
+  q7_mistakes: SurveyQuestionAnswer;        // 실수
+  q8_selfUse: SurveyQuestionAnswer;         // 혼자 다시 사용 가능
+  q9_satisfaction: SurveyQuestionAnswer;    // 전반 만족
+  q10_continue: SurveyQuestionAnswer;       // 계속 사용 의향
 
-  // Step 2 — 전체 평가
-  nps: number; // 0~10
-  overallSatisfaction: number; // 1~5
+  // Q11~Q13 서술
+  q11_liked: string;       // 가장 좋았던 점
+  q12_disliked: string;    // 가장 불편했던 점
+  q13_oneChange: string;   // 하나만 바꿀 수 있다면
 
-  // Step 3 — 화면별 만족도 (null = 사용 안 함)
-  scoreWelfare: number | null;
-  scoreJobs: number | null;
-  scoreActivity: number | null;
-  scoreCommunity: number | null;
-
-  // Step 4 — 페인포인트 + 자유 의견
-  painPoints: SurveyPainPoint[];
-  painPointDetail: string;
-  freeFeedback: string;
   contactEmail?: string;
 }
+
+/** 객관식 10문항을 한 곳에서 관리 — 라벨·선택지 라벨 매핑 */
+export type SurveyChoiceKey =
+  | "q1_ease"
+  | "q2_understanding"
+  | "q3_findFeature"
+  | "q4_confusion"
+  | "q5_readability"
+  | "q6_buttons"
+  | "q7_mistakes"
+  | "q8_selfUse"
+  | "q9_satisfaction"
+  | "q10_continue";
+
+export const SURVEY_CHOICE_KEYS: SurveyChoiceKey[] = [
+  "q1_ease",
+  "q2_understanding",
+  "q3_findFeature",
+  "q4_confusion",
+  "q5_readability",
+  "q6_buttons",
+  "q7_mistakes",
+  "q8_selfUse",
+  "q9_satisfaction",
+  "q10_continue",
+];
 
 // ─────────────────────────────────────────────────────────
 // API 공통

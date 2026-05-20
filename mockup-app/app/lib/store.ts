@@ -9,15 +9,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { samplePoomasiPosts, sampleUser } from "./sample-data";
 import { realSampleJobs } from "./sample-jobs-real";
-import type {
-  Job,
-  LedgerEntry,
-  PoomasiPost,
-  SurveyAgeBand,
-  SurveyPainPoint,
-  SurveyResponse,
-  SurveyUsagePeriod,
-  UserProfile,
+import {
+  SURVEY_CHOICE_KEYS,
+  type Job,
+  type LedgerEntry,
+  type PoomasiPost,
+  type SurveyChoice,
+  type SurveyChoiceKey,
+  type SurveyResponse,
+  type UserProfile,
 } from "./types";
 
 interface Store {
@@ -188,52 +188,26 @@ export function listSurveyResponses(limit = 50): SurveyResponse[] {
   return getStore().surveys.slice(0, limit);
 }
 
-export interface SurveyStats {
-  total: number;
-  npsAvg: number | null;
-  npsScore: number | null; // Net Promoter Score = (promoter% - detractor%) ∈ [-100, 100]
-  npsBreakdown: { promoters: number; passives: number; detractors: number };
-  satisfactionAvg: number | null;
-  screenScores: {
-    welfare: { avg: number | null; respondents: number };
-    jobs: { avg: number | null; respondents: number };
-    activity: { avg: number | null; respondents: number };
-    community: { avg: number | null; respondents: number };
-  };
-  painPointCounts: Record<SurveyPainPoint, number>;
-  ageBandCounts: Record<SurveyAgeBand, number>;
-  usagePeriodCounts: Record<SurveyUsagePeriod, number>;
-  recentFeedback: {
-    id: string;
-    createdAt: string;
-    freeFeedback: string;
-    painPointDetail: string;
-  }[];
+/** 객관식 문항 1개의 분포 + 평균 + 기타 텍스트 모음 */
+export interface SurveyChoiceStats {
+  /** ①·②·③ 각각의 응답 수 */
+  counts: { 1: number; 2: number; 3: number };
+  /** 평균(1~3) — 응답 없으면 null */
+  avg: number | null;
+  /** 응답자 수 (해당 문항에 객관식 답한 사람) */
+  respondents: number;
+  /** 기타 자유 입력 (응답 있는 것만) */
+  etcAnswers: string[];
 }
 
-const PAIN_POINTS: SurveyPainPoint[] = [
-  "font_small",
-  "slow_loading",
-  "button_layout",
-  "guide_unclear",
-  "accuracy",
-  "voice_needed",
-  "other",
-];
-const AGE_BANDS: SurveyAgeBand[] = [
-  "60-64",
-  "65-69",
-  "70-74",
-  "75-79",
-  "80+",
-  "prefer_not",
-];
-const USAGE_PERIODS: SurveyUsagePeriod[] = [
-  "first",
-  "days",
-  "weeks",
-  "month_plus",
-];
+export interface SurveyStats {
+  total: number;
+  choices: Record<SurveyChoiceKey, SurveyChoiceStats>;
+  /** Q11~Q13 자유 응답 — 최근 5건 */
+  liked: { id: string; createdAt: string; text: string }[];
+  disliked: { id: string; createdAt: string; text: string }[];
+  oneChange: { id: string; createdAt: string; text: string }[];
+}
 
 function avgOrNull(nums: unknown[]): number | null {
   const valid = nums.filter(
@@ -244,77 +218,61 @@ function avgOrNull(nums: unknown[]): number | null {
   return Math.round((sum / valid.length) * 100) / 100;
 }
 
+function readChoice(
+  r: SurveyResponse,
+  key: SurveyChoiceKey,
+): { choice: SurveyChoice; etc?: string } | null {
+  const v = (r as unknown as Record<string, unknown>)[key];
+  if (!v || typeof v !== "object") return null;
+  const obj = v as { choice?: unknown; etc?: unknown };
+  if (obj.choice !== 1 && obj.choice !== 2 && obj.choice !== 3) return null;
+  return {
+    choice: obj.choice,
+    etc: typeof obj.etc === "string" ? obj.etc : undefined,
+  };
+}
+
+function topNTexts(
+  all: SurveyResponse[],
+  field: "q11_liked" | "q12_disliked" | "q13_oneChange",
+  n = 5,
+): { id: string; createdAt: string; text: string }[] {
+  return all
+    .filter((r) => typeof r[field] === "string" && r[field].trim().length > 0)
+    .slice(0, n)
+    .map((r) => ({ id: r.id, createdAt: r.createdAt, text: r[field] }));
+}
+
 export function computeSurveyStats(): SurveyStats {
   const all = getStore().surveys;
   const total = all.length;
 
-  const npsValues = all.map((r) => r.nps);
-  const satValues = all.map((r) => r.overallSatisfaction);
-  const promoters = all.filter((r) => r.nps >= 9).length;
-  const passives = all.filter((r) => r.nps >= 7 && r.nps <= 8).length;
-  const detractors = all.filter((r) => r.nps <= 6).length;
-  const npsScore =
-    total > 0
-      ? Math.round(((promoters - detractors) / total) * 100)
-      : null;
-
-  const screenAvg = (key: "scoreWelfare" | "scoreJobs" | "scoreActivity" | "scoreCommunity") => {
-    const used = all
-      .map((r) => r[key])
-      .filter((v): v is number => typeof v === "number");
-    return { avg: avgOrNull(used), respondents: used.length };
-  };
-
-  const painPointCounts = Object.fromEntries(
-    PAIN_POINTS.map((p) => [p, 0]),
-  ) as Record<SurveyPainPoint, number>;
-  for (const r of all) {
-    const pp = Array.isArray(r.painPoints) ? r.painPoints : [];
-    for (const p of pp) {
-      if (p in painPointCounts) painPointCounts[p]++;
+  const choices = {} as Record<SurveyChoiceKey, SurveyChoiceStats>;
+  for (const key of SURVEY_CHOICE_KEYS) {
+    const counts = { 1: 0, 2: 0, 3: 0 };
+    const numericChoices: number[] = [];
+    const etcAnswers: string[] = [];
+    for (const r of all) {
+      const a = readChoice(r, key);
+      if (!a) continue;
+      counts[a.choice]++;
+      numericChoices.push(a.choice);
+      if (a.etc && a.etc.trim().length > 0) etcAnswers.push(a.etc.trim());
     }
+    choices[key] = {
+      counts,
+      avg: avgOrNull(numericChoices),
+      respondents: numericChoices.length,
+      etcAnswers,
+    };
   }
-
-  const ageBandCounts = Object.fromEntries(
-    AGE_BANDS.map((a) => [a, 0]),
-  ) as Record<SurveyAgeBand, number>;
-  for (const r of all) {
-    if (r.ageBand in ageBandCounts) ageBandCounts[r.ageBand]++;
-  }
-
-  const usagePeriodCounts = Object.fromEntries(
-    USAGE_PERIODS.map((u) => [u, 0]),
-  ) as Record<SurveyUsagePeriod, number>;
-  for (const r of all) {
-    if (r.usagePeriod in usagePeriodCounts) usagePeriodCounts[r.usagePeriod]++;
-  }
-
-  const recentFeedback = all
-    .filter((r) => r.freeFeedback.trim() || r.painPointDetail.trim())
-    .slice(0, 5)
-    .map((r) => ({
-      id: r.id,
-      createdAt: r.createdAt,
-      freeFeedback: r.freeFeedback,
-      painPointDetail: r.painPointDetail,
-    }));
 
   return {
     total,
-    npsAvg: avgOrNull(npsValues),
-    npsScore,
-    npsBreakdown: { promoters, passives, detractors },
-    satisfactionAvg: avgOrNull(satValues),
-    screenScores: {
-      welfare: screenAvg("scoreWelfare"),
-      jobs: screenAvg("scoreJobs"),
-      activity: screenAvg("scoreActivity"),
-      community: screenAvg("scoreCommunity"),
-    },
-    painPointCounts,
-    ageBandCounts,
-    usagePeriodCounts,
-    recentFeedback,
+    choices,
+    liked: topNTexts(all, "q11_liked"),
+    disliked: topNTexts(all, "q12_disliked"),
+    oneChange: topNTexts(all, "q13_oneChange"),
   };
 }
 
