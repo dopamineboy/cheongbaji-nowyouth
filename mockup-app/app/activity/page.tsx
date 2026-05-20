@@ -67,7 +67,7 @@ function TabBar() {
     { label: "커뮤니티", icon: "💬", href: "/community" },
   ];
   return (
-    <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 border-t border-[var(--color-border)] bg-white">
+    <nav className="fixed bottom-0 left-1/2 w-full max-w-[448px] -translate-x-1/2 z-30 border-t border-[var(--color-border)] bg-white">
       <ul className="grid grid-cols-5">
         {tabs.map((t) => (
           <li key={t.label}>
