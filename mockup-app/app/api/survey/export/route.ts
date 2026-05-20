@@ -38,7 +38,7 @@ export async function GET() {
     .map((r) =>
       COLUMNS.map((c) => {
         if (c === "painPoints") return csvEscape((r.painPoints ?? []).join("|"));
-        return csvEscape((r as Record<string, unknown>)[c]);
+        return csvEscape((r as unknown as Record<string, unknown>)[c]);
       }).join(","),
     )
     .join("\n");
