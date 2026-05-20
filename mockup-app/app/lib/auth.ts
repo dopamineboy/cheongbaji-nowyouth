@@ -91,6 +91,23 @@ export function applyOverride(
   };
 }
 
+/**
+ * 옛 cookie 형식 감지 — 새 인터뷰 필드들(housingType/welfareStatus/birthMonth)
+ * 이 cookie에 없으면 옛 형식. sampleUser 기본값으로 채워져 사용자에게 "임의 변경"
+ * 처럼 보이는 문제 방지.
+ *
+ * @returns true면 옛 형식 → onboarding 재진행 권장
+ */
+export function isLegacyCookie(override: ProfileOverride | null): boolean {
+  if (!override) return false; // 아예 cookie 없으면 onboarded 아님 (다른 게이트)
+  // PR #27/#35에서 추가된 필수 필드 — 이 중 하나라도 cookie에 없으면 옛 형식
+  return (
+    override.birthMonth === undefined ||
+    override.housingType === undefined ||
+    override.welfareStatus === undefined
+  );
+}
+
 export async function clearAllSessionCookies(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(ONBOARDED_COOKIE);
