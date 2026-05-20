@@ -167,28 +167,35 @@ export function matchBenefits(
   profile: WelfareUserProfile,
   benefits: Benefit[],
 ): MatchedBenefit[] {
+  // 한시 지원금은 일반 매칭에서 제외 — /welfare 의 "이달 지금 지원 가능"
+  // 전용 섹션에서만 노출하기 위함. (5월에 9월 시작인 한시 항목이 일반 결과에
+  // 섞여 보이는 문제 해결)
   const visible = benefits.filter(
-    (b) => shouldShow(profile, b) && !isTemporaryExpired(b),
+    (b) => shouldShow(profile, b) && !b.is_temporary,
   );
   const results = visible.map((b) => evaluateBenefit(profile, b));
   return sortByHelpfulness(results);
 }
 
 /**
- * 한시·시즌성 지원금만 분리 추출 (현재 신청 가능한 것만).
- * 일반 매칭 결과에는 이미 포함되어 있고, /welfare 의 "이달 지금 지원 가능"
- * 별도 섹션에서 강조 노출하기 위한 헬퍼.
+ * 한시·시즌성 지원금만 별도 매칭·반환 (현재 신청 가능한 것만).
+ * /welfare 의 "이달 지금 지원 가능" 섹션에서 사용.
+ * 만료되거나 아직 시작 안 된 한시는 자동 제외.
  */
 export function pickTemporaryActive(
-  matches: MatchedBenefit[],
+  profile: WelfareUserProfile,
+  benefits: Benefit[],
   now: Date = new Date(),
 ): MatchedBenefit[] {
-  return matches.filter(
-    (m) =>
-      isTemporaryActive(m.benefit, now) &&
-      m.status !== "ineligible" &&
-      !m.benefit.hidden_from_results,
+  const temporaryActive = benefits.filter(
+    (b) =>
+      b.is_temporary &&
+      isTemporaryActive(b, now) &&
+      shouldShow(profile, b) &&
+      !b.hidden_from_results,
   );
+  const results = temporaryActive.map((b) => evaluateBenefit(profile, b));
+  return sortByHelpfulness(results).filter((m) => m.status !== "ineligible");
 }
 
 function shouldShow(profile: WelfareUserProfile, benefit: Benefit): boolean {
