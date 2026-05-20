@@ -27,13 +27,14 @@ documents:
 
 apply:
   online:
-    name: 국민건강보험공단
-    url: https://www.nhis.or.kr/nhis/healthins/retrieveTimeTreatCnts.do
+    name: 국민건강보험공단 — 노인 틀니 급여 안내
+    url: https://www.nhis.or.kr/static/html/wbma/c/wbmac0217.html
   offline:
     - 건강보험 적용 치과 (대부분의 치과에서 가능)
 
 sources:
-  - https://www.nhis.or.kr/nhis/healthins/retrieveTimeTreatCnts.do
+  - https://www.nhis.or.kr/static/html/wbma/c/wbmac0217.html
+  - https://www.nhis.or.kr/static/html/wbma/c/wbmac0221.html
 
 health_tags:
   - teeth
