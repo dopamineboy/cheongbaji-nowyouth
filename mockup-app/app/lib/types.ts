@@ -169,18 +169,52 @@ export interface PoomasiPost {
 // ⑤ 설문 (MVP 개선 의견 수집 — 공모전 데모용)
 // ─────────────────────────────────────────────────────────
 
-export type SurveySection = "welfare" | "jobs" | "activity" | "community" | "none";
+export type SurveyAgeBand =
+  | "60-64"
+  | "65-69"
+  | "70-74"
+  | "75-79"
+  | "80+"
+  | "prefer_not";
+
+export type SurveyUsagePeriod = "first" | "days" | "weeks" | "month_plus";
+
+export type SurveyDevice = "phone" | "tablet" | "pc";
+
+export type SurveyPainPoint =
+  | "font_small"
+  | "slow_loading"
+  | "button_layout"
+  | "guide_unclear"
+  | "accuracy"
+  | "voice_needed"
+  | "other";
 
 export interface SurveyResponse {
   id: string;
   userId: string | null; // 비로그인 응답도 허용
-  overallSatisfaction: number; // 1~5
-  mostUsefulSection: SurveySection;
-  weakestPoint: string; // 자유 서술
-  wouldRecommend: boolean | null;
-  freeFeedback: string; // 자유 서술
-  contactEmail?: string;
   createdAt: string; // ISO
+
+  // Step 1 — 기본 정보
+  ageBand: SurveyAgeBand;
+  usagePeriod: SurveyUsagePeriod;
+  device?: SurveyDevice;
+
+  // Step 2 — 전체 평가
+  nps: number; // 0~10
+  overallSatisfaction: number; // 1~5
+
+  // Step 3 — 화면별 만족도 (null = 사용 안 함)
+  scoreWelfare: number | null;
+  scoreJobs: number | null;
+  scoreActivity: number | null;
+  scoreCommunity: number | null;
+
+  // Step 4 — 페인포인트 + 자유 의견
+  painPoints: SurveyPainPoint[];
+  painPointDetail: string;
+  freeFeedback: string;
+  contactEmail?: string;
 }
 
 // ─────────────────────────────────────────────────────────
