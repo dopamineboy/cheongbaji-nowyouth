@@ -264,8 +264,8 @@ function shouldShow(profile: WelfareUserProfile, benefit: Benefit): boolean {
     if (profile.housingType !== "owned") return false;
   }
   if (sc.any_of && sc.any_of.length > 0) {
-    // any_of: OR 그룹 — 하나라도 충족하면 통과. 모두 미충족이면 노출 제외.
-    // (단 한 가지라도 미입력 정보가 있다면 노출 유지 — 평가 단계에서 needs_more_info 처리)
+    // any_of: OR 그룹 — 하나라도 충족하면 통과. 정확도 우선이라 미입력 정보는
+    // "확인 안 됨"으로 처리, 명시적 hit이 하나라도 없으면 노출 제외.
     let hasUnknown = false;
     const hit = sc.any_of.some((cond) => {
       switch (cond) {
@@ -299,7 +299,10 @@ function shouldShow(profile: WelfareUserProfile, benefit: Benefit): boolean {
           return profile.welfareStatus === "near_poverty";
       }
     });
-    if (!hit && !hasUnknown) return false;
+    // 명시적 hit이 없으면 — 그룹 자격 미확인이거나 미충족이면 모두 노출 제외.
+    // (사용자 보호: 잘못된 100% 노출보다 누락이 안전)
+    if (!hit) return false;
+    void hasUnknown;
   }
   return true;
 }

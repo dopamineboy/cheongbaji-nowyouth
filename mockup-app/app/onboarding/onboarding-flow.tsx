@@ -88,6 +88,8 @@ export default function OnboardingFlow() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(0);
   const [error, setError] = useState<string | null>(null);
+  // 출생 연도 2단계 선택: 연대 → 1년 단위
+  const [selectedDecade, setSelectedDecade] = useState<number | null>(null);
   const [s, setS] = useState<OnboardingState>({
     name: "",
     birthYear: null,
@@ -151,13 +153,14 @@ export default function OnboardingFlow() {
     }
   };
 
-  // 출생 연도 — 1년 단위 정확 입력 (만 나이 정밀 계산에 필수)
-  // 현재 시점 기준 55세~95세 범위 (1934~1969). 어르신·예비 시니어 모두 커버.
-  const yearOptions = (() => {
-    const yrs = [];
-    for (let y = 1969; y >= 1934; y--) yrs.push(y);
+  // 출생 연도 — 2단계 선택: 연대(1930~1970) → 그 연대 안에서 1년 단위
+  // 시니어 인지 부담 줄이기 + 만 나이 정밀 계산 둘 다 챙김.
+  const decadeOptions = [1930, 1940, 1950, 1960, 1970];
+  const yearsInDecade = (decade: number): number[] => {
+    const yrs: number[] = [];
+    for (let y = decade; y < decade + 10; y++) yrs.push(y);
     return yrs;
-  })();
+  };
   const monthOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   // done 화면 자동 이동을 useEffect로 — 컴포넌트 트리에서 분리해 메인 함수와 충돌 회피
@@ -276,22 +279,67 @@ export default function OnboardingFlow() {
           <p className="-mt-3 text-[13px] text-[var(--color-muted)]">
             정확한 만 나이로 혜택을 추천드리기 위해 필요해요.
           </p>
-          <div className="grid max-h-[280px] grid-cols-6 gap-1.5 overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-white p-2">
-            {yearOptions.map((y) => (
-              <button
-                key={y}
-                type="button"
-                onClick={() => setS({ ...s, birthYear: y })}
-                className={`rounded-xl py-3 text-[15px] font-bold ${
-                  s.birthYear === y
-                    ? "bg-[var(--color-primary)] text-white"
-                    : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
-                }`}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
+
+          {/* 1단계: 연대 선택 */}
+          {selectedDecade === null && s.birthYear === null && (
+            <div>
+              <p className="mb-2 text-[14px] font-bold text-[var(--color-text)]">
+                어느 연도대에 태어나셨나요?
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {decadeOptions.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setSelectedDecade(d)}
+                    className="rounded-2xl border border-[var(--color-border)] bg-white py-5 text-[18px] font-bold text-[var(--color-text)] active:bg-[var(--color-primary)]/5"
+                  >
+                    {d}년대
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 2단계: 선택한 연대 안에서 1년 단위 */}
+          {(selectedDecade !== null || s.birthYear !== null) && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[14px] font-bold text-[var(--color-text)]">
+                  {(selectedDecade ?? Math.floor((s.birthYear ?? 1950) / 10) * 10)}
+                  년대 — 정확한 연도를 골라주세요
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDecade(null);
+                    setS({ ...s, birthYear: null });
+                  }}
+                  className="text-[13px] font-semibold text-[var(--color-primary)]"
+                >
+                  ← 연대 다시 선택
+                </button>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5">
+                {yearsInDecade(
+                  selectedDecade ?? Math.floor((s.birthYear ?? 1950) / 10) * 10,
+                ).map((y) => (
+                  <button
+                    key={y}
+                    type="button"
+                    onClick={() => setS({ ...s, birthYear: y })}
+                    className={`rounded-xl py-3 text-[16px] font-bold ${
+                      s.birthYear === y
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                    }`}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <h2 className="mb-2 text-[18px] font-extrabold text-[var(--color-text)]">
