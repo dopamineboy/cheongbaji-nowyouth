@@ -11,6 +11,7 @@ import {
   type ProfileOverride,
 } from "../../../lib/auth";
 import { resolveLocation } from "../../../lib/geo/resolve-location";
+import { isLocationStale } from "../../../lib/geo/is-location-stale";
 import type { UserProfile } from "../../../lib/types";
 
 const REGIONS = [
@@ -102,9 +103,12 @@ export async function POST(req: NextRequest) {
     updated.district = v;
   }
 
-  // 시·도 또는 시·군·구가 바뀌었으면 위·경도와 dongCode/dongName도 재계산.
-  // 안 하면 사용자가 부산으로 바꿔도 좌표는 옛 서울 그대로라 매칭이 옛 위치 기준으로 잡힘.
-  if (regionOrDistrictChanged) {
+  // 좌표 재계산이 필요한 두 경우:
+  //   1) 시·도/시·군·구가 바뀐 경우 — 새 region에 맞춰 lat/lng 갱신 필수
+  //   2) 기존 사용자(옛 cookie)의 좌표가 region과 100km 이상 불일치(stale)한 경우
+  //      → 자동 마이그레이션. 사용자가 어떤 항목이든 한 번 저장만 해도 동기화됨.
+  const shouldRecalc = regionOrDistrictChanged || isLocationStale(updated);
+  if (shouldRecalc) {
     const located = await resolveLocation(updated.region, updated.district, {
       dongCode: updated.dongCode,
       dongName: updated.dongName,

@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "../lib/current-user";
 import { getProfileOverride, isLegacyCookie, isOnboarded } from "../lib/auth";
 import { calculateAge } from "../lib/age";
+import { isLocationStale } from "../lib/geo/is-location-stale";
 import MypageActions from "./mypage-actions";
+import AutoMigrateLocation from "./auto-migrate-location";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +50,7 @@ export default async function MyPage() {
 
   const cookieOverride = await getProfileOverride();
   const legacy = isLegacyCookie(cookieOverride);
+  const locationStale = isLocationStale(user);
 
   const age = calculateAge(user.birthYear, user.birthMonth);
   const birthMonthText = user.birthMonth ? `${user.birthMonth}월` : "월 미입력";
@@ -68,6 +71,9 @@ export default async function MyPage() {
           각 항목을 누르시면 그 항목만 수정하실 수 있어요.
         </p>
       </header>
+
+      {/* 옛 사용자 좌표 stale 감지 시 자동 마이그레이션 (1회) — region과 lat/lng 불일치 시만 실행 */}
+      {locationStale && <AutoMigrateLocation />}
 
       {/* 옛 cookie 안내 — 인터뷰 이후 새로 추가된 항목들이 채워지지 않은 상태 */}
       {legacy && (
