@@ -72,14 +72,16 @@ export default async function WelcomePage() {
         </p>
       </section>
 
-      {/* 신뢰 stats — MVP 범위 명시 (작아 보이지 않게 확장 계획 표시) */}
+      {/* 신뢰 stats — 정직한 출처·범위 표기 */}
       <section className="mb-5 grid grid-cols-3 gap-2 text-center">
-        <Stat number="25" unit="개+" label="MVP 핵심 제도" />
-        <Stat number="115만" unit="개" label="노인일자리" />
+        <Stat number="47" unit="개+" label="매칭 가능 제도" />
+        <Stat number="115만" unit="명" label="정부 노인일자리 규모" />
         <Stat number="100%" unit="" label="무료" />
       </section>
       <p className="-mt-3 mb-5 text-center text-[11px] leading-relaxed text-[var(--color-muted)]">
-        향후 복지로·공공데이터 기반 360종+ 자동 매칭 확장
+        * 「115만 명」은 보건복지부 2024 노인일자리 시행계획 전국 모집 규모 기준
+        <br />
+        매주 새 공고 약 300건 동기화 · 인터뷰 후 본인 적합 Top-5만 추천
       </p>
 
       {/* 4대 가치 */}

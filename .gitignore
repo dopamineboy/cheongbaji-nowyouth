@@ -58,3 +58,5 @@ venv/
 cookies.txt
 resp.json
 home.html
+
+.vercel

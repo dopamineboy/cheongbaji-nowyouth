@@ -62,6 +62,14 @@ const TIME_SLOT_OPTS: { value: TimeSlot; label: string }[] = [
   { value: "evening",   label: "저녁" },
 ];
 
+// 온보딩과 동일한 15개 직종 (lib/jobs/match.ts의 OCCUPATION_SYNONYMS와 키 1:1 매칭)
+const OCCUPATION_OPTS = [
+  "교육", "사무·행정", "주방·식당", "보육·돌봄",
+  "운수·교통", "환경·청소", "공방·수공예", "응대·안내",
+  "건설·기능직", "판매·영업", "의료·간호", "농업·임업",
+  "관리·경비", "IT·전산", "예술·문화",
+];
+
 interface Props {
   field: string;
   user: UserProfile;
@@ -96,8 +104,13 @@ export default function FieldEditor({ field, user }: Props) {
   // 일자리 선호
   const jp = user.jobPreferences;
   const [jobTypes, setJobTypes] = useState<JobActivityType[]>(jp?.preferredJobTypes ?? []);
-  const [pastOccupations, setPastOccupations] = useState<string>(
-    (jp?.pastOccupations ?? []).join(", "),
+  // 기존 저장값 → 15개 선택형(OCCUPATION_OPTS와 매칭되는 항목) + 자유 입력(나머지)
+  const initOcc = jp?.pastOccupations ?? [];
+  const [pastSelected, setPastSelected] = useState<string[]>(
+    initOcc.filter((o) => OCCUPATION_OPTS.includes(o)),
+  );
+  const [pastExtra, setPastExtra] = useState<string>(
+    initOcc.filter((o) => !OCCUPATION_OPTS.includes(o)).join(", "),
   );
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(jp?.preferredTimeSlots ?? []);
   const [hourlyWage, setHourlyWage] = useState<number | null>(
@@ -169,11 +182,13 @@ export default function FieldEditor({ field, user }: Props) {
     if (field === "youngChild") return save({ hasYoungChild });
     if (field === "jobTypes") return savePrefs({ preferredJobTypes: jobTypes });
     if (field === "pastOccupations") {
-      const arr = pastOccupations
+      // 선택형 15개 + 자유 입력 병합 (자유 입력 우선 dedupe)
+      const extras = pastExtra
         .split(/[,，、]/)
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
-      return savePrefs({ pastOccupations: arr });
+      const merged = Array.from(new Set([...pastSelected, ...extras]));
+      return savePrefs({ pastOccupations: merged });
     }
     if (field === "timeSlots") {
       if (timeSlots.length === 0) {
@@ -574,16 +589,55 @@ export default function FieldEditor({ field, user }: Props) {
         </div>
       )}
 
-      {/* 일자리 — 이전 직종 */}
+      {/* 일자리 — 이전 직종 (15개 선택형 + 자유 입력) */}
       {field === "pastOccupations" && (
-        <textarea
-          value={pastOccupations}
-          onChange={(e) => setPastOccupations(e.target.value)}
-          placeholder="예: 회계, 운전, 농업"
-          rows={3}
-          className="w-full rounded-xl border-2 border-[var(--color-border)] bg-white px-4 py-3 text-[16px]"
-          maxLength={200}
-        />
+        <>
+          <section className="rounded-2xl bg-white p-4">
+            <h2 className="mb-3 text-[15px] font-bold text-[var(--color-text)]">
+              해당하는 분야를 골라주세요{" "}
+              <span className="text-[12px] font-normal text-[var(--color-muted)]">
+                (중복 선택)
+              </span>
+            </h2>
+            <div className="grid grid-cols-2 gap-1.5">
+              {OCCUPATION_OPTS.map((o) => {
+                const on = pastSelected.includes(o);
+                return (
+                  <button
+                    key={o}
+                    type="button"
+                    onClick={() =>
+                      setPastSelected(toggleArr(pastSelected, o))
+                    }
+                    className={`rounded-xl py-2.5 text-[14px] font-bold ${
+                      on
+                        ? "bg-[var(--color-accent)] text-white"
+                        : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                    }`}
+                  >
+                    {o}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+          <section className="rounded-2xl bg-white p-4">
+            <h2 className="mb-2 text-[15px] font-bold text-[var(--color-text)]">
+              기타 (직접 입력){" "}
+              <span className="text-[12px] font-normal text-[var(--color-muted)]">
+                쉼표로 구분 · 생략 가능
+              </span>
+            </h2>
+            <textarea
+              value={pastExtra}
+              onChange={(e) => setPastExtra(e.target.value)}
+              placeholder="예: 회계, 자동차정비"
+              rows={2}
+              className="w-full rounded-xl border-2 border-[var(--color-border)] bg-white px-4 py-3 text-[16px]"
+              maxLength={200}
+            />
+          </section>
+        </>
       )}
 
       {/* 일자리 — 선호 시간대 */}
