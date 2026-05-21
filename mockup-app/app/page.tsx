@@ -17,6 +17,8 @@ import { toWelfareProfile } from "./lib/welfare/adapter";
 import { isOnboarded } from "./lib/auth";
 import { getCurrentUser } from "./lib/current-user";
 import RestartButton from "./components/restart-button";
+import ProfileUpdateToast from "./components/profile-update-toast";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -270,6 +272,10 @@ export default async function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
+      {/* 마이페이지 저장 후 ?updated=field 쿼리로 들어왔을 때 토스트 노출 */}
+      <Suspense fallback={null}>
+        <ProfileUpdateToast />
+      </Suspense>
       <GreetingHeader name={user.name} dong={user.dongName} />
       <MatchingHero
         name={user.name}

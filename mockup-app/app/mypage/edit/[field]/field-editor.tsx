@@ -141,8 +141,10 @@ export default function FieldEditor({ field, user }: Props) {
         setSaving(false);
         return;
       }
+      // 저장된 필드를 홈으로 쿼리에 실어 보내 토스트("맞춤 추천 다시 계산됐어요") 노출.
+      // router.refresh()로 홈의 SSR 매칭을 강제 재계산.
       router.refresh();
-      router.push("/mypage");
+      router.push(`/?updated=${encodeURIComponent(field)}`);
     } catch {
       setError("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
       setSaving(false);
