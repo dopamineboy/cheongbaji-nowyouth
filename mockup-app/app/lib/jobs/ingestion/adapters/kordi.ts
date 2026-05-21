@@ -106,57 +106,87 @@ const SEOUL_GU_LATLNG: Record<string, [number, number]> = {
 
 // 17개 광역 시·도 중심 좌표 — workPlcNm prefix로 매칭해서 빠른 폴백
 // (KORDI workPlcNm 형식: "서울 강남구", "부산 해운대구", "강원 원주시" 등)
-const REGION_PREFIX_LATLNG: Record<string, [number, number]> = {
-  서울: [37.5665, 126.978], // 서울 자치구는 SEOUL_GU_LATLNG 우선 매칭
-  부산: [35.1796, 129.0756],
-  대구: [35.8714, 128.6014],
-  인천: [37.4563, 126.7052],
-  광주: [35.1595, 126.8526],
-  대전: [36.3504, 127.3845],
-  울산: [35.5384, 129.3114],
-  세종: [36.4801, 127.289],
-  경기: [37.4138, 127.5183],
-  강원: [37.8228, 128.1555],
-  충북: [36.6357, 127.4917],
-  충남: [36.5184, 126.8],
-  전북: [35.7175, 127.153],
-  전남: [34.8161, 126.463],
-  경북: [36.4919, 128.8889],
-  경남: [35.4606, 128.2132],
-  제주: [33.4996, 126.5312],
+// fullName은 사용자 region 입력("서울특별시", "경기도" 등)과 매칭하기 위해 정규화에 사용.
+const REGION_PREFIX_LATLNG: Record<string, { latlng: [number, number]; fullName: string }> = {
+  서울: { latlng: [37.5665, 126.978],   fullName: "서울특별시" },
+  부산: { latlng: [35.1796, 129.0756],  fullName: "부산광역시" },
+  대구: { latlng: [35.8714, 128.6014],  fullName: "대구광역시" },
+  인천: { latlng: [37.4563, 126.7052],  fullName: "인천광역시" },
+  광주: { latlng: [35.1595, 126.8526],  fullName: "광주광역시" },
+  대전: { latlng: [36.3504, 127.3845],  fullName: "대전광역시" },
+  울산: { latlng: [35.5384, 129.3114],  fullName: "울산광역시" },
+  세종: { latlng: [36.4801, 127.289],   fullName: "세종특별자치시" },
+  경기: { latlng: [37.4138, 127.5183],  fullName: "경기도" },
+  강원: { latlng: [37.8228, 128.1555],  fullName: "강원특별자치도" },
+  충북: { latlng: [36.6357, 127.4917],  fullName: "충청북도" },
+  충남: { latlng: [36.5184, 126.8],     fullName: "충청남도" },
+  전북: { latlng: [35.7175, 127.153],   fullName: "전북특별자치도" },
+  전남: { latlng: [34.8161, 126.463],   fullName: "전라남도" },
+  경북: { latlng: [36.4919, 128.8889],  fullName: "경상북도" },
+  경남: { latlng: [35.4606, 128.2132],  fullName: "경상남도" },
+  제주: { latlng: [33.4996, 126.5312],  fullName: "제주특별자치도" },
 };
 
-function locateByNameSync(workPlcNm: string): { lat: number; lng: number } | null {
+interface LocateResult {
+  lat: number;
+  lng: number;
+  /** 사용자 region 표기와 일치하는 시·도 풀네임 (예: "서울특별시"). 못 찾으면 undefined. */
+  regionFullName?: string;
+}
+
+function locateByNameSync(workPlcNm: string): LocateResult | null {
   // 1) 서울 명시 시작 → 자치구 정확 매칭 (다른 시의 동명 자치구 오매칭 방지)
   if (workPlcNm.startsWith("서울")) {
     for (const [gu, [lat, lng]] of Object.entries(SEOUL_GU_LATLNG)) {
-      if (workPlcNm.includes(gu)) return { lat, lng };
+      if (workPlcNm.includes(gu)) return { lat, lng, regionFullName: "서울특별시" };
     }
-    return { lat: 37.5665, lng: 126.978 };
+    return { lat: 37.5665, lng: 126.978, regionFullName: "서울특별시" };
   }
-  // 2) 다른 광역 시·도 prefix → 시 중심값 (정확도는 덜하지만 거리 필터에 충분)
-  for (const [prefix, [lat, lng]] of Object.entries(REGION_PREFIX_LATLNG)) {
-    if (workPlcNm.startsWith(prefix)) return { lat, lng };
+  // 2) 다른 광역 시·도 prefix → 시 중심값 + 풀네임 정규화
+  for (const [prefix, { latlng: [lat, lng], fullName }] of Object.entries(REGION_PREFIX_LATLNG)) {
+    if (workPlcNm.startsWith(prefix)) return { lat, lng, regionFullName: fullName };
   }
   return null;
 }
 
 /** 서울 자치구 fallback 우선 → 안 맞으면 Kakao geocoding (서울 외 지역) → 둘 다 실패 시 종로 중심값 */
-async function locateByName(workPlcNm: string): Promise<{ lat: number; lng: number }> {
+async function locateByName(workPlcNm: string): Promise<LocateResult> {
   const sync = locateByNameSync(workPlcNm);
   if (sync) return sync;
 
   if (isKakaoAvailable() && workPlcNm.trim()) {
     const geo = await geocodeKeyword(workPlcNm);
-    if (geo) return { lat: geo.lat, lng: geo.lng };
+    if (geo) return { lat: geo.lat, lng: geo.lng }; // 풀네임 추정 X (kakao 응답에 시·도 prefix 별도 처리 필요)
   }
 
-  return { lat: 37.5703, lng: 126.9824 }; // 최종 폴백 (종로구)
+  return { lat: 37.5703, lng: 126.9824 }; // 최종 폴백 (종로구) — regionFullName 없음
+}
+
+/**
+ * regionName 정규화: KORDI 응답의 workPlcNm이 "서울 강남구" 같이 짧거나 비어 있는 경우,
+ * locate에서 알아낸 풀네임("서울특별시")을 붙여 사용자 region 입력과 매칭되게 한다.
+ *
+ * - workPlcNm 비어있음 + fullName 있음 → "서울특별시"
+ * - workPlcNm "서울 강남구" + fullName "서울특별시" → "서울특별시 강남구"
+ * - workPlcNm "서울특별시 강남구" → 그대로
+ * - 둘 다 없으면 원본 workPlcNm 그대로 (빈 문자열일 수 있음)
+ */
+function normalizeRegionName(workPlcNm: string, fullName: string | undefined): string {
+  if (!fullName) return workPlcNm;
+  const trimmed = workPlcNm.trim();
+  if (!trimmed) return fullName;
+  if (trimmed.startsWith(fullName)) return trimmed; // 이미 정규화된 상태
+  // "서울 강남구" 같은 짧은 prefix → 첫 토큰을 풀네임으로 교체
+  const tokens = trimmed.split(/\s+/);
+  if (tokens.length > 1) return `${fullName} ${tokens.slice(1).join(" ")}`;
+  return fullName; // 단일 토큰 prefix만 있으면 풀네임으로 대체
 }
 
 async function toJob(item: SenuriJobItem): Promise<Job> {
   const activity = EMPLYMSHP_TO_ACTIVITY[item.emplymShp] ?? "민간";
-  const { lat, lng } = await locateByName(item.workPlcNm);
+  const located = await locateByName(item.workPlcNm);
+  const { lat, lng, regionFullName } = located;
+  const regionName = normalizeRegionName(item.workPlcNm, regionFullName);
   const expiresAt = parseDate(item.toDd).toISOString();
   return {
     id: `j-senuri-${item.jobId}`,
@@ -165,7 +195,7 @@ async function toJob(item: SenuriJobItem): Promise<Job> {
     title: item.recrtTitle,
     org: item.oranNm || "(기업 정보 없음)",
     regionCode: item.workPlc, // 코드 그대로 (행정구역 매핑은 S2)
-    regionName: item.workPlcNm,
+    regionName, // "서울특별시 강남구" 같이 사용자 region 입력과 매칭되는 풀네임
     lat,
     lng,
     jobTags: item.jobclsNm ? [item.jobclsNm] : [],
