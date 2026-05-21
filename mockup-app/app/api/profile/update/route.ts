@@ -10,6 +10,7 @@ import {
   saveProfileToCookie,
   type ProfileOverride,
 } from "../../../lib/auth";
+import { resolveLocation } from "../../../lib/geo/resolve-location";
 import type { UserProfile } from "../../../lib/types";
 
 const REGIONS = [
@@ -80,11 +81,15 @@ export async function POST(req: NextRequest) {
     updated.birthMonth = m;
   }
 
+  // region/district 변경 감지 — 둘 중 하나라도 바뀌면 좌표·dongCode 재계산 필요
+  let regionOrDistrictChanged = false;
+
   if (body.region !== undefined) {
     const v = String(body.region);
     if (!REGIONS.includes(v)) {
       return err("region", "INVALID_REGION", "시·도를 다시 골라주세요.");
     }
+    if (updated.region !== v) regionOrDistrictChanged = true;
     updated.region = v;
   }
 
@@ -93,7 +98,23 @@ export async function POST(req: NextRequest) {
     if (v.length === 0) {
       return err("district", "INVALID_DISTRICT", "시·군·구를 입력해주세요.");
     }
+    if (updated.district !== v) regionOrDistrictChanged = true;
     updated.district = v;
+  }
+
+  // 시·도 또는 시·군·구가 바뀌었으면 위·경도와 dongCode/dongName도 재계산.
+  // 안 하면 사용자가 부산으로 바꿔도 좌표는 옛 서울 그대로라 매칭이 옛 위치 기준으로 잡힘.
+  if (regionOrDistrictChanged) {
+    const located = await resolveLocation(updated.region, updated.district, {
+      dongCode: updated.dongCode,
+      dongName: updated.dongName,
+      lat: updated.lat,
+      lng: updated.lng,
+    });
+    updated.dongCode = located.dongCode;
+    updated.dongName = located.dongName;
+    updated.lat = located.lat;
+    updated.lng = located.lng;
   }
 
   if (body.household !== undefined) {

@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { getDemoUserId, getStore } from "../../../lib/store";
 import type { JobActivityType, TimeSlot, UserProfile } from "../../../lib/types";
-import { geocodeAddress, isKakaoAvailable } from "../../../lib/geo/kakao";
+import { resolveLocation } from "../../../lib/geo/resolve-location";
 import { saveProfileToCookie, clearAllSessionCookies } from "../../../lib/auth";
 
 const COOKIE_NAME = "cb_onboarded";
@@ -31,15 +31,7 @@ interface OnboardingPayload {
   name?: string;
 }
 
-const DONG_BY_DISTRICT: Record<string, { code: string; name: string; lat: number; lng: number }> = {
-  "종로구": { code: "1111051500", name: "종로구 종로1·2·3·4가동", lat: 37.5703, lng: 126.9824 },
-  "중구":   { code: "1114052000", name: "중구 회현동",            lat: 37.5589, lng: 126.9789 },
-  "용산구": { code: "1117052000", name: "용산구 용산2가동",        lat: 37.5326, lng: 126.9909 },
-  "성북구": { code: "1129052000", name: "성북구 성북동",            lat: 37.5894, lng: 127.0067 },
-  "마포구": { code: "1144052000", name: "마포구 공덕동",            lat: 37.5440, lng: 126.9519 },
-  "강남구": { code: "1168052000", name: "강남구 역삼1동",            lat: 37.5008, lng: 127.0367 },
-  "송파구": { code: "1171052000", name: "송파구 잠실본동",            lat: 37.5145, lng: 127.0987 },
-};
+// DONG_BY_DISTRICT 정적 매핑은 lib/geo/resolve-location.ts로 이동됨 (profile/update와 공유)
 
 export async function POST(req: NextRequest) {
   let body: OnboardingPayload = {};
@@ -73,30 +65,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const dong = body.district ? DONG_BY_DISTRICT[body.district] : null;
-
-  // dongCode는 region+district 조합으로 표준화 — 비-서울 district도 고유 식별 보장
-  // (이전엔 매핑 없으면 sampleUser의 종로 dongCode로 떨어져서 일산서구 사용자가 종로 시드 글 보던 버그 수정)
-  const standardizedDongCode = body.region && body.district
-    ? `R_${body.region}_${body.district}`.replace(/\s+/g, "_")
-    : (dong?.code ?? existing.dongCode);
-
-  // Kakao Geocoding 우선 → 실패 시 정적 매핑 → 그것도 없으면 sampleUser 좌표
-  let geoLat = dong?.lat ?? existing.lat;
-  let geoLng = dong?.lng ?? existing.lng;
-  let resolvedDongName = dong?.name ?? `${body.region ?? ""} ${body.district ?? ""}`.trim();
-  const resolvedDongCode = standardizedDongCode;
-
-  if (isKakaoAvailable() && body.region && body.district) {
-    const fullAddr = `${body.region} ${body.district}`;
-    const geo = await geocodeAddress(fullAddr);
-    if (geo) {
-      geoLat = geo.lat;
-      geoLng = geo.lng;
-      // 카카오가 반환한 매칭된 주소명 사용 (더 정확)
-      if (geo.matchedAddress) resolvedDongName = geo.matchedAddress;
-    }
-  }
+  // region/district → 좌표·dongCode 결정 (Kakao 우선, 서울 자치구 정적 매핑 폴백)
+  const located = await resolveLocation(body.region, body.district, {
+    dongCode: existing.dongCode,
+    dongName: existing.dongName,
+    lat: existing.lat,
+    lng: existing.lng,
+  });
+  const resolvedDongCode = located.dongCode;
+  const resolvedDongName = located.dongName;
+  const geoLat = located.lat;
+  const geoLng = located.lng;
 
   // 출생월 검증 (1~12 또는 null)
   const birthMonth =
