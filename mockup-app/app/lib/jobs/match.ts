@@ -53,6 +53,28 @@ function commuteMinutes(km: number): number {
 // Stage 1: Hard Filter
 // ─────────────────────────────────────────────────────────
 
+/**
+ * 사용자 시·도와 일자리 시·도가 일치하는지 + 광역 경계 통근권(60분 이내) 예외.
+ * "지방 사용자에게 서울 일자리 노출" 같은 부정확 매칭을 막는 강한 필터.
+ *
+ * - 같은 시·도면 통과
+ * - 다른 시·도면 통근 시간 60분 이내일 때만 통과 (서울↔경기 같은 광역 경계)
+ * - 사용자 region 미입력자는 region 무시하고 거리만으로 판단
+ */
+function regionMatches(
+  userRegion: string | undefined,
+  jobRegionName: string,
+  commuteMin: number,
+): boolean {
+  if (!userRegion) return true;
+  // jobRegionName 예: "서울특별시 종로구", "경기도 수원시" — 앞 토큰이 시·도
+  const jobRegion = jobRegionName.split(/\s+/)[0];
+  if (!jobRegion) return true;
+  if (userRegion === jobRegion) return true;
+  // 다른 시·도 — 60분 이내만 통과 (광역 경계 통근)
+  return commuteMin <= 60;
+}
+
 export function passHardFilter(
   user: UserProfile,
   job: Job,
@@ -65,6 +87,13 @@ export function passHardFilter(
   const age = calculateAge(user.birthYear, user.birthMonth, now);
   if (age < job.ageMin) return false;
 
+  // 거리·통근 시간 (region 매칭 + 통근 필터에 둘 다 사용)
+  const km = haversineKm(user.lat, user.lng, job.lat, job.lng);
+  const commuteMin = commuteMinutes(km);
+
+  // 시·도 일치 (사용자 region 기준) — 다른 시·도면 60분 이내일 때만 통과
+  if (!regionMatches(user.region, job.regionName, commuteMin)) return false;
+
   // 신체 조건 — 사용자가 명시적으로 못 한다고 한 경우만 제외
   // (사용자가 jobPreferences를 안 적었으면 통과 — 콜드스타트 대응)
   const pref = user.jobPreferences;
@@ -72,10 +101,8 @@ export function passHardFilter(
     if (job.outdoor && !pref.outdoorOk) return false;
     if (job.walkingHeavy && !pref.walkingHeavyOk) return false;
     if (job.drivingRequired && !pref.drivingOk) return false;
-
     // 통근 시간 초과
-    const km = haversineKm(user.lat, user.lng, job.lat, job.lng);
-    if (commuteMinutes(km) > pref.maxCommuteMinutes) return false;
+    if (commuteMin > pref.maxCommuteMinutes) return false;
   }
 
   return true;
