@@ -4,6 +4,7 @@
 // 저장 후 /mypage로 복귀
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getDistricts } from "../../../lib/geo/districts";
 import type {
   JobActivityType,
   JobPreferences,
@@ -290,15 +291,32 @@ export default function FieldEditor({ field, user }: Props) {
         </div>
       )}
 
-      {/* 시·군·구 */}
+      {/* 시·군·구 — 현재 region 기반 선택형 */}
       {field === "district" && (
-        <input
-          type="text"
-          value={district}
-          onChange={(e) => setDistrict(e.target.value)}
-          placeholder="예: 종로구"
-          className="w-full rounded-xl border-2 border-[var(--color-border)] bg-white px-4 py-3 text-[18px]"
-        />
+        <>
+          <p className="text-[13px] text-[var(--color-muted)]">
+            현재 시·도: <span className="font-bold text-[var(--color-text)]">{user.region}</span>
+          </p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {getDistricts(user.region).map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setDistrict(g)}
+                className={`rounded-xl py-3 text-[14px] font-bold ${
+                  district === g
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-white text-[var(--color-text)] border border-[var(--color-border)]"
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            시·도가 바뀌었다면 먼저 시·도부터 다시 수정해 주세요.
+          </p>
+        </>
       )}
 
       {/* 가구 */}

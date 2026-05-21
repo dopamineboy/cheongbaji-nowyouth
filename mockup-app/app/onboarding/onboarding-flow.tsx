@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getDistricts } from "../lib/geo/districts";
 
 // 인터뷰 완료 화면 — 1.5초 후 자동 홈 이동 + 즉시 가기 버튼
 function DoneScreen({ onGo }: { onGo: () => void }) {
@@ -61,17 +62,7 @@ const REGIONS = [
   "전라남도", "경상북도", "경상남도", "제주특별자치도",
 ];
 
-// 서울시 25개 자치구 — 가나다 순
-const SEOUL_GU = [
-  "강남구", "강동구", "강북구", "강서구",
-  "관악구", "광진구", "구로구", "금천구",
-  "노원구",
-  "도봉구", "동대문구", "동작구",
-  "마포구",
-  "서대문구", "서초구", "성동구", "성북구", "송파구",
-  "양천구", "영등포구", "용산구", "은평구",
-  "종로구", "중구", "중랑구",
-];
+// 시·도별 시·군·구는 lib/geo/districts.ts에서 가져옴 (17개 시·도 전체 매핑)
 
 const JOB_TYPES = [
   { v: "공익활동형", desc: "공원·환경·안전" },
@@ -391,13 +382,13 @@ export default function OnboardingFlow() {
               ))}
             </div>
 
-            {s.region === "서울특별시" && (
+            {s.region && (
               <>
                 <p className="mt-4 mb-2 text-[14px] font-bold text-[var(--color-text)]">
-                  2) 자치구 ← <span className="text-[var(--color-urgent)]">선택 필수</span>
+                  2) 시·군·구 ← <span className="text-[var(--color-urgent)]">선택 필수</span>
                 </p>
                 <div className="grid grid-cols-4 gap-1.5">
-                  {SEOUL_GU.map((g) => (
+                  {getDistricts(s.region).map((g) => (
                     <button
                       key={g}
                       type="button"
@@ -413,24 +404,6 @@ export default function OnboardingFlow() {
                   ))}
                 </div>
               </>
-            )}
-
-            {s.region && s.region !== "서울특별시" && (
-              <div className="mt-4 rounded-xl bg-white p-3">
-                <p className="text-[14px] font-bold text-[var(--color-text)]">
-                  2) 시·군·구 직접 입력
-                </p>
-                <input
-                  type="text"
-                  placeholder="예: 수원시 영통구"
-                  value={s.district ?? ""}
-                  onChange={(e) => setS({ ...s, district: e.target.value })}
-                  className="mt-2 w-full rounded-lg border-2 border-[var(--color-border)] bg-white px-3 py-2 text-[15px]"
-                />
-                <p className="mt-1 text-[11px] text-[var(--color-muted)]">
-                  💡 서울 외 지역은 텍스트로 입력해주세요. 카카오 지도가 자동 좌표 변환합니다.
-                </p>
-              </div>
             )}
 
             {s.region && (
