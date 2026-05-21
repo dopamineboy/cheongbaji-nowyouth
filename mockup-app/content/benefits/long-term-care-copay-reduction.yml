@@ -1,0 +1,51 @@
+# =============================================================================
+# 청바지 — 장기요양 본인부담금 경감 (Long-Term Care Copay Reduction)
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: long-term-care-copay-reduction
+name: 장기요양 본인부담금 경감
+agency: 보건복지부 · 국민건강보험공단
+category: 돌봄
+summary: |
+  장기요양보험 서비스를 받으실 때 본인부담금이 부담되시면,
+  소득 수준에 따라 본인부담금을 40~60% 깎아 드려요.
+  의료급여·기초수급·차상위 어르신은 본인부담금이 0~9%로 줄어요.
+
+eligibility:
+  citizenship: KR
+
+show_condition:
+  any_of:
+    - basic_livelihood
+    - near_poverty
+
+benefit:
+  type: discount
+  amount_krw_max:
+    single: 600000
+    couple: 600000
+
+documents:
+  - 신분증
+  - 기초수급자 또는 차상위 증명서
+  - 장기요양인정서
+
+apply:
+  online:
+    name: 노인장기요양보험
+    url: https://www.longtermcare.or.kr/
+  offline:
+    - 가까운 국민건강보험공단 지사
+    - 주민센터
+
+sources:
+  - https://www.longtermcare.or.kr/
+
+last_verified: 2024-12-01
+
+notes: |
+  - 기초수급자(생계·의료): 본인부담금 면제 (0%)
+  - 차상위·중증질환자: 본인부담금 40~60% 경감
+  - 의료급여 수급자도 9%까지 경감
+  - 장기요양인정 받은 후 별도로 본인부담금 경감 신청해야 적용돼요.

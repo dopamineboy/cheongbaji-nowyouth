@@ -1,0 +1,48 @@
+# =============================================================================
+# 청바지 — 어르신 폐렴구균 예방접종 (Senior Pneumococcal Vaccine)
+# ⚠️ 데모용 시드 — 2024년 기준. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: senior-pneumococcal-vaccine
+name: 어르신 폐렴구균 예방접종
+agency: 보건복지부 · 질병관리청
+category: 건강·의료
+summary: |
+  만 65세 이상 어르신은 폐렴구균 예방접종(PPSV23)을
+  보건소에서 무료로 한 번 맞으실 수 있어요.
+  폐렴은 어르신 사망 원인 상위라 꼭 챙기시는 게 좋아요.
+
+eligibility:
+  age_min: 65
+  citizenship: KR
+
+benefit:
+  type: service
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증
+  - 예방접종 수첩 (있으시면)
+
+apply:
+  online:
+    name: 예방접종도우미
+    url: https://nip.kdca.go.kr
+  offline:
+    - 보건소 (전국)
+    - 지정 위탁의료기관 (병의원)
+
+sources:
+  - https://nip.kdca.go.kr
+
+health_tags:
+  - daily_life
+
+last_verified: 2024-12-01
+
+notes: |
+  - 일생에 한 번만 무료로 맞으시면 돼요. 이미 맞으셨으면 다시 안 맞아도 괜찮아요.
+  - 보건소가 가까우면 보건소, 멀면 가까운 의원 (위탁기관)에서 맞으실 수 있어요.
+  - 인플루엔자(독감) 백신과 같은 날 맞아도 안전해요.

@@ -1,0 +1,54 @@
+# =============================================================================
+# 청바지 — 결식 노인 도시락·반찬 배달
+# ⚠️ 데모용 시드 — 2024년 기준. 지자체별 운영. 오픈 전 재검수 필요.
+# =============================================================================
+
+id: senior-meal-delivery
+name: 결식 어르신 도시락·반찬 배달
+agency: 지자체 · 노인복지관 · 사회복지법인
+category: 돌봄
+summary: |
+  혼자 사시거나 거동이 불편하셔서 식사를 챙기기 어려우시면,
+  주중 매일 따뜻한 도시락 또는 일주일치 반찬을 집까지 배달해 드려요.
+  대부분 무료이고, 일부는 본인부담금이 있어요.
+
+eligibility:
+  age_min: 60
+  citizenship: KR
+
+show_condition:
+  any_of:
+    - basic_livelihood
+    - near_poverty
+    - has_disability
+  single_household: false
+
+benefit:
+  type: service
+  amount_krw_max:
+    single: 0
+    couple: 0
+
+documents:
+  - 신분증
+  - 기초수급자 또는 차상위 증명서 (해당하시면)
+  - 거주 확인 서류
+
+apply:
+  online:
+    name: 복지로
+    url: https://www.bokjiro.go.kr
+  offline:
+    - 주소지 관할 행정복지센터(주민센터)
+    - 가까운 노인복지관
+    - 종합사회복지관
+
+sources:
+  - https://www.bokjiro.go.kr
+
+last_verified: 2024-12-01
+
+notes: |
+  - 보통 평일 점심·저녁 또는 주 2~3회 반찬 배달.
+  - 우선순위: 독거·기초수급·차상위·장애 어르신. 일부 지자체는 일반 어르신에도 본인부담금 받고 운영.
+  - 식사 외에 안부 확인·말벗 역할도 해요.
