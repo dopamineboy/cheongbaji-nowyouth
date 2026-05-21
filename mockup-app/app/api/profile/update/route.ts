@@ -2,6 +2,7 @@
 // 보낸 필드만 반영, 다른 필드는 그대로.
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { getDemoUserId, getStore } from "../../../lib/store";
 import {
   applyOverride,
@@ -201,6 +202,15 @@ export async function POST(req: NextRequest) {
 
   // onboarded 쿠키 유지 (이미 인터뷰 통과한 사용자)
   void cookies;
+
+  // 추천 엔진을 사용하는 모든 페이지의 server-side 캐시를 즉시 무효화.
+  // 사용자가 어디로 가든 stale 추천이 보이지 않도록 한다.
+  // (홈/일자리/복지/마이페이지 모두 dynamic="force-dynamic"이지만,
+  //  Next.js router/fetch 캐시 레이어가 가끔 stale을 들고 있어 강제 무효화)
+  revalidatePath("/");
+  revalidatePath("/jobs");
+  revalidatePath("/welfare");
+  revalidatePath("/mypage");
 
   return Response.json({ ok: true, data: { profile: updated } });
 }

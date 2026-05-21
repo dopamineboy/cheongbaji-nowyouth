@@ -142,9 +142,11 @@ export default function FieldEditor({ field, user }: Props) {
         return;
       }
       // 저장된 필드를 홈으로 쿼리에 실어 보내 토스트("맞춤 추천 다시 계산됐어요") 노출.
-      // router.refresh()로 홈의 SSR 매칭을 강제 재계산.
-      router.refresh();
+      // 1) push로 홈 네비게이션 (홈은 dynamic="force-dynamic"이라 새 SSR)
+      // 2) refresh로 client router cache까지 명시 무효화 (push만 하면 BFCache hit 가능)
+      // (서버 캐시는 /api/profile/update 안에서 revalidatePath("/")로 이미 무효화됨)
       router.push(`/?updated=${encodeURIComponent(field)}`);
+      router.refresh();
     } catch {
       setError("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");
       setSaving(false);
