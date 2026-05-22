@@ -338,8 +338,8 @@ export default async function WelfarePage({
         <ThemeFilter counts={counts} totalCount={totalCount} />
       </Suspense>
 
-      {/* 🔥 이달 지금 지원 가능 — 한시·시즌성 지원금 */}
-      {temporaryList.length > 0 && (
+      {/* 🔥 이달 지금 지원 가능 — 한시·시즌성 지원금 (첫 화면에서만 노출) */}
+      {!activeMeta && temporaryList.length > 0 && (
         <section className="mb-6 px-5">
           <div className="rounded-2xl border-2 border-[var(--color-urgent)]/30 bg-[var(--color-urgent)]/5 p-5">
             <div className="mb-2 flex items-center gap-2">
