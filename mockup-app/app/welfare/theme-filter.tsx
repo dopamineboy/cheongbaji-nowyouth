@@ -11,6 +11,7 @@
 //
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { THEMES, type ThemeId } from "../lib/welfare/themes";
 
 interface Props {
@@ -23,16 +24,33 @@ interface Props {
 export default function ThemeFilter({ counts, totalCount }: Props) {
   const sp = useSearchParams();
   const active = (sp.get("theme") ?? null) as ThemeId | null;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 활성 칩이 가로 스크롤 영역의 가운데로 자동 이동 — 사용자가 화면 밖에 있는
+  // 활성 칩을 못 보는 문제 해소.
+  useEffect(() => {
+    if (!active || !scrollRef.current) return;
+    const activeEl = scrollRef.current.querySelector(
+      `[data-theme-id="${active}"]`,
+    ) as HTMLElement | null;
+    if (activeEl) {
+      activeEl.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [active]);
 
   // ── 활성 모드: sticky 칩 줄 (스크롤해도 화면 상단에 따라옴)
   if (active) {
     return (
       <div
-        className="sticky top-0 z-30 -mx-0 border-b border-[var(--color-border)] bg-[var(--bg-page)]/95 px-5 py-2 backdrop-blur"
+        className="sticky top-0 z-40 -mx-0 border-b border-[var(--color-border)] bg-[var(--bg-page)]/95 px-5 py-2 backdrop-blur"
       >
         <div className="mb-2 flex items-center justify-between">
           <p className="text-[12px] font-bold text-[var(--color-muted)]">
-            다른 테마로 바로 이동
+            다른 테마로 바로 이동 <span aria-hidden>→</span>
           </p>
           <Link
             href="/welfare"
@@ -41,35 +59,46 @@ export default function ThemeFilter({ counts, totalCount }: Props) {
             ✕ 전체 테마로
           </Link>
         </div>
-        <div
-          className="-mx-5 flex gap-1.5 overflow-x-auto px-5"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {THEMES.map((t) => {
-            const c = counts[t.id] ?? 0;
-            const isActive = active === t.id;
-            const disabled = c === 0;
-            if (disabled) return null;
-            return (
-              <Link
-                key={t.id}
-                href={`/welfare?theme=${t.id}`}
-                scroll={false}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-bold transition ${
-                  isActive
-                    ? "bg-[var(--color-primary)] text-white shadow"
-                    : "bg-white text-[var(--color-text)] border border-[var(--color-border)] active:bg-[var(--color-primary)]/5"
-                }`}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <span className="mr-1" aria-hidden>{t.icon}</span>
-                {t.label}
-                <span className={`ml-1 text-[11px] ${isActive ? "text-white/80" : "text-[var(--color-muted)]"}`}>
-                  {c}
-                </span>
-              </Link>
-            );
-          })}
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            className="-mx-5 flex gap-1.5 overflow-x-auto px-5 pr-10 scroll-px-5 snap-x"
+            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+          >
+            {THEMES.map((t) => {
+              const c = counts[t.id] ?? 0;
+              const isActive = active === t.id;
+              const disabled = c === 0;
+              if (disabled) return null;
+              return (
+                <Link
+                  key={t.id}
+                  href={`/welfare?theme=${t.id}`}
+                  scroll={false}
+                  data-theme-id={t.id}
+                  className={`shrink-0 snap-start rounded-full px-3 py-1.5 text-[13px] font-bold transition ${
+                    isActive
+                      ? "bg-[var(--color-primary)] text-white shadow"
+                      : "bg-white text-[var(--color-text)] border border-[var(--color-border)] active:bg-[var(--color-primary)]/5"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <span className="mr-1" aria-hidden>{t.icon}</span>
+                  {t.label}
+                  <span className={`ml-1 text-[11px] ${isActive ? "text-white/80" : "text-[var(--color-muted)]"}`}>
+                    {c}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+          {/* 우측 fade — "옆으로 더 있어요" affordance */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute right-0 top-0 flex h-full w-10 items-center justify-end bg-gradient-to-l from-[var(--bg-page)] via-[var(--bg-page)]/80 to-transparent pr-1 text-[14px] text-[var(--color-primary)]"
+          >
+            ›
+          </div>
         </div>
       </div>
     );
