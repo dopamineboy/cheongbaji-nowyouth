@@ -1,5 +1,6 @@
 // ① 복지 알리미 — 도우다 matcher 기반
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCurrentUser } from "../lib/current-user";
 import { loadAllBenefits } from "../lib/welfare/content";
 import {
@@ -14,6 +15,7 @@ import {
   THEMES_BY_ID,
   countByTheme,
   getTheme,
+  type ThemeId,
 } from "../lib/welfare/themes";
 import ThemeFilter from "./theme-filter";
 
@@ -100,14 +102,14 @@ function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean 
           >
             {receiving ? "수령 중" : meta.label}
           </span>
-          {/* 테마 뱃지 — 같은 페이지 anchor로 점프 (해당 테마 섹션 헤더로) */}
-          <a
-            href={`#theme-${themeId}`}
+          {/* 테마 뱃지 — 클릭하면 그 테마만 펼침 (?theme=ID) */}
+          <Link
+            href={`/welfare?theme=${themeId}`}
             className="rounded-full bg-[var(--bg-soft-blue)] px-2.5 py-1 text-[12px] font-bold text-[var(--color-primary)] active:opacity-70"
-            aria-label={`${themeMeta.label} 테마 섹션으로 이동`}
+            aria-label={`${themeMeta.label} 테마 혜택만 보기`}
           >
             {themeMeta.icon} {themeMeta.label}
-          </a>
+          </Link>
           {!receiving && m.totalConditions > 0 && (
             <span
               className="text-[12px] text-[var(--color-muted)]"
@@ -200,15 +202,17 @@ function TabBar() {
 
 export const dynamic = "force-dynamic";
 
-export default async function WelfarePage() {
+export default async function WelfarePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ theme?: string }>;
+}) {
   const user = await getCurrentUser();
   const benefits = loadAllBenefits();
   const matched = user ? matchBenefits(toWelfareProfile(user), benefits) : [];
 
   const receivedSet = new Set(user?.receivedBenefitIds ?? []);
-  // 지금 받고 계시는 — 받는 ID에 포함된 매칭 (자격 상관없이 우선 표시)
   const receivingList = matched.filter((m) => receivedSet.has(m.benefit.id));
-  // 받을 수 있는 — 자격 충족(eligible) 중 아직 안 받는 것
   const availableList = matched.filter(
     (m) => m.status === "eligible" && !receivedSet.has(m.benefit.id),
   );
@@ -221,37 +225,24 @@ export default async function WelfarePage() {
     (m) => m.status === "ineligible" && !receivedSet.has(m.benefit.id),
   );
 
-  // 테마별 그룹화 — availableList + needsDocsList를 각 테마 안에서 status별로 분리
-  const themeGroups: Array<{
-    themeId: string;
-    icon: string;
-    label: string;
-    description: string;
-    available: MatchedBenefit[];
-    needsDocs: MatchedBenefit[];
-    total: number;
-  }> = [];
+  // ?theme=ID 활성 테마 (있으면 그 테마만 펼침)
+  const sp = await searchParams;
+  const activeThemeRaw = sp.theme;
+  const activeTheme: ThemeId | null =
+    activeThemeRaw && THEMES_BY_ID[activeThemeRaw as ThemeId]
+      ? (activeThemeRaw as ThemeId)
+      : null;
+  const activeMeta = activeTheme ? THEMES_BY_ID[activeTheme] : null;
 
-  // 11개 테마 순서대로 (THEMES_BY_ID 기준) — 0건 테마는 제외
-  const themeIds = Object.keys(THEMES_BY_ID) as Array<keyof typeof THEMES_BY_ID>;
-  for (const tid of themeIds) {
-    const tMeta = THEMES_BY_ID[tid];
-    if (!tMeta) continue;
-    const a = availableList.filter((m) => getTheme(m.benefit) === tid);
-    const n = needsDocsList.filter((m) => getTheme(m.benefit) === tid);
-    if (a.length + n.length === 0) continue;
-    themeGroups.push({
-      themeId: tid,
-      icon: tMeta.icon,
-      label: tMeta.label,
-      description: tMeta.description,
-      available: a,
-      needsDocs: n,
-      total: a.length + n.length,
-    });
-  }
+  // 활성 테마의 ✅ / 📋 분리
+  const activeAvailable = activeTheme
+    ? availableList.filter((m) => getTheme(m.benefit) === activeTheme)
+    : [];
+  const activeNeedsDocs = activeTheme
+    ? needsDocsList.filter((m) => getTheme(m.benefit) === activeTheme)
+    : [];
 
-  // 그리드 점프용 건수 (받을 수 있는 + 보완 필요 + 받고 계신 합산)
+  // 그리드 점수용 건수 (받을 수 있는 + 보완 필요 + 받고 계신 합산)
   const counts = countByTheme<MatchedBenefit>([
     ...availableList,
     ...needsDocsList,
@@ -342,8 +333,10 @@ export default async function WelfarePage() {
         )}
       </section>
 
-      {/* 테마 그리드 — 빠른 점프(anchor scroll) 입구 */}
-      <ThemeFilter counts={counts} totalCount={totalCount} />
+      {/* 테마 그리드(첫 진입) 또는 sticky 칩 줄(테마 활성) */}
+      <Suspense fallback={null}>
+        <ThemeFilter counts={counts} totalCount={totalCount} />
+      </Suspense>
 
       {/* 🔥 이달 지금 지원 가능 — 한시·시즌성 지원금 */}
       {temporaryList.length > 0 && (
@@ -423,65 +416,70 @@ export default async function WelfarePage() {
         </section>
       )}
 
-      {/* 테마별 펼침 섹션 — 각 테마 안에서 ✅ 지금 바로 / 📋 서류 보완 두 그룹으로 분리 */}
-      {themeGroups.length === 0 && (
-        <section className="px-5">
-          <p className="rounded-2xl bg-white p-5 text-center text-[15px] text-[var(--color-muted)]">
-            지금 추천할 혜택이 없어요. 마이페이지에서 정보를 보완하시면 더 정확히 매칭해 드릴게요.
-          </p>
-        </section>
-      )}
-
-      {themeGroups.map((g) => (
-        <section
-          key={g.themeId}
-          id={`theme-${g.themeId}`}
-          className="mb-7 flex flex-col gap-4 px-5 scroll-mt-4"
-        >
-          {/* 테마 헤더 */}
+      {/* 활성 테마: 그 테마의 ✅/📋 펼침. 없으면 안내 카드. */}
+      {activeMeta && activeAvailable.length + activeNeedsDocs.length > 0 ? (
+        <section className="mb-7 flex flex-col gap-4 px-5 pt-3">
+          {/* 활성 테마 헤더 */}
           <div className="flex items-baseline gap-2 border-b-2 border-[var(--color-primary)]/20 pb-2">
-            <span className="text-[26px] leading-none" aria-hidden>
-              {g.icon}
+            <span className="text-[28px] leading-none" aria-hidden>
+              {activeMeta.icon}
             </span>
-            <h2 className="text-[20px] font-extrabold text-[var(--color-text)]">
-              {g.label}
+            <h2 className="text-[22px] font-extrabold text-[var(--color-text)]">
+              {activeMeta.label}
             </h2>
             <span className="text-[14px] font-bold text-[var(--color-primary)]">
-              {g.total}건
-            </span>
-            <span className="ml-1 truncate text-[12px] text-[var(--color-muted)]">
-              · {g.description}
+              {activeAvailable.length + activeNeedsDocs.length}건
             </span>
           </div>
+          <p className="-mt-2 text-[13px] leading-relaxed text-[var(--color-muted)]">
+            {activeMeta.description}
+          </p>
 
           {/* ✅ 지금 바로 받을 수 있는 혜택 */}
-          {g.available.length > 0 && (
+          {activeAvailable.length > 0 && (
             <div className="flex flex-col gap-3">
-              <h3 className="text-[15px] font-bold text-[var(--color-success)]">
-                ✅ 지금 바로 받을 수 있는 혜택 ({g.available.length}건)
+              <h3 className="text-[16px] font-bold text-[var(--color-success)]">
+                ✅ 지금 바로 받을 수 있는 혜택 ({activeAvailable.length}건)
               </h3>
-              {g.available.map((m) => (
+              {activeAvailable.map((m) => (
                 <BenefitCard key={m.benefit.id} m={m} />
               ))}
             </div>
           )}
 
           {/* 📋 서류 보완해서 신청할 수 있는 혜택 */}
-          {g.needsDocs.length > 0 && (
+          {activeNeedsDocs.length > 0 && (
             <div className="flex flex-col gap-3">
-              <h3 className="text-[15px] font-bold text-[#8A5E00]">
-                📋 서류 보완해서 신청할 수 있는 혜택 ({g.needsDocs.length}건)
+              <h3 className="text-[16px] font-bold text-[#8A5E00]">
+                📋 서류 보완해서 신청할 수 있는 혜택 ({activeNeedsDocs.length}건)
               </h3>
               <p className="-mt-1 text-[12px] leading-relaxed text-[var(--color-muted)]">
                 입력 정보만으로는 자격이 확실치 않아요. 주민센터에 한 번 더 확인하시면 정확히 안내받으실 수 있어요.
               </p>
-              {g.needsDocs.map((m) => (
+              {activeNeedsDocs.map((m) => (
                 <BenefitCard key={m.benefit.id} m={m} />
               ))}
             </div>
           )}
         </section>
-      ))}
+      ) : !activeMeta ? (
+        // 첫 진입: 그리드 아래 부드러운 안내
+        <section className="px-5 pb-2">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4 text-center">
+            <p className="text-[14px] leading-relaxed text-[var(--color-muted)]">
+              위에서 <span className="font-bold text-[var(--color-text)]">테마를 누르시면</span>{" "}
+              해당 분야 혜택만 모아 보여드려요.
+            </p>
+          </div>
+        </section>
+      ) : (
+        // 활성 테마는 있는데 그 안에 결과 0건
+        <section className="px-5">
+          <p className="rounded-2xl bg-white p-5 text-center text-[15px] text-[var(--color-muted)]">
+            이 테마에는 지금 추천할 혜택이 없어요.
+          </p>
+        </section>
+      )}
 
       {/* 어려운 혜택 (참고, 접힘) */}
       {ineligible.length > 0 && (
