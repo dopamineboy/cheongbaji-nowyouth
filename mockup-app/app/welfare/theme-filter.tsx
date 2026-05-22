@@ -42,15 +42,15 @@ export default function ThemeFilter({ counts, totalCount }: Props) {
     }
   }, [active]);
 
-  // ── 활성 모드: sticky 칩 줄 (스크롤해도 화면 상단에 따라옴)
+  // ── 활성 모드: sticky 그리드 (스크롤해도 화면 상단에 따라옴, 11개 한 화면)
   if (active) {
+    // 0건 테마는 sticky에서 숨김 — 누를 일 없으니 공간 절약
+    const visibleThemes = THEMES.filter((t) => (counts[t.id] ?? 0) > 0);
     return (
-      <div
-        className="sticky top-0 z-40 -mx-0 border-b border-[var(--color-border)] bg-[var(--bg-page)]/95 px-5 py-2 backdrop-blur"
-      >
-        <div className="mb-2 flex items-center justify-between">
+      <div className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--bg-page)]/95 px-3 py-2 backdrop-blur">
+        <div className="mb-1.5 flex items-center justify-between px-2">
           <p className="text-[12px] font-bold text-[var(--color-muted)]">
-            다른 테마로 바로 이동 <span aria-hidden>→</span>
+            다른 테마 바로 가기
           </p>
           <Link
             href="/welfare"
@@ -59,46 +59,32 @@ export default function ThemeFilter({ counts, totalCount }: Props) {
             ✕ 전체 테마로
           </Link>
         </div>
-        <div className="relative">
-          <div
-            ref={scrollRef}
-            className="-mx-5 flex gap-1.5 overflow-x-auto px-5 pr-10 scroll-px-5 snap-x"
-            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
-          >
-            {THEMES.map((t) => {
-              const c = counts[t.id] ?? 0;
-              const isActive = active === t.id;
-              const disabled = c === 0;
-              if (disabled) return null;
-              return (
-                <Link
-                  key={t.id}
-                  href={`/welfare?theme=${t.id}`}
-                  scroll={false}
-                  data-theme-id={t.id}
-                  className={`shrink-0 snap-start rounded-full px-3 py-1.5 text-[13px] font-bold transition ${
-                    isActive
-                      ? "bg-[var(--color-primary)] text-white shadow"
-                      : "bg-white text-[var(--color-text)] border border-[var(--color-border)] active:bg-[var(--color-primary)]/5"
-                  }`}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <span className="mr-1" aria-hidden>{t.icon}</span>
-                  {t.label}
-                  <span className={`ml-1 text-[11px] ${isActive ? "text-white/80" : "text-[var(--color-muted)]"}`}>
-                    {c}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-          {/* 우측 fade — "옆으로 더 있어요" affordance */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute right-0 top-0 flex h-full w-10 items-center justify-end bg-gradient-to-l from-[var(--bg-page)] via-[var(--bg-page)]/80 to-transparent pr-1 text-[14px] text-[var(--color-primary)]"
-          >
-            ›
-          </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {visibleThemes.map((t) => {
+            const c = counts[t.id] ?? 0;
+            const isActive = active === t.id;
+            return (
+              <Link
+                key={t.id}
+                href={`/welfare?theme=${t.id}`}
+                scroll={false}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[12px] font-bold leading-tight ${
+                  isActive
+                    ? "bg-[var(--color-primary)] text-white shadow"
+                    : "bg-white text-[var(--color-text)] border border-[var(--color-border)] active:bg-[var(--color-primary)]/5"
+                }`}
+              >
+                <span className="text-[15px] leading-none" aria-hidden>
+                  {t.icon}
+                </span>
+                <span className="truncate">{t.label}</span>
+                <span className={`shrink-0 ${isActive ? "text-white/80" : "text-[var(--color-muted)]"}`}>
+                  {c}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     );
