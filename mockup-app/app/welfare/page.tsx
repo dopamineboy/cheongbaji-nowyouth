@@ -1,5 +1,6 @@
 // ① 복지 알리미 — 도우다 matcher 기반
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCurrentUser } from "../lib/current-user";
 import { loadAllBenefits } from "../lib/welfare/content";
 import {
@@ -10,6 +11,13 @@ import {
   type MatchStatus,
 } from "../lib/welfare/matcher";
 import { toWelfareProfile } from "../lib/welfare/adapter";
+import {
+  THEMES_BY_ID,
+  countByTheme,
+  getTheme,
+  type ThemeId,
+} from "../lib/welfare/themes";
+import ThemeFilter from "./theme-filter";
 
 const STATUS_META: Record<
   MatchStatus,
@@ -183,7 +191,11 @@ function TabBar() {
 
 export const dynamic = "force-dynamic";
 
-export default async function WelfarePage() {
+export default async function WelfarePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ theme?: string }>;
+}) {
   const user = await getCurrentUser();
   const benefits = loadAllBenefits();
   const matched = user ? matchBenefits(toWelfareProfile(user), benefits) : [];
@@ -192,10 +204,10 @@ export default async function WelfarePage() {
   // 지금 받고 계시는 — 받는 ID에 포함된 매칭 (자격 상관없이 우선 표시)
   const receivingList = matched.filter((m) => receivedSet.has(m.benefit.id));
   // 받을 수 있는 — 자격 충족(eligible) 중 아직 안 받는 것
-  const availableList = matched.filter(
+  const availableListAll = matched.filter(
     (m) => m.status === "eligible" && !receivedSet.has(m.benefit.id),
   );
-  const needsDocsList = matched.filter(
+  const needsDocsListAll = matched.filter(
     (m) =>
       (m.status === "likely_eligible" || m.status === "needs_more_info") &&
       !receivedSet.has(m.benefit.id),
@@ -203,6 +215,26 @@ export default async function WelfarePage() {
   const ineligible = matched.filter(
     (m) => m.status === "ineligible" && !receivedSet.has(m.benefit.id),
   );
+
+  // 테마 필터링 — ?theme=medical 같은 쿼리 적용
+  const sp = await searchParams;
+  const activeTheme = (sp.theme as ThemeId | undefined) ?? null;
+  const filterByTheme = <T extends { benefit: { id: string; category: string } }>(
+    list: T[],
+  ): T[] => (activeTheme ? list.filter((m) => getTheme(m.benefit as never) === activeTheme) : list);
+
+  const availableList = filterByTheme(availableListAll);
+  const needsDocsList = filterByTheme(needsDocsListAll);
+
+  // 칩 필터에 표시할 테마별 건수 (받을 수 있는 + 보완 필요 + 받고 계신 합산)
+  const counts = countByTheme<MatchedBenefit>([
+    ...availableListAll,
+    ...needsDocsListAll,
+    ...receivingList,
+  ]);
+  const totalCount =
+    availableListAll.length + needsDocsListAll.length + receivingList.length;
+  const activeThemeMeta = activeTheme ? THEMES_BY_ID[activeTheme] : null;
 
   const receivingAmounts = summarizeAmounts(receivingList);
   const availableAmounts = summarizeAmounts(availableList);
@@ -285,6 +317,28 @@ export default async function WelfarePage() {
           </p>
         )}
       </section>
+
+      {/* 테마 칩 필터 — 의료/교통/돌봄 등으로 추천 결과 정렬 */}
+      <Suspense fallback={null}>
+        <ThemeFilter counts={counts} totalCount={totalCount} />
+      </Suspense>
+
+      {/* 활성 테마 안내 (필터 적용 시) */}
+      {activeThemeMeta && (
+        <section className="-mt-2 mb-3 px-5">
+          <div className="rounded-xl bg-[var(--bg-soft-blue)] px-4 py-2.5">
+            <p className="text-[13px] font-bold text-[var(--color-text)]">
+              <span className="mr-1" aria-hidden>
+                {activeThemeMeta.icon}
+              </span>
+              {activeThemeMeta.label} 테마만 보고 있어요
+              <span className="ml-2 text-[12px] font-normal text-[var(--color-muted)]">
+                · {activeThemeMeta.description}
+              </span>
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* 🔥 이달 지금 지원 가능 — 한시·시즌성 지원금 */}
       {temporaryList.length > 0 && (
