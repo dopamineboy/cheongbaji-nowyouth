@@ -74,6 +74,8 @@ export interface BenefitEligibility {
   requires_veteran?: boolean;
   /** 영유아 가구원 필요 (또는 OR 조건) */
   requires_young_child?: boolean;
+  /** 특정 의료 진단서 필요 — 값은 진단명 (예: "치매"). needs_more_info 처리됨. */
+  requires_medical_diagnosis?: string;
   regions?: string[];
   districts?: string[];
 }
@@ -388,6 +390,9 @@ function evaluateBenefit(
     if (profile.hasYoungChild === undefined) need("가구원 중 영유아 여부");
     else if (!profile.hasYoungChild) fail("이 사업은 영유아 가구원이 있어야 신청할 수 있어요.");
     else pass("영유아 가구원 조건 대상자입니다.");
+  }
+  if (e.requires_medical_diagnosis) {
+    need(`${e.requires_medical_diagnosis} 진단서·의사 소견서`);
   }
 
   // any_of OR 그룹 — show_condition에 있으면 평가 단계에서도 부합률에 반영

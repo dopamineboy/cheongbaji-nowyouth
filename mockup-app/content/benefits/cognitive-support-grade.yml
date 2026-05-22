@@ -15,6 +15,7 @@ summary: |
 eligibility:
   age_min: 65
   citizenship: KR
+  requires_medical_diagnosis: 치매
 
 benefit:
   type: service
