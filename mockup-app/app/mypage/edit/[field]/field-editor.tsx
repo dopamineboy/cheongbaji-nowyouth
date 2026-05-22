@@ -141,11 +141,11 @@ export default function FieldEditor({ field, user }: Props) {
         setSaving(false);
         return;
       }
-      // 저장된 필드를 홈으로 쿼리에 실어 보내 토스트("맞춤 추천 다시 계산됐어요") 노출.
-      // 1) push로 홈 네비게이션 (홈은 dynamic="force-dynamic"이라 새 SSR)
-      // 2) refresh로 client router cache까지 명시 무효화 (push만 하면 BFCache hit 가능)
-      // (서버 캐시는 /api/profile/update 안에서 revalidatePath("/")로 이미 무효화됨)
-      router.push(`/?updated=${encodeURIComponent(field)}`);
+      // 마이페이지로 돌아가서 ?saved=<field> 쿼리로 작은 토스트("○○ 저장됐어요") 노출.
+      // 사용자가 다른 항목 더 수정할 수 있게 마이페이지에 머무름 — 모든 수정 끝나면
+      // 마이페이지 하단 "✓ 새 맞춤 추천 보기" 버튼으로 홈으로 이동.
+      // (서버 캐시는 /api/profile/update 안의 revalidatePath로 이미 무효화됨)
+      router.push(`/mypage?saved=${encodeURIComponent(field)}`);
       router.refresh();
     } catch {
       setError("네트워크 오류예요. 잠시 후 다시 시도해 주세요.");

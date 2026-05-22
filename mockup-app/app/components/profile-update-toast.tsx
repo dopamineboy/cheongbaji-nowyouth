@@ -25,6 +25,7 @@ const FIELD_LABEL: Record<string, string> = {
   outdoor: "야외 활동",
   walkingHeavy: "도보 많은 일",
   driving: "운전 가능",
+  mypage: "마이페이지 정보",
 };
 
 export default function ProfileUpdateToast() {

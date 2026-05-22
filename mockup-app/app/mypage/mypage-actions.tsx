@@ -1,10 +1,21 @@
 "use client";
 
-// 마이페이지 액션 버튼들 — 전체 다시 입력 (부분 수정은 각 row 클릭)
+// 마이페이지 액션 버튼들
+//   ① 저장하고 홈화면으로 돌아가기 — 큰 primary CTA (수정 끝낸 후 새 추천 보기)
+//   ② 인터뷰 처음부터 다시 — 보조 (전체 재입력)
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function MypageActions() {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
+
+  const goHomeWithFreshRecs = () => {
+    // 각 항목 저장 시점에 이미 cookie 영속화 + revalidatePath가 호출됐으므로
+    // 홈은 새로 SSR된다. router.refresh로 client cache도 명시 무효화.
+    router.refresh();
+    router.push("/?updated=mypage");
+  };
 
   const restartInterview = async () => {
     if (busy) return;
@@ -24,6 +35,19 @@ export default function MypageActions() {
 
   return (
     <div className="flex flex-col gap-2">
+      {/* 큰 primary CTA — 수정 마치고 홈에서 새 추천 받기 */}
+      <button
+        type="button"
+        onClick={goHomeWithFreshRecs}
+        className="btn-primary rounded-2xl py-4 text-[17px] font-bold"
+      >
+        ✓ 저장하고 홈화면으로 가기
+      </button>
+      <p className="px-1 -mt-1 mb-2 text-[12px] leading-relaxed text-[var(--color-muted)]">
+        바뀐 정보로 맞춤 추천을 새로 계산해서 보여드려요.
+      </p>
+
+      {/* 보조 — 전체 인터뷰 다시 */}
       <button
         type="button"
         onClick={restartInterview}
@@ -33,8 +57,8 @@ export default function MypageActions() {
         🔄 인터뷰 처음부터 다시
       </button>
       <p className="px-1 text-[12px] leading-relaxed text-[var(--color-muted)]">
-        위 각 항목을 누르면 그 항목만 수정하실 수 있어요. 일자리 선호처럼
-        한 번에 새로 입력하시는 게 좋은 항목은 위 버튼을 사용해 주세요.
+        위 각 항목을 누르면 그 항목만 수정하실 수 있어요. 처음부터 새로
+        입력하고 싶으시면 위 버튼을 눌러 주세요.
       </p>
     </div>
   );

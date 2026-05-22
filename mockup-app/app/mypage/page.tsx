@@ -1,12 +1,14 @@
 // 마이페이지 — 인터뷰로 입력한 정보 요약 + 항목별 ✏️ 수정 진입
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getCurrentUser } from "../lib/current-user";
 import { getProfileOverride, isLegacyCookie, isOnboarded } from "../lib/auth";
 import { calculateAge } from "../lib/age";
 import { isLocationStale } from "../lib/geo/is-location-stale";
 import MypageActions from "./mypage-actions";
 import AutoMigrateLocation from "./auto-migrate-location";
+import SavedToast from "./saved-toast";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +76,11 @@ export default async function MyPage() {
 
       {/* 옛 사용자 좌표 stale 감지 시 자동 마이그레이션 (1회) — region과 lat/lng 불일치 시만 실행 */}
       {locationStale && <AutoMigrateLocation />}
+
+      {/* 항목 저장 후 돌아왔을 때 짧은 토스트 ("○○ 저장됐어요") */}
+      <Suspense fallback={null}>
+        <SavedToast />
+      </Suspense>
 
       {/* 옛 cookie 안내 — 인터뷰 이후 새로 추가된 항목들이 채워지지 않은 상태 */}
       {legacy && (
