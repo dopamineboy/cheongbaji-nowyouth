@@ -66,11 +66,23 @@ const CATEGORY_ICON: Record<string, string> = {
   복지서비스: "✨",
 };
 
-function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean }) {
+function BenefitCard({
+  m,
+  receiving,
+  fromTheme,
+}: {
+  m: MatchedBenefit;
+  receiving?: boolean;
+  /** 활성 테마에서 카드 클릭 시 상세 페이지에서 그 테마로 돌아가도록 전달 */
+  fromTheme?: ThemeId | null;
+}) {
   const meta = STATUS_META[m.status];
   const icon = CATEGORY_ICON[m.benefit.category] ?? "📌";
   const themeId = getTheme(m.benefit);
   const themeMeta = THEMES_BY_ID[themeId];
+  const detailHref = fromTheme
+    ? `/welfare/${m.benefit.id}?from=${fromTheme}`
+    : `/welfare/${m.benefit.id}`;
   const amount =
     m.benefit.benefit.amount_krw_max?.single ??
     m.benefit.benefit.amount_krw_max?.couple ??
@@ -125,7 +137,7 @@ function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean 
           )}
         </div>
 
-        <Link href={`/welfare/${m.benefit.id}`} className="block card-link">
+        <Link href={detailHref} className="block card-link">
 
           <div className="mb-3 flex items-center gap-3">
             <span className="text-3xl" aria-hidden>
@@ -442,7 +454,7 @@ export default async function WelfarePage({
                 ✅ 지금 바로 받을 수 있는 혜택 ({activeAvailable.length}건)
               </h3>
               {activeAvailable.map((m) => (
-                <BenefitCard key={m.benefit.id} m={m} />
+                <BenefitCard key={m.benefit.id} m={m} fromTheme={activeTheme} />
               ))}
             </div>
           )}
@@ -457,7 +469,7 @@ export default async function WelfarePage({
                 입력 정보만으로는 자격이 확실치 않아요. 주민센터에 한 번 더 확인하시면 정확히 안내받으실 수 있어요.
               </p>
               {activeNeedsDocs.map((m) => (
-                <BenefitCard key={m.benefit.id} m={m} />
+                <BenefitCard key={m.benefit.id} m={m} fromTheme={activeTheme} />
               ))}
             </div>
           )}

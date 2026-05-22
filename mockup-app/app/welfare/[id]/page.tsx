@@ -74,12 +74,21 @@ function householdLabel(h: string): string {
 
 export default async function WelfareDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
   const b = loadBenefitById(id);
   if (!b) notFound();
+
+  // 어디서 진입했는지 — 테마 활성 상태에서 카드 클릭 시 ?from=<themeId>가 들어옴.
+  // 안전 검증: 화이트리스트된 영어 키만 허용 (open redirect 방지).
+  const safeFrom = /^[a-z_]+$/.test(sp.from ?? "") ? sp.from : null;
+  const backHref = safeFrom ? `/welfare?theme=${safeFrom}` : "/welfare";
+  const backLabel = safeFrom ? "← 테마 목록으로" : "← 복지 알리미로";
 
   const user = await getCurrentUser();
 
@@ -132,10 +141,10 @@ export default async function WelfareDetailPage({
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
         <Link
-          href="/welfare"
+          href={backHref}
           className="mb-4 inline-block text-[15px] font-bold text-[var(--color-primary)]"
         >
-          ← 복지 알리미로
+          {backLabel}
         </Link>
         <div className="mb-2 flex items-center gap-2">
           <span className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-[13px] font-bold text-[var(--color-primary)]">
