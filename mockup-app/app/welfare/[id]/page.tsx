@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { loadBenefitById } from "../../lib/welfare/content";
 import { getCurrentUser } from "../../lib/current-user";
 import ApplyFlow from "./apply-flow";
+import BackButton from "./back-button";
 
 const DOC_GUIDE: Record<string, { how: string; url?: string; urlLabel?: string }> = {
   신분증: { how: "주민등록증 또는 운전면허증을 준비하세요. 이미 가지고 계실 거예요." },
@@ -84,11 +85,9 @@ export default async function WelfareDetailPage({
   const b = loadBenefitById(id);
   if (!b) notFound();
 
-  // 어디서 진입했는지 — 테마 활성 상태에서 카드 클릭 시 ?from=<themeId>가 들어옴.
-  // 안전 검증: 화이트리스트된 영어 키만 허용 (open redirect 방지).
+  // history 없을 때(새 탭/공유 링크 직접 진입) 폴백 — ?from 있으면 테마, 없으면 첫 화면
   const safeFrom = /^[a-z_]+$/.test(sp.from ?? "") ? sp.from : null;
-  const backHref = safeFrom ? `/welfare?theme=${safeFrom}` : "/welfare";
-  const backLabel = safeFrom ? "← 테마 목록으로" : "← 복지 알리미로";
+  const fallbackHref = safeFrom ? `/welfare?theme=${safeFrom}` : "/welfare";
 
   const user = await getCurrentUser();
 
@@ -140,12 +139,7 @@ export default async function WelfareDetailPage({
   return (
     <main className="mx-auto flex min-h-screen max-w-[448px] flex-col bg-[var(--bg-page)] pb-24">
       <header className="px-5 pt-6 pb-4">
-        <Link
-          href={backHref}
-          className="mb-4 inline-block text-[15px] font-bold text-[var(--color-primary)]"
-        >
-          {backLabel}
-        </Link>
+        <BackButton fallbackHref={fallbackHref} />
         <div className="mb-2 flex items-center gap-2">
           <span className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-[13px] font-bold text-[var(--color-primary)]">
             {b.category}
