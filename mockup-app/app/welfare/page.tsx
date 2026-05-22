@@ -260,8 +260,6 @@ export default async function WelfarePage({
     ...needsDocsList,
     ...receivingList,
   ]);
-  const totalCount =
-    availableList.length + needsDocsList.length + receivingList.length;
 
   const receivingAmounts = summarizeAmounts(receivingList);
   const availableAmounts = summarizeAmounts(availableList);
@@ -325,7 +323,7 @@ export default async function WelfarePage({
             </div>
           )}
           <div className="rounded-xl bg-white/15 px-3 py-3">
-            <p className="text-white/70">받으실 수 있는 혜택</p>
+            <p className="text-white/70">지금 바로 받으실 수 있는 혜택</p>
             <p className="mt-1 text-[24px] font-extrabold leading-tight">
               {receivingList.length > 0 ? "+" : ""}{availableList.length}건
             </p>
@@ -336,8 +334,13 @@ export default async function WelfarePage({
             )}
           </div>
         </div>
+        {needsDocsList.length > 0 && (
+          <p className="mt-2 text-[12px] text-white/70">
+            추가로 <span className="font-bold text-white">서류 보완해서 받을 수 있는 혜택 {needsDocsList.length}건</span>이 있어요 (아래 테마에서 확인)
+          </p>
+        )}
         {availableAmounts.annualOneTimeKrw > 0 && (
-          <p className="mt-3 text-[13px] text-white/80">
+          <p className="mt-2 text-[13px] text-white/80">
             추가로 연 약{" "}
             {availableAmounts.annualOneTimeKrw.toLocaleString("ko-KR")}원
             일시 지원도 가능해요
@@ -347,7 +350,7 @@ export default async function WelfarePage({
 
       {/* 테마 그리드(첫 진입) 또는 sticky 칩 줄(테마 활성) */}
       <Suspense fallback={null}>
-        <ThemeFilter counts={counts} totalCount={totalCount} />
+        <ThemeFilter counts={counts} />
       </Suspense>
 
       {/* 🔥 이달 지금 지원 가능 — 한시·시즌성 지원금 (첫 화면에서만 노출) */}

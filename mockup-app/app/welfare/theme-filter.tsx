@@ -17,11 +17,9 @@ import { THEMES, type ThemeId } from "../lib/welfare/themes";
 interface Props {
   /** 매칭 결과의 테마별 건수 — 0인 테마는 회색 처리 */
   counts: Record<ThemeId, number>;
-  /** 전체 총 건수 (그리드 안내용) */
-  totalCount: number;
 }
 
-export default function ThemeFilter({ counts, totalCount }: Props) {
+export default function ThemeFilter({ counts }: Props) {
   const sp = useSearchParams();
   const active = (sp.get("theme") ?? null) as ThemeId | null;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -98,9 +96,6 @@ export default function ThemeFilter({ counts, totalCount }: Props) {
       </h2>
       <p className="mb-4 text-[13px] leading-relaxed text-[var(--color-muted)]">
         궁금하신 테마를 한 번 눌러보세요. 그 분야 혜택만 모아 보여드려요.
-        <span className="ml-1 font-semibold text-[var(--color-text)]">
-          (총 {totalCount}건 추천)
-        </span>
       </p>
       <div className="grid grid-cols-3 gap-2">
         {THEMES.map((t) => {
