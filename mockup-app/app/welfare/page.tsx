@@ -1,6 +1,5 @@
 // ① 복지 알리미 — 도우다 matcher 기반
 import Link from "next/link";
-import { Suspense } from "react";
 import { getCurrentUser } from "../lib/current-user";
 import { loadAllBenefits } from "../lib/welfare/content";
 import {
@@ -15,7 +14,6 @@ import {
   THEMES_BY_ID,
   countByTheme,
   getTheme,
-  type ThemeId,
 } from "../lib/welfare/themes";
 import ThemeFilter from "./theme-filter";
 
@@ -102,14 +100,14 @@ function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean 
           >
             {receiving ? "수령 중" : meta.label}
           </span>
-          {/* 테마 뱃지 — 클릭하면 같은 테마만 필터링 */}
-          <Link
-            href={`/welfare?theme=${themeId}`}
+          {/* 테마 뱃지 — 같은 페이지 anchor로 점프 (해당 테마 섹션 헤더로) */}
+          <a
+            href={`#theme-${themeId}`}
             className="rounded-full bg-[var(--bg-soft-blue)] px-2.5 py-1 text-[12px] font-bold text-[var(--color-primary)] active:opacity-70"
-            aria-label={`${themeMeta.label} 테마 혜택 더 보기`}
+            aria-label={`${themeMeta.label} 테마 섹션으로 이동`}
           >
             {themeMeta.icon} {themeMeta.label}
-          </Link>
+          </a>
           {!receiving && m.totalConditions > 0 && (
             <span
               className="text-[12px] text-[var(--color-muted)]"
@@ -202,11 +200,7 @@ function TabBar() {
 
 export const dynamic = "force-dynamic";
 
-export default async function WelfarePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ theme?: string }>;
-}) {
+export default async function WelfarePage() {
   const user = await getCurrentUser();
   const benefits = loadAllBenefits();
   const matched = user ? matchBenefits(toWelfareProfile(user), benefits) : [];
@@ -215,10 +209,10 @@ export default async function WelfarePage({
   // 지금 받고 계시는 — 받는 ID에 포함된 매칭 (자격 상관없이 우선 표시)
   const receivingList = matched.filter((m) => receivedSet.has(m.benefit.id));
   // 받을 수 있는 — 자격 충족(eligible) 중 아직 안 받는 것
-  const availableListAll = matched.filter(
+  const availableList = matched.filter(
     (m) => m.status === "eligible" && !receivedSet.has(m.benefit.id),
   );
-  const needsDocsListAll = matched.filter(
+  const needsDocsList = matched.filter(
     (m) =>
       (m.status === "likely_eligible" || m.status === "needs_more_info") &&
       !receivedSet.has(m.benefit.id),
@@ -227,25 +221,44 @@ export default async function WelfarePage({
     (m) => m.status === "ineligible" && !receivedSet.has(m.benefit.id),
   );
 
-  // 테마 필터링 — ?theme=medical 같은 쿼리 적용
-  const sp = await searchParams;
-  const activeTheme = (sp.theme as ThemeId | undefined) ?? null;
-  const filterByTheme = <T extends { benefit: { id: string; category: string } }>(
-    list: T[],
-  ): T[] => (activeTheme ? list.filter((m) => getTheme(m.benefit as never) === activeTheme) : list);
+  // 테마별 그룹화 — availableList + needsDocsList를 각 테마 안에서 status별로 분리
+  const themeGroups: Array<{
+    themeId: string;
+    icon: string;
+    label: string;
+    description: string;
+    available: MatchedBenefit[];
+    needsDocs: MatchedBenefit[];
+    total: number;
+  }> = [];
 
-  const availableList = filterByTheme(availableListAll);
-  const needsDocsList = filterByTheme(needsDocsListAll);
+  // 11개 테마 순서대로 (THEMES_BY_ID 기준) — 0건 테마는 제외
+  const themeIds = Object.keys(THEMES_BY_ID) as Array<keyof typeof THEMES_BY_ID>;
+  for (const tid of themeIds) {
+    const tMeta = THEMES_BY_ID[tid];
+    if (!tMeta) continue;
+    const a = availableList.filter((m) => getTheme(m.benefit) === tid);
+    const n = needsDocsList.filter((m) => getTheme(m.benefit) === tid);
+    if (a.length + n.length === 0) continue;
+    themeGroups.push({
+      themeId: tid,
+      icon: tMeta.icon,
+      label: tMeta.label,
+      description: tMeta.description,
+      available: a,
+      needsDocs: n,
+      total: a.length + n.length,
+    });
+  }
 
-  // 칩 필터에 표시할 테마별 건수 (받을 수 있는 + 보완 필요 + 받고 계신 합산)
+  // 그리드 점프용 건수 (받을 수 있는 + 보완 필요 + 받고 계신 합산)
   const counts = countByTheme<MatchedBenefit>([
-    ...availableListAll,
-    ...needsDocsListAll,
+    ...availableList,
+    ...needsDocsList,
     ...receivingList,
   ]);
   const totalCount =
-    availableListAll.length + needsDocsListAll.length + receivingList.length;
-  const activeThemeMeta = activeTheme ? THEMES_BY_ID[activeTheme] : null;
+    availableList.length + needsDocsList.length + receivingList.length;
 
   const receivingAmounts = summarizeAmounts(receivingList);
   const availableAmounts = summarizeAmounts(availableList);
@@ -329,27 +342,8 @@ export default async function WelfarePage({
         )}
       </section>
 
-      {/* 테마 칩 필터 — 의료/교통/돌봄 등으로 추천 결과 정렬 */}
-      <Suspense fallback={null}>
-        <ThemeFilter counts={counts} totalCount={totalCount} />
-      </Suspense>
-
-      {/* 활성 테마 안내 (필터 적용 시) */}
-      {activeThemeMeta && (
-        <section className="-mt-2 mb-3 px-5">
-          <div className="rounded-xl bg-[var(--bg-soft-blue)] px-4 py-2.5">
-            <p className="text-[13px] font-bold text-[var(--color-text)]">
-              <span className="mr-1" aria-hidden>
-                {activeThemeMeta.icon}
-              </span>
-              {activeThemeMeta.label} 테마만 보고 있어요
-              <span className="ml-2 text-[12px] font-normal text-[var(--color-muted)]">
-                · {activeThemeMeta.description}
-              </span>
-            </p>
-          </div>
-        </section>
-      )}
+      {/* 테마 그리드 — 빠른 점프(anchor scroll) 입구 */}
+      <ThemeFilter counts={counts} totalCount={totalCount} />
 
       {/* 🔥 이달 지금 지원 가능 — 한시·시즌성 지원금 */}
       {temporaryList.length > 0 && (
@@ -429,38 +423,65 @@ export default async function WelfarePage({
         </section>
       )}
 
-      {/* ✅ 바로 신청 가능 — eligible & not received */}
-      <section className="flex flex-col gap-4 px-5">
-        <h2 className="text-[19px] font-bold text-[var(--color-text)]">
-          ✅ 바로 신청 가능한 혜택 ({availableList.length}건)
-        </h2>
-        <p className="text-[13px] text-[var(--color-muted)]">
-          단순 자격(나이·국적 등)만으로 받으실 수 있는 혜택이에요. 신청 페이지에서 바로 신청하세요.
-        </p>
-        {availableList.length > 0 ? (
-          availableList.map((m) => <BenefitCard key={m.benefit.id} m={m} />)
-        ) : (
+      {/* 테마별 펼침 섹션 — 각 테마 안에서 ✅ 지금 바로 / 📋 서류 보완 두 그룹으로 분리 */}
+      {themeGroups.length === 0 && (
+        <section className="px-5">
           <p className="rounded-2xl bg-white p-5 text-center text-[15px] text-[var(--color-muted)]">
-            바로 신청 가능한 혜택은 없어요. 아래 "주민센터 확인 후" 항목을 살펴봐주세요.
+            지금 추천할 혜택이 없어요. 마이페이지에서 정보를 보완하시면 더 정확히 매칭해 드릴게요.
           </p>
-        )}
-      </section>
-
-      {/* 📋 주민센터 확인 후 신청 — likely + needs_more_info */}
-      {needsDocsList.length > 0 && (
-        <section className="mt-6 flex flex-col gap-4 px-5">
-          <h2 className="text-[19px] font-bold text-[var(--color-text)]">
-            📋 주민센터 확인 후 신청 가능 ({needsDocsList.length}건)
-          </h2>
-          <p className="text-[13px] text-[var(--color-muted)]">
-            입력하신 정보로는 가능성이 보이나, <strong>최종 자격은 소득인정액·재산환산·가구특성 검토</strong>가 필요해요.
-            주민센터 방문하시면 정확히 안내받으실 수 있어요.
-          </p>
-          {needsDocsList.map((m) => (
-            <BenefitCard key={m.benefit.id} m={m} />
-          ))}
         </section>
       )}
+
+      {themeGroups.map((g) => (
+        <section
+          key={g.themeId}
+          id={`theme-${g.themeId}`}
+          className="mb-7 flex flex-col gap-4 px-5 scroll-mt-4"
+        >
+          {/* 테마 헤더 */}
+          <div className="flex items-baseline gap-2 border-b-2 border-[var(--color-primary)]/20 pb-2">
+            <span className="text-[26px] leading-none" aria-hidden>
+              {g.icon}
+            </span>
+            <h2 className="text-[20px] font-extrabold text-[var(--color-text)]">
+              {g.label}
+            </h2>
+            <span className="text-[14px] font-bold text-[var(--color-primary)]">
+              {g.total}건
+            </span>
+            <span className="ml-1 truncate text-[12px] text-[var(--color-muted)]">
+              · {g.description}
+            </span>
+          </div>
+
+          {/* ✅ 지금 바로 받을 수 있는 혜택 */}
+          {g.available.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <h3 className="text-[15px] font-bold text-[var(--color-success)]">
+                ✅ 지금 바로 받을 수 있는 혜택 ({g.available.length}건)
+              </h3>
+              {g.available.map((m) => (
+                <BenefitCard key={m.benefit.id} m={m} />
+              ))}
+            </div>
+          )}
+
+          {/* 📋 서류 보완해서 신청할 수 있는 혜택 */}
+          {g.needsDocs.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <h3 className="text-[15px] font-bold text-[#8A5E00]">
+                📋 서류 보완해서 신청할 수 있는 혜택 ({g.needsDocs.length}건)
+              </h3>
+              <p className="-mt-1 text-[12px] leading-relaxed text-[var(--color-muted)]">
+                입력 정보만으로는 자격이 확실치 않아요. 주민센터에 한 번 더 확인하시면 정확히 안내받으실 수 있어요.
+              </p>
+              {g.needsDocs.map((m) => (
+                <BenefitCard key={m.benefit.id} m={m} />
+              ))}
+            </div>
+          )}
+        </section>
+      ))}
 
       {/* 어려운 혜택 (참고, 접힘) */}
       {ineligible.length > 0 && (
