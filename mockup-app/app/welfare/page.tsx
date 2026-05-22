@@ -69,6 +69,8 @@ const CATEGORY_ICON: Record<string, string> = {
 function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean }) {
   const meta = STATUS_META[m.status];
   const icon = CATEGORY_ICON[m.benefit.category] ?? "📌";
+  const themeId = getTheme(m.benefit);
+  const themeMeta = THEMES_BY_ID[themeId];
   const amount =
     m.benefit.benefit.amount_krw_max?.single ??
     m.benefit.benefit.amount_krw_max?.couple ??
@@ -83,38 +85,47 @@ function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean 
       : `최대 ${amount.toLocaleString("ko-KR")}원`;
 
   return (
-    <Link href={`/welfare/${m.benefit.id}`}>
-      <article className="card-soft card-link relative overflow-hidden rounded-2xl bg-white">
-        <div
-          className={`absolute left-0 top-0 h-full w-1.5 ${
-            receiving ? "bg-[var(--color-success)]" : meta.stripe
-          }`}
-        />
-        <div className="p-5 pl-6">
-          <div className="mb-3 flex items-center gap-2">
+    <article className="card-soft relative overflow-hidden rounded-2xl bg-white">
+      <div
+        className={`absolute left-0 top-0 h-full w-1.5 ${
+          receiving ? "bg-[var(--color-success)]" : meta.stripe
+        }`}
+      />
+      <div className="p-5 pl-6">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span
+            className={`rounded-full px-3 py-1 text-[13px] font-semibold ${
+              receiving
+                ? "bg-[var(--color-success-soft)] text-[var(--color-success)]"
+                : meta.color
+            }`}
+          >
+            {receiving ? "수령 중" : meta.label}
+          </span>
+          {/* 테마 뱃지 — 클릭하면 같은 테마만 필터링 */}
+          <Link
+            href={`/welfare?theme=${themeId}`}
+            className="rounded-full bg-[var(--bg-soft-blue)] px-2.5 py-1 text-[12px] font-bold text-[var(--color-primary)] active:opacity-70"
+            aria-label={`${themeMeta.label} 테마 혜택 더 보기`}
+          >
+            {themeMeta.icon} {themeMeta.label}
+          </Link>
+          {!receiving && m.totalConditions > 0 && (
             <span
-              className={`rounded-full px-3 py-1 text-[13px] font-semibold ${
-                receiving
-                  ? "bg-[var(--color-success-soft)] text-[var(--color-success)]"
-                  : meta.color
-              }`}
+              className="text-[12px] text-[var(--color-muted)]"
+              title="저희가 확인할 수 있는 자격 조건 중 충족한 개수예요. 최종 자격은 신청 시 정확히 확인됩니다."
             >
-              {receiving ? "수령 중" : meta.label}
+              확인된 조건 {m.metConditions}/{m.totalConditions}
+              {m.missing.length > 0 && (
+                <span className="ml-1 text-[var(--color-accent)]">
+                  · {m.missing.length}개 보완 필요
+                </span>
+              )}
             </span>
-            {!receiving && m.totalConditions > 0 && (
-              <span
-                className="text-[12px] text-[var(--color-muted)]"
-                title="저희가 확인할 수 있는 자격 조건 중 충족한 개수예요. 최종 자격은 신청 시 정확히 확인됩니다."
-              >
-                확인된 조건 {m.metConditions}/{m.totalConditions}
-                {m.missing.length > 0 && (
-                  <span className="ml-1 text-[var(--color-accent)]">
-                    · {m.missing.length}개 보완 필요
-                  </span>
-                )}
-              </span>
-            )}
-          </div>
+          )}
+        </div>
+
+        <Link href={`/welfare/${m.benefit.id}`} className="block card-link">
 
           <div className="mb-3 flex items-center gap-3">
             <span className="text-3xl" aria-hidden>
@@ -151,9 +162,9 @@ function BenefitCard({ m, receiving }: { m: MatchedBenefit; receiving?: boolean 
           <p className="mt-4 text-[15px] font-semibold text-[var(--color-primary)]">
             자세히 보기 →
           </p>
-        </div>
-      </article>
-    </Link>
+        </Link>
+      </div>
+    </article>
   );
 }
 
